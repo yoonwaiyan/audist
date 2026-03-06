@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="512" height="512">
+  <!-- Background -->
+  <rect width="200" height="200" rx="44" fill="#0D0D14"/>
+
+  <!-- Waveform bars — left (outside → in: tall, medium, short) -->
+  <line x1="22" y1="72" x2="22" y2="128" stroke="#7B61FF" stroke-width="6" stroke-linecap="round"/>
+  <line x1="38" y1="82" x2="38" y2="118" stroke="#7B61FF" stroke-width="6" stroke-linecap="round"/>
+  <line x1="54" y1="91" x2="54" y2="109" stroke="#7B61FF" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Waveform bars — right (inside → out: short, medium, tall) -->
+  <line x1="146" y1="91" x2="146" y2="109" stroke="#7B61FF" stroke-width="6" stroke-linecap="round"/>
+  <line x1="162" y1="82" x2="162" y2="118" stroke="#7B61FF" stroke-width="6" stroke-linecap="round"/>
+  <line x1="178" y1="72" x2="178" y2="128" stroke="#7B61FF" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Microphone capsule -->
+  <rect x="76" y="34" width="48" height="74" rx="24" fill="none" stroke="#EEEEF5" stroke-width="7"/>
+
+  <!-- Microphone stand arc -->
+  <path d="M52 104 Q52 150 100 150 Q148 150 148 104"
+        fill="none" stroke="#EEEEF5" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Mic base stem + foot -->
+  <line x1="100" y1="150" x2="100" y2="166" stroke="#EEEEF5" stroke-width="7" stroke-linecap="round"/>
+  <line x1="74"  y1="166" x2="126" y2="166" stroke="#EEEEF5" stroke-width="7" stroke-linecap="round"/>
+</svg>
