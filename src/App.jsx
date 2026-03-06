@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import logo from './assets/logo.svg';
 import Waveform from './components/Waveform.jsx';
 import Summary from './components/Summary.jsx';
 import Settings from './components/Settings.jsx';
@@ -634,7 +635,7 @@ export default function App() {
       {/* Header */}
       <div style={S.header}>
         <div style={S.logo}>
-          <div style={S.logoIcon}>🌾</div>
+          <img src={logo} alt="Audist" style={{ width: 34, height: 34 }} onError={(e) => e.target.style.display = 'none'} />
           <span style={S.logoText}>Audist</span>
         </div>
         <div style={S.headerRight}>

@@ -3,11 +3,11 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  // Required so Electron can load the built files via file:// protocol
-  base: process.env.ELECTRON === 'true' ? './' : '/',
+  base: './',
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    assetsInlineLimit: 0,
   },
   server: {
     port: 5173,
