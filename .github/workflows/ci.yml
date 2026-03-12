@@ -23,7 +23,35 @@ jobs:
 
       - name: Build
         run: npm run build
-        env:
-          # electron-builder requires a display on Linux for some steps;
-          # the vite build itself doesn't, but this prevents any surprises.
-          DISPLAY: ':99'
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Electron dependencies
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+
+      - name: Run E2E tests
+        run: xvfb-run --auto-servernum npm run test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
