@@ -3,13 +3,22 @@ import MainLayout from './layouts/MainLayout'
 import PrefsLayout from './layouts/PrefsLayout'
 import SessionListPage from './pages/SessionListPage'
 import SetupPage from './pages/SetupPage'
+import PermissionsPage from './pages/PermissionsPage'
 import GeneralPrefsPage from './pages/prefs/GeneralPrefsPage'
 import LLMPrefsPage from './pages/prefs/LLMPrefsPage'
 import PromptPrefsPage from './pages/prefs/PromptPrefsPage'
 
-async function requireSaveDirectory(): Promise<Response | null> {
-  const accessible = await window.api.directory.verify()
-  if (!accessible) return redirect('/setup')
+async function requireSetup(): Promise<Response | null> {
+  // 1. Save directory must be configured and accessible
+  const dirOk = await window.api.directory.verify()
+  if (!dirOk) return redirect('/setup')
+
+  // 2. Both permissions must be granted
+  const perms = await window.api.permissions.check()
+  if (perms.microphone !== 'granted' || perms.screen !== 'granted') {
+    return redirect('/permissions')
+  }
+
   return null
 }
 
@@ -17,12 +26,16 @@ const router = createHashRouter([
   {
     path: '/',
     element: <MainLayout />,
-    loader: requireSaveDirectory,
+    loader: requireSetup,
     children: [{ index: true, element: <SessionListPage /> }]
   },
   {
     path: '/setup',
     element: <SetupPage />
+  },
+  {
+    path: '/permissions',
+    element: <PermissionsPage />
   },
   {
     path: '/prefs',

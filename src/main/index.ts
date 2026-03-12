@@ -5,6 +5,7 @@ import icon from '../../resources/icon.png?asset'
 import { setApplicationMenu } from './menu'
 import { focusOrOpenPrefsWindow, PrefsSection } from './windows/prefs'
 import { registerDirectoryHandlers } from './ipc/directory'
+import { registerPermissionHandlers } from './ipc/permissions'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -46,6 +47,7 @@ app.whenReady().then(() => {
 
   setApplicationMenu()
   registerDirectoryHandlers()
+  registerPermissionHandlers()
 
   ipcMain.on('audist:prefs:open', (_, payload?: { section?: PrefsSection }) => {
     focusOrOpenPrefsWindow(payload?.section)

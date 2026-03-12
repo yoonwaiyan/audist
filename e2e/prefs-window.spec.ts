@@ -4,7 +4,7 @@ import { launchAppWithSaveDir } from './helpers/electron'
 test.describe('Main window', () => {
   test('renders Audist header and gear icon', async () => {
     const { app, page, cleanup } = await launchAppWithSaveDir()
-    await expect(page.getByText('Audist')).toBeVisible()
+    await expect(page.locator('header').getByText('Audist', { exact: true })).toBeVisible()
     await expect(page.locator('button[title*="Preferences"]')).toBeVisible()
     await app.close()
     cleanup()
