@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { setApplicationMenu } from './menu'
 import { focusOrOpenPrefsWindow, PrefsSection } from './windows/prefs'
+import { registerDirectoryHandlers } from './ipc/directory'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -44,6 +45,7 @@ app.whenReady().then(() => {
   })
 
   setApplicationMenu()
+  registerDirectoryHandlers()
 
   ipcMain.on('audist:prefs:open', (_, payload?: { section?: PrefsSection }) => {
     focusOrOpenPrefsWindow(payload?.section)
