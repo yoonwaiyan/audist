@@ -11,6 +11,8 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**
+  - node_modules/naudiodon/build/Release/naudiodon.node
+  - node_modules/naudiodon/build/Release/libportaudio.dylib
 win:
   executableName: audist
 nsis:
