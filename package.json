@@ -19,14 +19,12 @@
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "electron-vite build && electron-builder --mac",
     "build:linux": "electron-vite build && electron-builder --linux",
-    "rebuild": "electron-rebuild -f -w naudiodon",
     "test:e2e": "playwright test"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "electron-updater": "^6.3.9",
-    "naudiodon": "^2.3.6",
     "react-router-dom": "^7.13.1"
   },
   "devDependencies": {
