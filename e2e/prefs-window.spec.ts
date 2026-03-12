@@ -1,18 +1,19 @@
 import { test, expect } from '@playwright/test'
-import { launchApp } from './helpers/electron'
+import { launchAppWithSaveDir } from './helpers/electron'
 
 test.describe('Main window', () => {
   test('renders Audist header and gear icon', async () => {
-    const { app, page } = await launchApp()
+    const { app, page, cleanup } = await launchAppWithSaveDir()
     await expect(page.getByText('Audist')).toBeVisible()
     await expect(page.locator('button[title*="Preferences"]')).toBeVisible()
     await app.close()
+    cleanup()
   })
 })
 
 test.describe('Preferences window', () => {
   test('gear icon opens preferences window with sidebar nav', async () => {
-    const { app, page } = await launchApp()
+    const { app, page, cleanup } = await launchAppWithSaveDir()
 
     await page.locator('button[title*="Preferences"]').click()
 
@@ -26,10 +27,11 @@ test.describe('Preferences window', () => {
     await expect(prefsPage.getByRole('link', { name: 'Prompt' })).toBeVisible()
 
     await app.close()
+    cleanup()
   })
 
   test('sidebar navigation switches sections', async () => {
-    const { app, page } = await launchApp()
+    const { app, page, cleanup } = await launchAppWithSaveDir()
 
     await page.locator('button[title*="Preferences"]').click()
     const prefsPage = await app.waitForEvent('window')
@@ -47,10 +49,11 @@ test.describe('Preferences window', () => {
     await expect(prefsPage.locator('h2').getByText('Prompt')).toBeVisible()
 
     await app.close()
+    cleanup()
   })
 
   test('clicking gear when prefs is already open does not create a second prefs window', async () => {
-    const { app, page } = await launchApp()
+    const { app, page, cleanup } = await launchAppWithSaveDir()
 
     // Open prefs
     await page.locator('button[title*="Preferences"]').click()
@@ -64,5 +67,6 @@ test.describe('Preferences window', () => {
     expect(app.windows().length).toBe(countAfterFirstOpen)
 
     await app.close()
+    cleanup()
   })
 })
