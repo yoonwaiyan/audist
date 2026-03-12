@@ -1,4 +1,4 @@
-import { ipcMain, systemPreferences, shell } from 'electron'
+import { ipcMain, systemPreferences, shell, desktopCapturer } from 'electron'
 
 export type PermissionStatus = 'granted' | 'denied' | 'not-determined' | 'restricted' | 'unknown'
 
@@ -14,7 +14,7 @@ export function registerPermissionHandlers(): void {
   //   'not-determined' → both not-determined (test the permissions page UI)
   //   'denied'         → both denied (test the blocked/error state)
   // On non-macOS, permissions are implicitly granted.
-  ipcMain.handle('audist:permissions:check', (): PermissionsState => {
+  ipcMain.handle('audist:permissions:check', async (): Promise<PermissionsState> => {
     const testOverride = process.env['AUDIST_TEST_PERMISSIONS']
     if (testOverride === 'granted') return { microphone: 'granted', screen: 'granted' }
     if (testOverride === 'not-determined') {
@@ -25,10 +25,26 @@ export function registerPermissionHandlers(): void {
     if (process.platform !== 'darwin') {
       return { microphone: 'granted', screen: 'granted' }
     }
-    return {
-      microphone: systemPreferences.getMediaAccessStatus('microphone') as PermissionStatus,
-      screen: systemPreferences.getMediaAccessStatus('screen') as PermissionStatus
+
+    const microphone = systemPreferences.getMediaAccessStatus('microphone') as PermissionStatus
+    let screen = systemPreferences.getMediaAccessStatus('screen') as PermissionStatus
+
+    // On macOS 15+ Sequoia, getMediaAccessStatus('screen') is unreliable —
+    // it returns 'denied' even when the user has granted access in System Settings.
+    // Probe with desktopCapturer.getSources() to verify the actual state.
+    if (screen !== 'granted') {
+      try {
+        const sources = await desktopCapturer.getSources({
+          types: ['screen'],
+          thumbnailSize: { width: 1, height: 1 }
+        })
+        if (sources.length > 0) screen = 'granted'
+      } catch {
+        // Keep original status
+      }
     }
+
+    return { microphone, screen }
   })
 
   // Trigger the macOS microphone permission dialog.
