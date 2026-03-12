@@ -9,6 +9,13 @@ const api = {
   },
   session: {
     create: (): Promise<string> => ipcRenderer.invoke('audist:session:create')
+  },
+  permissions: {
+    check: (): Promise<{ microphone: string; screen: string }> =>
+      ipcRenderer.invoke('audist:permissions:check'),
+    requestMic: (): Promise<boolean> => ipcRenderer.invoke('audist:permissions:request-mic'),
+    openSettings: (target: 'microphone' | 'screen'): Promise<void> =>
+      ipcRenderer.invoke('audist:permissions:open-settings', target)
   }
 }
 

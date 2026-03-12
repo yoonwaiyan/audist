@@ -1,4 +1,5 @@
-import { Outlet } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Outlet, useNavigate } from 'react-router-dom'
 
 function GearIcon(): React.JSX.Element {
   return (
@@ -21,9 +22,24 @@ function GearIcon(): React.JSX.Element {
 }
 
 export default function MainLayout(): React.JSX.Element {
+  const navigate = useNavigate()
+
   const openPrefs = (): void => {
     window.electron.ipcRenderer.send('audist:prefs:open')
   }
+
+  // Re-check permissions on every window focus — catches permissions revoked
+  // in System Settings while the app is in the background (AUD-7 requirement).
+  useEffect(() => {
+    const handleFocus = async (): Promise<void> => {
+      const perms = await window.api.permissions.check()
+      if (perms.microphone !== 'granted' || perms.screen !== 'granted') {
+        navigate('/permissions')
+      }
+    }
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [navigate])
 
   return (
     <div className="flex flex-col h-full bg-[var(--color-surface-base)]">
