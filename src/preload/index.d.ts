@@ -31,6 +31,22 @@ interface PermissionsAPI {
   openSettings: (target: 'microphone' | 'screen') => Promise<void>
 }
 
+type IpcUnsub = () => void
+
+interface WhisperAPI {
+  isReady: () => Promise<boolean>
+  install: () => Promise<void>
+  onBootstrap: (cb: (data: { stage: string; percent: number }) => void) => IpcUnsub
+  onReady: (cb: (data: Record<string, never>) => void) => IpcUnsub
+}
+
+interface TranscriptionAPI {
+  retry: (sessionDir: string) => Promise<void>
+  onProgress: (cb: (data: { sessionId: string; percent: number; stage: string }) => void) => IpcUnsub
+  onComplete: (cb: (data: { sessionId: string }) => void) => IpcUnsub
+  onError: (cb: (data: { sessionId: string; code: string; message: string }) => void) => IpcUnsub
+}
+
 interface RecordingAPI {
   getScreenSource: () => Promise<string>
   start: (payload: { sessionDir: string; micSampleRate: number; systemSampleRate: number }) => Promise<void>
@@ -43,6 +59,8 @@ interface AppAPI {
   directory: DirectoryAPI
   session: SessionAPI
   permissions: PermissionsAPI
+  whisper: WhisperAPI
+  transcription: TranscriptionAPI
   recording: RecordingAPI
 }
 

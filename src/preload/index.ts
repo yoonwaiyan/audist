@@ -1,6 +1,14 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
+type IpcListener<T> = (data: T) => void
+
+function listen<T>(channel: string, cb: IpcListener<T>): () => void {
+  const handler = (_: Electron.IpcRendererEvent, data: T): void => cb(data)
+  ipcRenderer.on(channel, handler)
+  return () => ipcRenderer.removeListener(channel, handler)
+}
+
 const api = {
   directory: {
     get: (): Promise<string | null> => ipcRenderer.invoke('audist:directory:get'),
@@ -17,6 +25,23 @@ const api = {
     requestMic: (): Promise<boolean> => ipcRenderer.invoke('audist:permissions:request-mic'),
     openSettings: (target: 'microphone' | 'screen'): Promise<void> =>
       ipcRenderer.invoke('audist:permissions:open-settings', target)
+  },
+  whisper: {
+    isReady: (): Promise<boolean> => ipcRenderer.invoke('audist:whisper:is-ready'),
+    install: (): Promise<void> => ipcRenderer.invoke('audist:whisper:install'),
+    onBootstrap: (cb: IpcListener<{ stage: string; percent: number }>) =>
+      listen('audist:whisper:bootstrap', cb),
+    onReady: (cb: IpcListener<Record<string, never>>) => listen('audist:whisper:ready', cb)
+  },
+  transcription: {
+    retry: (sessionDir: string): Promise<void> =>
+      ipcRenderer.invoke('audist:transcription:retry', sessionDir),
+    onProgress: (cb: IpcListener<{ sessionId: string; percent: number; stage: string }>) =>
+      listen('audist:transcription:progress', cb),
+    onComplete: (cb: IpcListener<{ sessionId: string }>) =>
+      listen('audist:transcription:complete', cb),
+    onError: (cb: IpcListener<{ sessionId: string; code: string; message: string }>) =>
+      listen('audist:transcription:error', cb)
   },
   recording: {
     getScreenSource: (): Promise<string> =>
