@@ -8,3 +8,6 @@ out
 # Playwright
 playwright-report
 test-results
+
+# Pre-compiled whisper binary (platform-specific, built by prepare:whisper)
+resources/whisper-bin/

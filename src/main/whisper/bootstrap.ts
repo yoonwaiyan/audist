@@ -1,6 +1,6 @@
 import { installWhisperCpp, downloadWhisperModel } from '@remotion/install-whisper-cpp'
 import { app } from 'electron'
-import { existsSync, rmSync } from 'fs'
+import { existsSync, rmSync, mkdirSync, copyFileSync, chmodSync } from 'fs'
 import { join } from 'path'
 
 export const WHISPER_VERSION = '1.5.5'
@@ -34,21 +34,36 @@ export async function bootstrapWhisper(
   onProgress: (stage: 'installing' | 'downloading', percent: number) => void
 ): Promise<void> {
   const dir = getWhisperDir()
+  mkdirSync(dir, { recursive: true })
 
-  // On macOS/Linux, installWhisperCpp uses git clone + make. If a previous
-  // bootstrap attempt left a partial directory, git clone fails with exit code 128.
-  // Wipe it so every bootstrap attempt starts clean.
-  if (existsSync(dir) && !existsSync(whisperBinaryPath(dir))) {
-    rmSync(dir, { recursive: true, force: true })
+  if (!existsSync(whisperBinaryPath(dir))) {
+    if (app.isPackaged) {
+      // In a packaged app the binary was pre-compiled and bundled as an extraResource.
+      // Copy it into userData so whisper.cpp can find it alongside the model.
+      const bundledBin = join(
+        process.resourcesPath,
+        'whisper-bin',
+        process.platform === 'win32' ? 'main.exe' : 'main'
+      )
+      copyFileSync(bundledBin, whisperBinaryPath(dir))
+      if (process.platform !== 'win32') chmodSync(whisperBinaryPath(dir), 0o755)
+    } else {
+      // Development: git clone + make (requires Xcode CLT / build-essentials)
+      // On macOS/Linux, if a previous bootstrap attempt left a partial directory,
+      // git clone fails with exit code 128. Wipe it so every attempt starts clean.
+      if (existsSync(dir) && !existsSync(whisperBinaryPath(dir))) {
+        rmSync(dir, { recursive: true, force: true })
+      }
+
+      // Prevent git from hanging on credential prompts in headless Electron environments
+      process.env['GIT_TERMINAL_PROMPT'] = '0'
+      process.env['GIT_ASKPASS'] = 'echo'
+
+      onProgress('installing', 0)
+      await installWhisperCpp({ version: WHISPER_VERSION, to: dir, printOutput: false })
+      onProgress('installing', 100)
+    }
   }
-
-  // Prevent git from hanging on credential prompts in headless Electron environments
-  process.env['GIT_TERMINAL_PROMPT'] = '0'
-  process.env['GIT_ASKPASS'] = 'echo'
-
-  onProgress('installing', 0)
-  await installWhisperCpp({ version: WHISPER_VERSION, to: dir, printOutput: false })
-  onProgress('installing', 100)
 
   onProgress('downloading', 0)
   await downloadWhisperModel({
