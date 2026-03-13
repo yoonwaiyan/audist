@@ -25,7 +25,6 @@ function formatDuration(seconds: number): string {
 }
 
 function formatTimestamp(id: string): string {
-  // id format: YYYY-MM-DD_HH-MM-SS
   const match = id.match(/^(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})$/)
   if (!match) return id
   const [, year, month, day, hour, min] = match
@@ -75,6 +74,99 @@ function StopIcon(): React.JSX.Element {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Session row
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface TranscriptionProgress {
+  percent: number
+  stage: string
+}
+
+interface SessionRowProps {
+  session: SessionMeta
+  progress: TranscriptionProgress | null
+  errorMessage: string | null
+  isMissingBinary: boolean
+}
+
+function SessionRow({
+  session,
+  progress,
+  errorMessage,
+  isMissingBinary
+}: SessionRowProps): React.JSX.Element {
+  const isTranscribing = session.status === 'transcribing'
+  const isError = session.status === 'error'
+
+  const handleRetry = (): void => {
+    void window.api.transcription.retry(session.dir)
+  }
+
+  const handleReinstall = (): void => {
+    void window.location.assign('#/whisper-setup')
+  }
+
+  return (
+    <li className="flex flex-col gap-2 px-4 py-3 rounded-xl bg-[var(--color-surface-panel)]">
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm text-[var(--color-text-primary)]">
+            {formatTimestamp(session.id)}
+          </span>
+          <span className={`text-xs ${STATUS_COLOR[session.status]}`}>
+            {isTranscribing && progress
+              ? `Transcribing… (${progress.percent}%)`
+              : STATUS_LABEL[session.status]}
+          </span>
+        </div>
+        <span className="text-sm text-[var(--color-text-secondary)] tabular-nums">
+          {formatDuration(session.duration)}
+        </span>
+      </div>
+
+      {/* Transcription progress bar */}
+      {isTranscribing && progress !== null && (
+        <div className="w-full h-1 bg-[var(--color-surface-overlay)] rounded-full overflow-hidden">
+          <div
+            className="h-full bg-blue-400 rounded-full transition-all duration-300"
+            style={{ width: `${progress.percent}%` }}
+          />
+        </div>
+      )}
+
+      {/* Error state */}
+      {isError && (
+        <div className="flex flex-col gap-2">
+          {errorMessage && (
+            <p className="text-xs text-red-400 leading-relaxed">{errorMessage}</p>
+          )}
+          <div className="flex gap-2">
+            {isMissingBinary ? (
+              <button
+                onClick={handleReinstall}
+                className="text-xs px-3 py-1 rounded-lg bg-[var(--color-accent)] text-white
+                  hover:bg-[var(--color-accent-hover)] transition-colors cursor-default"
+              >
+                Reinstall Engine
+              </button>
+            ) : (
+              <button
+                onClick={handleRetry}
+                className="text-xs px-3 py-1 rounded-lg bg-[var(--color-surface-overlay)]
+                  text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]
+                  transition-colors cursor-default"
+              >
+                Retry Transcription
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </li>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -83,6 +175,14 @@ export default function SessionListPage(): React.JSX.Element {
   const [elapsed, setElapsed] = useState(0)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [sessions, setSessions] = useState<SessionMeta[]>([])
+
+  // Per-session live transcription state (not persisted — derived from IPC events)
+  const [transcriptionProgress, setTranscriptionProgress] = useState<
+    Record<string, TranscriptionProgress>
+  >({})
+  const [transcriptionErrors, setTranscriptionErrors] = useState<
+    Record<string, { message: string; isMissingBinary: boolean }>
+  >({})
 
   const loadSessions = useCallback(async () => {
     const list = await window.api.session.list()
@@ -114,6 +214,51 @@ export default function SessionListPage(): React.JSX.Element {
     }
   }, [state, loadSessions])
 
+  // Transcription event listeners
+  useEffect(() => {
+    const unsubProgress = window.api.transcription.onProgress(({ sessionId, percent, stage }) => {
+      setTranscriptionProgress((prev) => ({ ...prev, [sessionId]: { percent, stage } }))
+      // Optimistically set status to transcribing in session list
+      setSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, status: 'transcribing' } : s))
+      )
+    })
+
+    const unsubComplete = window.api.transcription.onComplete(({ sessionId }) => {
+      setTranscriptionProgress((prev) => {
+        const next = { ...prev }
+        delete next[sessionId]
+        return next
+      })
+      setTranscriptionErrors((prev) => {
+        const next = { ...prev }
+        delete next[sessionId]
+        return next
+      })
+      loadSessions()
+    })
+
+    const unsubError = window.api.transcription.onError(({ sessionId, code, message }) => {
+      setTranscriptionProgress((prev) => {
+        const next = { ...prev }
+        delete next[sessionId]
+        return next
+      })
+      setTranscriptionErrors((prev) => ({
+        ...prev,
+        [sessionId]: { message, isMissingBinary: code === 'NO_BINARY' }
+      }))
+      // Reload so status badge updates to 'error'
+      loadSessions()
+    })
+
+    return () => {
+      unsubProgress()
+      unsubComplete()
+      unsubError()
+    }
+  }, [loadSessions])
+
   const handleStop = useCallback(() => {
     stopRecording(elapsed)
   }, [stopRecording, elapsed])
@@ -122,10 +267,8 @@ export default function SessionListPage(): React.JSX.Element {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Recording controls */}
       <div className="flex flex-col items-center justify-center gap-6 py-8">
-        {/* Waveform — visible while recording, flat bars when idle */}
         <Waveform active={state === 'recording'} analyserRef={analyserRef} />
 
-        {/* Elapsed timer — only shown while recording */}
         {state === 'recording' && (
           <div className="flex items-center gap-2 text-[var(--color-text-secondary)] text-sm -mt-2">
             <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" />
@@ -133,7 +276,6 @@ export default function SessionListPage(): React.JSX.Element {
           </div>
         )}
 
-        {/* Main record/stop button */}
         {state === 'idle' && (
           <button
             onClick={startRecording}
@@ -167,7 +309,6 @@ export default function SessionListPage(): React.JSX.Element {
           </button>
         )}
 
-        {/* Error message */}
         {error && <p className="text-xs text-red-400 max-w-xs text-center">{error}</p>}
       </div>
 
@@ -183,24 +324,13 @@ export default function SessionListPage(): React.JSX.Element {
         ) : (
           <ul className="flex flex-col gap-2">
             {sessions.map((session) => (
-              <li
+              <SessionRow
                 key={session.id}
-                className="flex items-center justify-between px-4 py-3 rounded-xl
-                  bg-[var(--color-surface-panel)] hover:bg-[var(--color-surface-hover)]
-                  cursor-default select-none transition-colors"
-              >
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-sm text-[var(--color-text-primary)]">
-                    {formatTimestamp(session.id)}
-                  </span>
-                  <span className={`text-xs ${STATUS_COLOR[session.status]}`}>
-                    {STATUS_LABEL[session.status]}
-                  </span>
-                </div>
-                <span className="text-sm text-[var(--color-text-secondary)] tabular-nums">
-                  {formatDuration(session.duration)}
-                </span>
-              </li>
+                session={session}
+                progress={transcriptionProgress[session.id] ?? null}
+                errorMessage={transcriptionErrors[session.id]?.message ?? session.error ?? null}
+                isMissingBinary={transcriptionErrors[session.id]?.isMissingBinary ?? false}
+              />
             ))}
           </ul>
         )}

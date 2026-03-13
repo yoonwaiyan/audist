@@ -1,7 +1,8 @@
-import { ipcMain, desktopCapturer } from 'electron'
+import { ipcMain, BrowserWindow, desktopCapturer } from 'electron'
 import { createWriteStream, openSync, writeSync, closeSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import type { WriteStream } from 'fs'
+import { transcribeSession } from './transcription'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // WAV helpers
@@ -120,8 +121,8 @@ export function registerRecordingHandlers(): void {
     session.systemStream.write(chunk)
   })
 
-  // Stop capture, flush both streams, patch WAV headers, and write session metadata
-  ipcMain.handle('audist:recording:stop', async (_, duration: number): Promise<void> => {
+  // Stop capture, flush both streams, patch WAV headers, write session metadata, trigger transcription
+  ipcMain.handle('audist:recording:stop', async (event, duration: number): Promise<void> => {
     if (!session) return
 
     acceptingChunks = false
@@ -140,8 +141,12 @@ export function registerRecordingHandlers(): void {
     if (s.micBytesWritten > 0) patchWavHeader(s.micPath, s.micBytesWritten)
     if (s.systemBytesWritten > 0) patchWavHeader(s.systemPath, s.systemBytesWritten)
 
-    // Write session metadata for session history
-    const meta = { duration, status: 'complete' }
+    // Write session metadata — status starts as 'transcribing'; transcription pipeline updates it
+    const meta = { duration, status: 'transcribing' }
     writeFileSync(join(s.sessionDir, 'session.json'), JSON.stringify(meta), 'utf-8')
+
+    // Auto-trigger transcription in the background
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) transcribeSession(s.sessionDir, win)
   })
 }

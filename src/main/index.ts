@@ -8,6 +8,8 @@ import { registerDirectoryHandlers } from './ipc/directory'
 import { registerPermissionHandlers } from './ipc/permissions'
 import { registerRecordingHandlers } from './ipc/recording'
 import { registerSessionHandlers } from './ipc/session'
+import { registerTranscriptionHandlers } from './ipc/transcription'
+import { bootstrapWhisper } from './whisper/bootstrap'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -52,6 +54,20 @@ app.whenReady().then(() => {
   registerPermissionHandlers()
   registerRecordingHandlers()
   registerSessionHandlers()
+  registerTranscriptionHandlers()
+
+  // Bootstrap IPC — renderer calls this from the whisper setup screen
+  ipcMain.handle('audist:whisper:install', async (event): Promise<void> => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    await bootstrapWhisper((stage, percent) => {
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('audist:whisper:bootstrap', { stage, percent })
+      }
+    })
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('audist:whisper:ready', {})
+    }
+  })
 
   ipcMain.on('audist:prefs:open', (_, payload?: { section?: PrefsSection }) => {
     focusOrOpenPrefsWindow(payload?.section)

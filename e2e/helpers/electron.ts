@@ -3,6 +3,28 @@ import path from 'path'
 import fs from 'fs'
 import os from 'os'
 
+export interface SessionSeed {
+  id: string
+  duration: number
+  status: 'complete' | 'transcribing' | 'error'
+  error?: string
+}
+
+/**
+ * Seed one or more completed session directories into a save directory.
+ * Each session gets a `session.json` with the provided metadata.
+ */
+export function seedSessions(saveDir: string, sessions: SessionSeed[]): void {
+  for (const s of sessions) {
+    const sessionDir = path.join(saveDir, s.id)
+    fs.mkdirSync(sessionDir, { recursive: true })
+    fs.writeFileSync(
+      path.join(sessionDir, 'session.json'),
+      JSON.stringify({ duration: s.duration, status: s.status, ...(s.error ? { error: s.error } : {}) })
+    )
+  }
+}
+
 export interface LaunchResult {
   app: ElectronApplication
   page: Page
@@ -20,10 +42,15 @@ export interface LaunchResult {
  *   - 'granted'        → bypass OS permission check, both treated as granted (default)
  *   - 'not-determined' → simulate a fresh macOS install, lands on /permissions
  *   - 'denied'         → simulate both permissions denied, shows blocked state
+ *
+ * @param opts.whisper
+ *   - 'ready'          → bypass whisper binary/model check, treated as installed (default)
+ *   - 'not-ready'      → simulate first run, whisper not yet bootstrapped
  */
 export async function launchApp(opts?: {
   saveDirectory?: string
   permissions?: 'granted' | 'not-determined' | 'denied'
+  whisper?: 'ready' | 'not-ready'
 }): Promise<LaunchResult> {
   const tmpUserData = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-test-'))
 
@@ -35,6 +62,7 @@ export async function launchApp(opts?: {
   }
 
   const permissionsOverride = opts?.permissions ?? 'granted'
+  const whisperOverride = opts?.whisper ?? 'ready'
 
   const app = await electron.launch({
     args: [
@@ -44,7 +72,8 @@ export async function launchApp(opts?: {
     ],
     env: {
       ...process.env,
-      AUDIST_TEST_PERMISSIONS: permissionsOverride
+      AUDIST_TEST_PERMISSIONS: permissionsOverride,
+      AUDIST_TEST_WHISPER: whisperOverride
     }
   })
 
