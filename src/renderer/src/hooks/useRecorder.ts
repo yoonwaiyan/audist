@@ -8,7 +8,7 @@ export interface UseRecorderResult {
   error: string | null
   analyserRef: React.RefObject<AnalyserNode | null>
   startRecording: () => Promise<void>
-  stopRecording: () => Promise<void>
+  stopRecording: (elapsed: number) => Promise<void>
 }
 
 // Connects a MediaStream to an AudioWorklet that converts Float32 → Int16 PCM
@@ -118,7 +118,7 @@ export function useRecorder(): UseRecorderResult {
     }
   }, [])
 
-  const stopRecording = useCallback(async (): Promise<void> => {
+  const stopRecording = useCallback(async (elapsed: number): Promise<void> => {
     setState('stopping')
     try {
       // Stop both audio streams (no more chunks will be sent after this)
@@ -128,8 +128,8 @@ export function useRecorder(): UseRecorderResult {
       cleanupSystemRef.current = null
       analyserRef.current = null
 
-      // Flush and close WAV files in main process
-      await window.api.recording.stop()
+      // Flush and close WAV files in main process; pass duration for session metadata
+      await window.api.recording.stop(elapsed)
 
       setState('idle')
     } catch (err) {

@@ -7,6 +7,7 @@ import { focusOrOpenPrefsWindow, PrefsSection } from './windows/prefs'
 import { registerDirectoryHandlers } from './ipc/directory'
 import { registerPermissionHandlers } from './ipc/permissions'
 import { registerRecordingHandlers } from './ipc/recording'
+import { registerSessionHandlers } from './ipc/session'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -50,6 +51,7 @@ app.whenReady().then(() => {
   registerDirectoryHandlers()
   registerPermissionHandlers()
   registerRecordingHandlers()
+  registerSessionHandlers()
 
   ipcMain.on('audist:prefs:open', (_, payload?: { section?: PrefsSection }) => {
     focusOrOpenPrefsWindow(payload?.section)
