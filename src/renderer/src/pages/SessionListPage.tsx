@@ -328,7 +328,7 @@ export default function SessionListPage(): React.JSX.Element {
                 key={session.id}
                 session={session}
                 progress={transcriptionProgress[session.id] ?? null}
-                errorMessage={transcriptionErrors[session.id]?.message ?? null}
+                errorMessage={transcriptionErrors[session.id]?.message ?? session.error ?? null}
                 isMissingBinary={transcriptionErrors[session.id]?.isMissingBinary ?? false}
               />
             ))}

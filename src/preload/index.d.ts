@@ -18,6 +18,7 @@ export interface SessionMeta {
   dir: string
   duration: number
   status: 'complete' | 'transcribing' | 'summarising' | 'error'
+  error?: string
 }
 
 interface SessionAPI {
