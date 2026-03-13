@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 type BootstrapStage = 'idle' | 'installing' | 'downloading' | 'done' | 'error'
@@ -17,6 +17,28 @@ export default function WhisperSetupPage(): React.JSX.Element {
   const [percent, setPercent] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
+  const runInstall = useCallback(
+    (unsubBootstrap: () => void, unsubReady: () => void) => {
+      setStage('idle')
+      setError(null)
+      setPercent(0)
+      window.api.whisper.install().catch((err: unknown) => {
+        setStage('error')
+        const raw = err instanceof Error ? err.message : String(err)
+        const friendly = raw.includes('git clone')
+          ? 'Failed to download whisper.cpp source. Check your internet connection and try again.'
+          : raw.includes('make')
+            ? 'Failed to compile whisper.cpp. Ensure Xcode Command Line Tools are installed:\n  xcode-select --install'
+            : raw
+        setError(friendly)
+        // Re-register listeners for the next attempt
+        unsubBootstrap()
+        unsubReady()
+      })
+    },
+    []
+  )
+
   useEffect(() => {
     const unsubBootstrap = window.api.whisper.onBootstrap(({ stage: s, percent: p }) => {
       setStage(s as BootstrapStage)
@@ -29,17 +51,13 @@ export default function WhisperSetupPage(): React.JSX.Element {
       setTimeout(() => navigate('/'), 600)
     })
 
-    // Kick off bootstrap immediately — non-dismissable
-    window.api.whisper.install().catch((err: unknown) => {
-      setStage('error')
-      setError(err instanceof Error ? err.message : 'Setup failed. Please restart the app.')
-    })
+    runInstall(unsubBootstrap, unsubReady)
 
     return () => {
       unsubBootstrap()
       unsubReady()
     }
-  }, [navigate])
+  }, [navigate, runInstall])
 
   return (
     <div className="flex flex-col items-center justify-center h-full bg-[var(--color-surface-base)] px-8">
@@ -94,7 +112,21 @@ export default function WhisperSetupPage(): React.JSX.Element {
           </div>
         )}
 
-        {error && <p className="text-xs text-red-400 max-w-xs text-center">{error}</p>}
+        {error && (
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-xs text-red-400 max-w-xs text-center whitespace-pre-line">{error}</p>
+            <button
+              onClick={() => runInstall(
+                window.api.whisper.onBootstrap(({ stage: s, percent: p }) => { setStage(s as BootstrapStage); setPercent(p) }),
+                window.api.whisper.onReady(() => { setStage('done'); setPercent(100); setTimeout(() => navigate('/'), 600) })
+              )}
+              className="px-4 py-2 rounded-lg bg-[var(--color-accent)] text-white text-sm font-medium
+                hover:bg-[var(--color-accent-hover)] transition-colors cursor-default"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
