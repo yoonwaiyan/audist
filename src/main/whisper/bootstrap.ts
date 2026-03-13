@@ -21,6 +21,11 @@ function whisperModelPath(dir: string): string {
 }
 
 export function isWhisperReady(): boolean {
+  // E2E test override: AUDIST_TEST_WHISPER=ready skips the filesystem check
+  const testOverride = process.env['AUDIST_TEST_WHISPER']
+  if (testOverride === 'ready') return true
+  if (testOverride === 'not-ready') return false
+
   const dir = getWhisperDir()
   return existsSync(whisperBinaryPath(dir)) && existsSync(whisperModelPath(dir))
 }
