@@ -64,10 +64,13 @@ let acceptingChunks = false
 export function registerRecordingHandlers(): void {
   // Returns the first available screen source ID for getUserMedia desktop capture
   ipcMain.handle('audist:recording:get-screen-source', async (): Promise<string> => {
-    const sources = await desktopCapturer.getSources({
-      types: ['screen'],
-      thumbnailSize: { width: 1, height: 1 }
-    })
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Screen recording permission denied')), 3000)
+    )
+    const sources = await Promise.race([
+      desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1, height: 1 } }),
+      timeout
+    ])
     if (sources.length === 0) throw new Error('No screen sources available')
     return sources[0].id
   })
