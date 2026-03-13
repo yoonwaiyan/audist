@@ -54,6 +54,7 @@ interface RecordingAPI {
   stop: (duration: number) => Promise<void>
   sendMicAudioChunk: (chunk: Uint8Array) => void
   sendSystemAudioChunk: (chunk: Uint8Array) => void
+  onSaved: (cb: (data: { sessionDir: string }) => void) => IpcUnsub
 }
 
 interface AppAPI {
