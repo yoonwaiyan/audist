@@ -55,7 +55,8 @@ const api = {
     sendMicAudioChunk: (chunk: Uint8Array): void =>
       ipcRenderer.send('audist:recording:mic-audio-chunk', chunk),
     sendSystemAudioChunk: (chunk: Uint8Array): void =>
-      ipcRenderer.send('audist:recording:system-audio-chunk', chunk)
+      ipcRenderer.send('audist:recording:system-audio-chunk', chunk),
+    onSaved: (cb: IpcListener<{ sessionDir: string }>) => listen('audist:recording:saved', cb)
   }
 }
 

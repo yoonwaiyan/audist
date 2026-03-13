@@ -1,7 +1,8 @@
 import { ipcMain, BrowserWindow, desktopCapturer } from 'electron'
 import { createWriteStream, openSync, writeSync, closeSync, writeFileSync } from 'fs'
-import { join } from 'path'
+import { join, basename } from 'path'
 import type { WriteStream } from 'fs'
+import { mixAudio } from './mix'
 import { transcribeSession } from './transcription'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -145,8 +146,28 @@ export function registerRecordingHandlers(): void {
     const meta = { duration, status: 'transcribing' }
     writeFileSync(join(s.sessionDir, 'session.json'), JSON.stringify(meta), 'utf-8')
 
-    // Auto-trigger transcription in the background
     const win = BrowserWindow.fromWebContents(event.sender)
-    if (win) transcribeSession(s.sessionDir, win)
+
+    // Mix mic + system audio, then trigger transcription (fire-and-forget)
+    mixAudio(s.sessionDir)
+      .then(() => {
+        if (win) win.webContents.send('audist:recording:saved', { sessionDir: s.sessionDir })
+        if (win) transcribeSession(s.sessionDir, win)
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Audio mix failed'
+        writeFileSync(
+          join(s.sessionDir, 'session.json'),
+          JSON.stringify({ duration, status: 'error', error: message }),
+          'utf-8'
+        )
+        if (win) {
+          win.webContents.send('audist:transcription:error', {
+            sessionId: basename(s.sessionDir),
+            code: 'MIX_FAILED',
+            message
+          })
+        }
+      })
   })
 }

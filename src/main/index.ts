@@ -9,6 +9,7 @@ import { registerPermissionHandlers } from './ipc/permissions'
 import { registerRecordingHandlers } from './ipc/recording'
 import { registerSessionHandlers } from './ipc/session'
 import { registerTranscriptionHandlers } from './ipc/transcription'
+import { mixAudio } from './ipc/mix'
 import { bootstrapWhisper } from './whisper/bootstrap'
 
 function createWindow(): void {
@@ -68,6 +69,11 @@ app.whenReady().then(() => {
       win.webContents.send('audist:whisper:ready', {})
     }
   })
+
+  // Test-only IPC: invoke mixAudio directly without going through the full recording flow
+  if (process.env['AUDIST_TEST_MODE']) {
+    ipcMain.handle('audist:test:mix-audio', (_, sessionDir: string) => mixAudio(sessionDir))
+  }
 
   ipcMain.on('audist:prefs:open', (_, payload?: { section?: PrefsSection }) => {
     focusOrOpenPrefsWindow(payload?.section)

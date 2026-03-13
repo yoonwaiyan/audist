@@ -51,6 +51,7 @@ export async function launchApp(opts?: {
   saveDirectory?: string
   permissions?: 'granted' | 'not-determined' | 'denied'
   whisper?: 'ready' | 'not-ready'
+  testMode?: boolean
 }): Promise<LaunchResult> {
   const tmpUserData = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-test-'))
 
@@ -73,7 +74,8 @@ export async function launchApp(opts?: {
     env: {
       ...process.env,
       AUDIST_TEST_PERMISSIONS: permissionsOverride,
-      AUDIST_TEST_WHISPER: whisperOverride
+      AUDIST_TEST_WHISPER: whisperOverride,
+      ...(opts?.testMode ? { AUDIST_TEST_MODE: '1' } : {})
     }
   })
 
