@@ -1,5 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron'
-import { transcribe, toCaptions } from '@remotion/install-whisper-cpp'
+import { transcribe } from '@remotion/install-whisper-cpp'
 import { writeFile, unlink, writeFileSync, readFileSync, existsSync } from 'fs'
 import { join, basename } from 'path'
 import { getWhisperDir, WHISPER_VERSION, WHISPER_MODEL, isWhisperReady } from '../whisper/bootstrap'
@@ -27,14 +27,6 @@ function updateSessionStatus(
   } catch {
     // Non-critical — session list will show stale status
   }
-}
-
-function formatTimestamp(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = Math.floor(seconds % 60)
-  const pad = (n: number): string => String(n).padStart(2, '0')
-  return `${pad(h)}:${pad(m)}:${pad(s)}`
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -73,7 +65,8 @@ export async function transcribeSession(sessionDir: string, win: BrowserWindow):
       whisperPath: getWhisperDir(),
       whisperCppVersion: WHISPER_VERSION,
       model: WHISPER_MODEL,
-      tokenLevelTimestamps: true,
+      tokenLevelTimestamps: false,
+      tokensPerItem: null, // remove --max-len so whisper segments naturally into sentences
       printOutput: false,
       onProgress: (progress) => {
         if (win.isDestroyed()) return
@@ -85,11 +78,14 @@ export async function transcribeSession(sessionDir: string, win: BrowserWindow):
       }
     })
 
-    // Group tokens into readable segments
-    const { captions } = toCaptions({ whisperCppOutput: result })
-    const lines = captions
-      .filter((c) => c.text.trim().length > 0)
-      .map((c) => `[${formatTimestamp(c.startMs / 1000)}] ${c.text.trim()}`)
+    // Each segment is a natural phrase from whisper — one line per segment
+    const lines = result.transcription
+      .filter((seg) => seg.text.trim().length > 0)
+      .map((seg) => {
+        // timestamps.from is "HH:MM:SS,mmm" — strip the milliseconds
+        const ts = seg.timestamps.from.split(',')[0]
+        return `[${ts}] ${seg.text.trim()}`
+      })
     const content = lines.join('\n')
 
     // Write transcript.txt (non-blocking)
