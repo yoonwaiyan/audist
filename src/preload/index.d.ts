@@ -23,10 +23,19 @@ interface PermissionsAPI {
   openSettings: (target: 'microphone' | 'screen') => Promise<void>
 }
 
+interface RecordingAPI {
+  getScreenSource: () => Promise<string>
+  start: (payload: { sessionDir: string; micSampleRate: number; systemSampleRate: number }) => Promise<void>
+  stop: () => Promise<void>
+  sendMicAudioChunk: (chunk: Uint8Array) => void
+  sendSystemAudioChunk: (chunk: Uint8Array) => void
+}
+
 interface AppAPI {
   directory: DirectoryAPI
   session: SessionAPI
   permissions: PermissionsAPI
+  recording: RecordingAPI
 }
 
 declare global {

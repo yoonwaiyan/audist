@@ -16,6 +16,20 @@ const api = {
     requestMic: (): Promise<boolean> => ipcRenderer.invoke('audist:permissions:request-mic'),
     openSettings: (target: 'microphone' | 'screen'): Promise<void> =>
       ipcRenderer.invoke('audist:permissions:open-settings', target)
+  },
+  recording: {
+    getScreenSource: (): Promise<string> =>
+      ipcRenderer.invoke('audist:recording:get-screen-source'),
+    start: (payload: {
+      sessionDir: string
+      micSampleRate: number
+      systemSampleRate: number
+    }): Promise<void> => ipcRenderer.invoke('audist:recording:start', payload),
+    stop: (): Promise<void> => ipcRenderer.invoke('audist:recording:stop'),
+    sendMicAudioChunk: (chunk: Uint8Array): void =>
+      ipcRenderer.send('audist:recording:mic-audio-chunk', chunk),
+    sendSystemAudioChunk: (chunk: Uint8Array): void =>
+      ipcRenderer.send('audist:recording:system-audio-chunk', chunk)
   }
 }
 
