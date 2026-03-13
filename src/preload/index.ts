@@ -8,7 +8,8 @@ const api = {
     select: (): Promise<string | null> => ipcRenderer.invoke('audist:directory:select')
   },
   session: {
-    create: (): Promise<string> => ipcRenderer.invoke('audist:session:create')
+    create: (): Promise<string> => ipcRenderer.invoke('audist:session:create'),
+    list: () => ipcRenderer.invoke('audist:session:list')
   },
   permissions: {
     check: (): Promise<{ microphone: string; screen: string }> =>
@@ -25,7 +26,7 @@ const api = {
       micSampleRate: number
       systemSampleRate: number
     }): Promise<void> => ipcRenderer.invoke('audist:recording:start', payload),
-    stop: (): Promise<void> => ipcRenderer.invoke('audist:recording:stop'),
+    stop: (duration: number): Promise<void> => ipcRenderer.invoke('audist:recording:stop', duration),
     sendMicAudioChunk: (chunk: Uint8Array): void =>
       ipcRenderer.send('audist:recording:mic-audio-chunk', chunk),
     sendSystemAudioChunk: (chunk: Uint8Array): void =>

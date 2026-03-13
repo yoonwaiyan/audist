@@ -13,8 +13,16 @@ interface DirectoryAPI {
   select: () => Promise<string | null>
 }
 
+export interface SessionMeta {
+  id: string
+  dir: string
+  duration: number
+  status: 'complete' | 'transcribing' | 'summarising' | 'error'
+}
+
 interface SessionAPI {
   create: () => Promise<string>
+  list: () => Promise<SessionMeta[]>
 }
 
 interface PermissionsAPI {
@@ -26,7 +34,7 @@ interface PermissionsAPI {
 interface RecordingAPI {
   getScreenSource: () => Promise<string>
   start: (payload: { sessionDir: string; micSampleRate: number; systemSampleRate: number }) => Promise<void>
-  stop: () => Promise<void>
+  stop: (duration: number) => Promise<void>
   sendMicAudioChunk: (chunk: Uint8Array) => void
   sendSystemAudioChunk: (chunk: Uint8Array) => void
 }

@@ -1,5 +1,5 @@
 import { ipcMain, desktopCapturer } from 'electron'
-import { createWriteStream, openSync, writeSync, closeSync } from 'fs'
+import { createWriteStream, openSync, writeSync, closeSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import type { WriteStream } from 'fs'
 
@@ -46,6 +46,7 @@ function patchWavHeader(filePath: string, bytesWritten: number): void {
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface SessionState {
+  sessionDir: string
   micPath: string
   systemPath: string
   micStream: WriteStream
@@ -92,6 +93,7 @@ export function registerRecordingHandlers(): void {
       systemStream.write(makeWavHeader(systemSampleRate, 1))
 
       session = {
+        sessionDir,
         micPath,
         systemPath,
         micStream,
@@ -118,8 +120,8 @@ export function registerRecordingHandlers(): void {
     session.systemStream.write(chunk)
   })
 
-  // Stop capture, flush both streams, and patch WAV headers with final sizes
-  ipcMain.handle('audist:recording:stop', async (): Promise<void> => {
+  // Stop capture, flush both streams, patch WAV headers, and write session metadata
+  ipcMain.handle('audist:recording:stop', async (_, duration: number): Promise<void> => {
     if (!session) return
 
     acceptingChunks = false
@@ -137,5 +139,9 @@ export function registerRecordingHandlers(): void {
     // Patch WAV headers with real sizes
     if (s.micBytesWritten > 0) patchWavHeader(s.micPath, s.micBytesWritten)
     if (s.systemBytesWritten > 0) patchWavHeader(s.systemPath, s.systemBytesWritten)
+
+    // Write session metadata for session history
+    const meta = { duration, status: 'complete' }
+    writeFileSync(join(s.sessionDir, 'session.json'), JSON.stringify(meta), 'utf-8')
   })
 }
