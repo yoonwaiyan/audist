@@ -66,7 +66,7 @@ export async function transcribeSession(sessionDir: string, win: BrowserWindow):
       whisperCppVersion: WHISPER_VERSION,
       model: WHISPER_MODEL,
       tokenLevelTimestamps: false,
-      tokensPerItem: null, // remove --max-len so whisper segments naturally into sentences
+      tokensPerItem: 0, // 0 is falsy — omits --max-len so whisper segments naturally into sentences
       printOutput: false,
       onProgress: (progress) => {
         if (win.isDestroyed()) return
