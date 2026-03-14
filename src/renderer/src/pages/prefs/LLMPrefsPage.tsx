@@ -11,9 +11,6 @@ const PROVIDERS: { id: ProviderName; label: string }[] = [
   { id: 'compatible', label: 'OpenAI-compatible' }
 ]
 
-const OPENAI_MODELS = ['gpt-4o', 'gpt-4o-mini']
-const ANTHROPIC_MODELS = ['claude-sonnet-4-5', 'claude-haiku-4-5']
-
 const ERROR_LABELS: Record<string, string> = {
   AUTH_ERROR: 'Invalid API key',
   RATE_LIMIT: 'Rate limited',
@@ -197,6 +194,7 @@ export default function LLMPrefsPage(): React.JSX.Element {
   })
   const [credentialStatus, setCredentialStatus] = useState<Record<string, boolean>>({})
   const [compatibleBaseUrl, setCompatibleBaseUrl] = useState('')
+  const [providerModels, setProviderModels] = useState<Partial<Record<ProviderName, string[]>>>({})
 
   // Per-provider test connection state
   const [testState, setTestState] = useState<Record<ProviderName, TestState>>({
@@ -217,6 +215,13 @@ export default function LLMPrefsPage(): React.JSX.Element {
       if (s.activeProvider) setActiveProvider(s.activeProvider)
       if (s.models) setModels(s.models)
       if (s.compatibleBaseUrl) setCompatibleBaseUrl(s.compatibleBaseUrl)
+    })
+
+    const namedProviders: ProviderName[] = ['openai', 'anthropic']
+    void Promise.all(
+      namedProviders.map(async (p) => ({ p, models: await window.api.settings.getProviderModels(p) }))
+    ).then((results) => {
+      setProviderModels(Object.fromEntries(results.map((r) => [r.p, r.models])))
     })
 
     const credKeys = ['openai.apiKey', 'anthropic.apiKey', 'compatible.apiKey']
@@ -343,13 +348,13 @@ export default function LLMPrefsPage(): React.JSX.Element {
           <div className="flex flex-col gap-1">
             <label className="text-xs text-[var(--color-text-muted)]">Model</label>
             <select
-              value={models.openai ?? 'gpt-4o-mini'}
+              value={models.openai ?? providerModels.openai?.[0] ?? ''}
               onChange={(e) => handleModelChange('openai', e.target.value)}
               className="w-48 px-3 py-1.5 rounded-lg bg-[var(--color-surface-overlay)] border border-[var(--color-border)]
                 text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]
                 cursor-default transition-colors"
             >
-              {OPENAI_MODELS.map((m) => (
+              {(providerModels.openai ?? []).map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>
@@ -381,13 +386,13 @@ export default function LLMPrefsPage(): React.JSX.Element {
           <div className="flex flex-col gap-1">
             <label className="text-xs text-[var(--color-text-muted)]">Model</label>
             <select
-              value={models.anthropic ?? 'claude-haiku-4-5'}
+              value={models.anthropic ?? providerModels.anthropic?.[0] ?? ''}
               onChange={(e) => handleModelChange('anthropic', e.target.value)}
               className="w-48 px-3 py-1.5 rounded-lg bg-[var(--color-surface-overlay)] border border-[var(--color-border)]
                 text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]
                 cursor-default transition-colors"
             >
-              {ANTHROPIC_MODELS.map((m) => (
+              {(providerModels.anthropic ?? []).map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>

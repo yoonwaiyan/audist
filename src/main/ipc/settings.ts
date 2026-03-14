@@ -71,6 +71,14 @@ export function registerSettingsHandlers(): void {
   // Return current LLM settings (non-sensitive — no credentials)
   ipcMain.handle('audist:settings:getLLMSettings', () => getLLMSettings())
 
+  // Return the available model list for a provider (from provider.availableModels)
+  ipcMain.handle(
+    'audist:settings:getProviderModels',
+    (_, { provider }: { provider: string }): string[] => {
+      return llmRegistry.get(provider)?.availableModels ?? []
+    }
+  )
+
   // Trigger a test connection and push the result back via push event
   ipcMain.handle(
     'audist:llm:testConnection',

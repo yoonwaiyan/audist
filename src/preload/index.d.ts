@@ -68,6 +68,7 @@ interface SettingsAPI {
   setModel: (provider: ProviderName, model: string) => Promise<void>
   setCompatibleBaseUrl: (url: string) => Promise<void>
   getLLMSettings: () => Promise<LLMSettings>
+  getProviderModels: (provider: ProviderName) => Promise<string[]>
   onCredentialStatus: (cb: (data: { key: string; isSet: boolean }) => void) => IpcUnsub
   testConnection: (provider: ProviderName) => Promise<void>
   onTestResult: (cb: (data: { provider: string; result: TestConnectionResult }) => void) => IpcUnsub
