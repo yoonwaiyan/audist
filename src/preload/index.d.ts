@@ -74,6 +74,14 @@ interface SettingsAPI {
   onTestResult: (cb: (data: { provider: string; result: TestConnectionResult }) => void) => IpcUnsub
 }
 
+interface SummaryAPI {
+  read: (sessionDir: string) => Promise<string | null>
+  openInFinder: (sessionDir: string) => Promise<void>
+  onProgress: (cb: (data: { sessionId: string; status: string }) => void) => IpcUnsub
+  onComplete: (cb: (data: { sessionId: string; filePath: string }) => void) => IpcUnsub
+  onError: (cb: (data: { sessionId: string; code: string; message: string }) => void) => IpcUnsub
+}
+
 interface RecordingAPI {
   getScreenSource: () => Promise<string>
   start: (payload: { sessionDir: string; micSampleRate: number; systemSampleRate: number }) => Promise<void>
@@ -90,6 +98,7 @@ interface AppAPI {
   whisper: WhisperAPI
   transcription: TranscriptionAPI
   settings: SettingsAPI
+  summary: SummaryAPI
   recording: RecordingAPI
 }
 

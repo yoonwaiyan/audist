@@ -3,6 +3,7 @@ import { transcribe } from '@remotion/install-whisper-cpp'
 import { writeFile, unlink, writeFileSync, readFileSync, existsSync } from 'fs'
 import { join, basename } from 'path'
 import { getWhisperDir, WHISPER_VERSION, WHISPER_MODEL, isWhisperReady } from '../whisper/bootstrap'
+import { summariseSession } from './summary'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -102,6 +103,11 @@ export async function transcribeSession(sessionDir: string, win: BrowserWindow):
 
     // Delete input audio file only on confirmed success
     unlink(inputPath, () => {})
+
+    // Auto-trigger summarisation (fire-and-forget — runs in background)
+    if (!win.isDestroyed()) {
+      void summariseSession(sessionDir, win)
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Transcription failed'
     const code =

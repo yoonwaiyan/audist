@@ -8,6 +8,7 @@ interface LLMSettings {
   models?: Partial<Record<ProviderName, string>>
   cachedModels?: Partial<Record<ProviderName, string[]>>
   compatibleBaseUrl?: string
+  summarisationEnabled?: boolean
 }
 
 interface AppSettings {

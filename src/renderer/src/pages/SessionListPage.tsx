@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { useRecorder } from '../hooks/useRecorder'
 import Waveform from '../components/Waveform'
 import type { LLMSettings, SessionMeta } from '../../../preload/index.d'
@@ -93,16 +95,24 @@ interface SessionRowProps {
   progress: TranscriptionProgress | null
   errorMessage: string | null
   isMissingBinary: boolean
+  summaryContent: string | null
+  summaryLoading: boolean
 }
 
 function SessionRow({
   session,
   progress,
   errorMessage,
-  isMissingBinary
+  isMissingBinary,
+  summaryContent,
+  summaryLoading
 }: SessionRowProps): React.JSX.Element {
+  const [expanded, setExpanded] = useState(false)
   const isTranscribing = session.status === 'transcribing'
+  const isSummarising = session.status === 'summarising'
+  const isComplete = session.status === 'complete'
   const isError = session.status === 'error'
+  const hasSummary = isComplete && summaryContent !== null
 
   const handleRetry = (): void => {
     void window.api.transcription.retry(session.dir)
@@ -112,9 +122,25 @@ function SessionRow({
     void window.location.assign('#/whisper-setup')
   }
 
+  const handleOpenInFinder = (): void => {
+    void window.api.summary.openInFinder(session.dir)
+  }
+
+  const handleCopy = (): void => {
+    if (summaryContent) void navigator.clipboard.writeText(summaryContent)
+  }
+
+  const handleToggle = (): void => {
+    if (hasSummary || summaryLoading) setExpanded((v) => !v)
+  }
+
   return (
-    <li className="flex flex-col gap-2 px-4 py-3 rounded-xl bg-[var(--color-surface-panel)]">
-      <div className="flex items-center justify-between">
+    <li className="flex flex-col rounded-xl bg-[var(--color-surface-panel)] overflow-hidden">
+      {/* Header row */}
+      <div
+        className={`flex items-center justify-between px-4 py-3 ${hasSummary || summaryLoading ? 'cursor-default' : ''}`}
+        onClick={handleToggle}
+      >
         <div className="flex flex-col gap-0.5">
           <span className="text-sm text-[var(--color-text-primary)]">
             {formatTimestamp(session.id)}
@@ -125,14 +151,21 @@ function SessionRow({
               : STATUS_LABEL[session.status]}
           </span>
         </div>
-        <span className="text-sm text-[var(--color-text-secondary)] tabular-nums">
-          {formatDuration(session.duration)}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-[var(--color-text-secondary)] tabular-nums">
+            {formatDuration(session.duration)}
+          </span>
+          {(hasSummary || summaryLoading) && (
+            <span className="text-[var(--color-text-muted)] text-xs select-none">
+              {expanded ? '▲' : '▼'}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Transcription progress bar */}
       {isTranscribing && progress !== null && (
-        <div className="w-full h-1 bg-[var(--color-surface-overlay)] rounded-full overflow-hidden">
+        <div className="mx-4 mb-3 h-1 bg-[var(--color-surface-overlay)] rounded-full overflow-hidden">
           <div
             className="h-full bg-blue-400 rounded-full transition-all duration-300"
             style={{ width: `${progress.percent}%` }}
@@ -140,9 +173,14 @@ function SessionRow({
         </div>
       )}
 
+      {/* Summarising indicator */}
+      {isSummarising && (
+        <p className="px-4 pb-3 text-xs text-violet-400">Generating summary…</p>
+      )}
+
       {/* Error state */}
       {isError && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 px-4 pb-3">
           {errorMessage && (
             <p className="text-xs text-red-400 leading-relaxed">{errorMessage}</p>
           )}
@@ -168,6 +206,49 @@ function SessionRow({
           </div>
         </div>
       )}
+
+      {/* Expanded summary */}
+      {expanded && (
+        <div className="border-t border-[var(--color-border)]">
+          {summaryLoading && !summaryContent ? (
+            <p className="px-4 py-3 text-xs text-[var(--color-text-muted)]">Loading summary…</p>
+          ) : summaryContent ? (
+            <>
+              <div className="px-4 py-3 prose prose-sm prose-invert max-w-none
+                [&_h1]:text-sm [&_h1]:font-semibold [&_h1]:text-[var(--color-text-primary)] [&_h1]:mt-0 [&_h1]:mb-2
+                [&_h2]:text-xs [&_h2]:font-semibold [&_h2]:text-[var(--color-text-secondary)] [&_h2]:mt-3 [&_h2]:mb-1.5
+                [&_p]:text-xs [&_p]:text-[var(--color-text-secondary)] [&_p]:leading-relaxed [&_p]:my-1
+                [&_ul]:text-xs [&_ul]:text-[var(--color-text-secondary)] [&_ul]:pl-4 [&_ul]:my-1
+                [&_ol]:text-xs [&_ol]:text-[var(--color-text-secondary)] [&_ol]:pl-4 [&_ol]:my-1
+                [&_li]:my-0.5 [&_li]:leading-relaxed
+                [&_strong]:text-[var(--color-text-primary)] [&_strong]:font-medium
+                [&_input[type=checkbox]]:mr-1.5">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {summaryContent}
+                </ReactMarkdown>
+              </div>
+              <div className="flex gap-2 px-4 pb-3 border-t border-[var(--color-border)] pt-2">
+                <button
+                  onClick={handleOpenInFinder}
+                  className="text-xs px-2.5 py-1 rounded-lg bg-[var(--color-surface-overlay)]
+                    border border-[var(--color-border)] text-[var(--color-text-secondary)]
+                    hover:text-[var(--color-text-primary)] transition-colors cursor-default"
+                >
+                  Open in Finder
+                </button>
+                <button
+                  onClick={handleCopy}
+                  className="text-xs px-2.5 py-1 rounded-lg bg-[var(--color-surface-overlay)]
+                    border border-[var(--color-border)] text-[var(--color-text-secondary)]
+                    hover:text-[var(--color-text-primary)] transition-colors cursor-default"
+                >
+                  Copy text
+                </button>
+              </div>
+            </>
+          ) : null}
+        </div>
+      )}
     </li>
   )
 }
@@ -191,9 +272,22 @@ export default function SessionListPage(): React.JSX.Element {
     Record<string, { message: string; isMissingBinary: boolean }>
   >({})
 
+  // Per-session summary content (loaded on demand and refreshed via IPC events)
+  const [summaryContent, setSummaryContent] = useState<Record<string, string | null>>({})
+  const [summaryLoading, setSummaryLoading] = useState<Record<string, boolean>>({})
+
   const loadSessions = useCallback(async () => {
     const list = await window.api.session.list()
     setSessions(list)
+    // Load cached summaries for complete sessions
+    const complete = list.filter((s) => s.status === 'complete')
+    if (complete.length === 0) return
+    setSummaryLoading(Object.fromEntries(complete.map((s) => [s.id, true])))
+    const results = await Promise.all(
+      complete.map(async (s) => ({ id: s.id, content: await window.api.summary.read(s.dir) }))
+    )
+    setSummaryContent(Object.fromEntries(results.map((r) => [r.id, r.content])))
+    setSummaryLoading({})
   }, [])
 
   // Load session list and LLM settings on mount
@@ -260,12 +354,40 @@ export default function SessionListPage(): React.JSX.Element {
       loadSessions()
     })
 
+    const unsubSummaryProgress = window.api.summary.onProgress(({ sessionId }) => {
+      setSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, status: 'summarising' } : s))
+      )
+    })
+
+    const unsubSummaryComplete = window.api.summary.onComplete(({ sessionId }) => {
+      setSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, status: 'complete' } : s))
+      )
+      // Fetch the freshly written summary
+      const session = sessions.find((s) => s.id === sessionId)
+      if (session) {
+        void window.api.summary.read(session.dir).then((content) => {
+          setSummaryContent((prev) => ({ ...prev, [sessionId]: content }))
+        })
+      }
+    })
+
+    const unsubSummaryError = window.api.summary.onError(({ sessionId }) => {
+      // Summary failed but transcription succeeded — reload to get latest status
+      loadSessions()
+      setSummaryContent((prev) => ({ ...prev, [sessionId]: null }))
+    })
+
     return () => {
       unsubProgress()
       unsubComplete()
       unsubError()
+      unsubSummaryProgress()
+      unsubSummaryComplete()
+      unsubSummaryError()
     }
-  }, [loadSessions])
+  }, [loadSessions, sessions])
 
   const handleStop = useCallback(() => {
     stopRecording(elapsed)
@@ -368,6 +490,8 @@ export default function SessionListPage(): React.JSX.Element {
                 progress={transcriptionProgress[session.id] ?? null}
                 errorMessage={transcriptionErrors[session.id]?.message ?? session.error ?? null}
                 isMissingBinary={transcriptionErrors[session.id]?.isMissingBinary ?? false}
+                summaryContent={summaryContent[session.id] ?? null}
+                summaryLoading={summaryLoading[session.id] ?? false}
               />
             ))}
           </ul>

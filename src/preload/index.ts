@@ -68,6 +68,18 @@ const api = {
       cb: IpcListener<{ provider: string; result: unknown }>
     ) => listen('audist:llm:testResult', cb)
   },
+  summary: {
+    read: (sessionDir: string): Promise<string | null> =>
+      ipcRenderer.invoke('audist:summary:read', { sessionDir }),
+    openInFinder: (sessionDir: string): Promise<void> =>
+      ipcRenderer.invoke('audist:session:openInFinder', { sessionDir }),
+    onProgress: (cb: IpcListener<{ sessionId: string; status: string }>) =>
+      listen('audist:summary:progress', cb),
+    onComplete: (cb: IpcListener<{ sessionId: string; filePath: string }>) =>
+      listen('audist:summary:complete', cb),
+    onError: (cb: IpcListener<{ sessionId: string; code: string; message: string }>) =>
+      listen('audist:summary:error', cb)
+  },
   recording: {
     getScreenSource: (): Promise<string> =>
       ipcRenderer.invoke('audist:recording:get-screen-source'),

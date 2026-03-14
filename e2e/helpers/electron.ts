@@ -8,6 +8,8 @@ export interface SessionSeed {
   duration: number
   status: 'complete' | 'transcribing' | 'error'
   error?: string
+  summaryMd?: string
+  transcriptTxt?: string
 }
 
 /**
@@ -22,6 +24,12 @@ export function seedSessions(saveDir: string, sessions: SessionSeed[]): void {
       path.join(sessionDir, 'session.json'),
       JSON.stringify({ duration: s.duration, status: s.status, ...(s.error ? { error: s.error } : {}) })
     )
+    if (s.summaryMd !== undefined) {
+      fs.writeFileSync(path.join(sessionDir, 'summary.md'), s.summaryMd, 'utf-8')
+    }
+    if (s.transcriptTxt !== undefined) {
+      fs.writeFileSync(path.join(sessionDir, 'transcript.txt'), s.transcriptTxt, 'utf-8')
+    }
   }
 }
 
@@ -54,14 +62,16 @@ export async function launchApp(opts?: {
   testMode?: boolean
   /** Mock LLM testConnection result: 'success' | 'auth_error' | 'rate_limit' | 'connection_error' */
   llm?: 'success' | 'auth_error' | 'rate_limit' | 'connection_error'
+  /** Seed extra LLM settings fields (e.g. { summarisationEnabled: false }) */
+  llmSettings?: Record<string, unknown>
 }): Promise<LaunchResult> {
   const tmpUserData = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-test-'))
 
-  if (opts?.saveDirectory !== undefined) {
-    fs.writeFileSync(
-      path.join(tmpUserData, 'settings.json'),
-      JSON.stringify({ saveDirectory: opts.saveDirectory })
-    )
+  if (opts?.saveDirectory !== undefined || opts?.llmSettings !== undefined) {
+    const settings: Record<string, unknown> = {}
+    if (opts?.saveDirectory !== undefined) settings.saveDirectory = opts.saveDirectory
+    if (opts?.llmSettings !== undefined) settings.llm = opts.llmSettings
+    fs.writeFileSync(path.join(tmpUserData, 'settings.json'), JSON.stringify(settings))
   }
 
   const permissionsOverride = opts?.permissions ?? 'granted'
