@@ -10,7 +10,7 @@ import { registerRecordingHandlers } from './ipc/recording'
 import { registerSessionHandlers } from './ipc/session'
 import { registerTranscriptionHandlers } from './ipc/transcription'
 import { registerSettingsHandlers } from './ipc/settings'
-import { registerSummaryHandlers } from './ipc/summary'
+import { registerSummaryHandlers, summariseSession } from './ipc/summary'
 import { mixAudio } from './ipc/mix'
 import { bootstrapWhisper } from './whisper/bootstrap'
 import { llmRegistry } from './llm/registry'
@@ -86,9 +86,14 @@ app.whenReady().then(() => {
     }
   })
 
-  // Test-only IPC: invoke mixAudio directly without going through the full recording flow
+  // Test-only IPC: invoke mixAudio / summariseSession directly without the full pipeline
   if (process.env['AUDIST_TEST_MODE']) {
     ipcMain.handle('audist:test:mix-audio', (_, sessionDir: string) => mixAudio(sessionDir))
+    ipcMain.handle('audist:test:summarise', (event, sessionDir: string) => {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (!win) return
+      return summariseSession(sessionDir, win)
+    })
   }
 
   ipcMain.on('audist:prefs:open', (_, payload?: { section?: PrefsSection }) => {
