@@ -133,4 +133,10 @@ export function registerTranscriptionHandlers(): void {
     if (!win) return
     transcribeSession(sessionDir, win) // fire-and-forget — runs in background
   })
+
+  ipcMain.handle('audist:transcript:read', (_, { sessionDir }: { sessionDir: string }): string | null => {
+    const transcriptPath = join(sessionDir, 'transcript.txt')
+    if (!existsSync(transcriptPath)) return null
+    return readFileSync(transcriptPath, 'utf-8')
+  })
 }

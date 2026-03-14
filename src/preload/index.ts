@@ -34,6 +34,8 @@ const api = {
     onReady: (cb: IpcListener<Record<string, never>>) => listen('audist:whisper:ready', cb)
   },
   transcription: {
+    read: (sessionDir: string): Promise<string | null> =>
+      ipcRenderer.invoke('audist:transcript:read', { sessionDir }),
     retry: (sessionDir: string): Promise<void> =>
       ipcRenderer.invoke('audist:transcription:retry', sessionDir),
     onProgress: (cb: IpcListener<{ sessionId: string; percent: number; stage: string }>) =>

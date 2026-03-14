@@ -42,6 +42,7 @@ interface WhisperAPI {
 }
 
 interface TranscriptionAPI {
+  read: (sessionDir: string) => Promise<string | null>
   retry: (sessionDir: string) => Promise<void>
   onProgress: (cb: (data: { sessionId: string; percent: number; stage: string }) => void) => IpcUnsub
   onComplete: (cb: (data: { sessionId: string }) => void) => IpcUnsub
