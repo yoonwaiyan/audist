@@ -10,6 +10,7 @@ import { registerRecordingHandlers } from './ipc/recording'
 import { registerSessionHandlers } from './ipc/session'
 import { registerTranscriptionHandlers } from './ipc/transcription'
 import { registerSettingsHandlers } from './ipc/settings'
+import { registerSummaryHandlers } from './ipc/summary'
 import { mixAudio } from './ipc/mix'
 import { bootstrapWhisper } from './whisper/bootstrap'
 import { llmRegistry } from './llm/registry'
@@ -70,6 +71,7 @@ app.whenReady().then(() => {
   registerSessionHandlers()
   registerTranscriptionHandlers()
   registerSettingsHandlers()
+  registerSummaryHandlers()
 
   // Bootstrap IPC — renderer calls this from the whisper setup screen
   ipcMain.handle('audist:whisper:install', async (event): Promise<void> => {
