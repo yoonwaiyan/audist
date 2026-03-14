@@ -69,12 +69,28 @@ test.describe('LLM settings — layout', () => {
     }
   })
 
-  test('shows provider selector with three options', async () => {
-    const { app, prefsPage, cleanup, saveDir } = await launchWithLLMPrefs()
+  test('shows placeholder when no provider has been tested yet', async () => {
+    const { app, prefsPage, cleanup, saveDir } = await launchWithPrefsNoMock()
     try {
-      await expect(prefsPage.getByRole('button', { name: 'OpenAI' }).first()).toBeVisible()
-      await expect(prefsPage.getByRole('button', { name: 'Anthropic' })).toBeVisible()
-      await expect(prefsPage.getByRole('button', { name: 'OpenAI-compatible' })).toBeVisible()
+      await expect(prefsPage.getByText('Test a connection below to make a provider available.')).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('provider appears in dropdown after successful test', async () => {
+    const { app, prefsPage, cleanup, saveDir } = await launchWithLLMPrefs('success')
+    try {
+      // Run Test Connection for OpenAI
+      await prefsPage.getByRole('button', { name: 'Test Connection' }).first().click()
+      await expect(prefsPage.getByText(/Connected/)).toBeVisible({ timeout: 3000 })
+
+      // The select should now contain OpenAI as an option
+      const select = prefsPage.locator('select').first()
+      await expect(select).toBeVisible()
+      await expect(select.locator('option', { hasText: 'OpenAI' })).toHaveCount(1)
     } finally {
       await app.close()
       cleanup()

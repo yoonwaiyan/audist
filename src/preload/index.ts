@@ -58,7 +58,7 @@ const api = {
       ipcRenderer.invoke('audist:settings:setCompatibleBaseUrl', { url }),
     getLLMSettings: (): Promise<unknown> =>
       ipcRenderer.invoke('audist:settings:getLLMSettings'),
-    getProviderModels: (provider: string): Promise<string[]> =>
+    getProviderModels: (provider: string): Promise<string[] | null> =>
       ipcRenderer.invoke('audist:settings:getProviderModels', { provider }),
     onCredentialStatus: (cb: IpcListener<{ key: string; isSet: boolean }>) =>
       listen('audist:settings:credentialStatus', cb),

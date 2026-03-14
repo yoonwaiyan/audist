@@ -73,10 +73,10 @@ export function registerSettingsHandlers(): void {
   // Return current LLM settings (non-sensitive — no credentials)
   ipcMain.handle('audist:settings:getLLMSettings', () => getLLMSettings())
 
-  // Return cached model list for a provider (populated after a successful testConnection)
+  // Return cached model list for a provider, or null if never successfully tested
   ipcMain.handle(
     'audist:settings:getProviderModels',
-    (_, { provider }: { provider: string }): string[] => {
+    (_, { provider }: { provider: string }): string[] | null => {
       return getCachedModels(provider as ProviderName)
     }
   )

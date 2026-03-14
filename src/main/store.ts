@@ -53,8 +53,11 @@ export function setLLMSettings(llm: LLMSettings): void {
   write({ ...read(), llm: { ...getLLMSettings(), ...llm } })
 }
 
-export function getCachedModels(provider: ProviderName): string[] {
-  return getLLMSettings().cachedModels?.[provider] ?? []
+/** Returns the cached model list, or null if this provider has never been successfully tested. */
+export function getCachedModels(provider: ProviderName): string[] | null {
+  const cached = getLLMSettings().cachedModels
+  if (!cached || !(provider in cached)) return null
+  return cached[provider] ?? null
 }
 
 export function setCachedModels(provider: ProviderName, models: string[]): void {

@@ -194,7 +194,8 @@ export default function LLMPrefsPage(): React.JSX.Element {
   })
   const [credentialStatus, setCredentialStatus] = useState<Record<string, boolean>>({})
   const [compatibleBaseUrl, setCompatibleBaseUrl] = useState('')
-  const [providerModels, setProviderModels] = useState<Partial<Record<ProviderName, string[]>>>({})
+  // null = not yet verified; string[] = verified (populated after successful test)
+  const [providerModels, setProviderModels] = useState<Partial<Record<ProviderName, string[] | null>>>({})
 
   // Per-provider test connection state
   const [testState, setTestState] = useState<Record<ProviderName, TestState>>({
@@ -217,9 +218,9 @@ export default function LLMPrefsPage(): React.JSX.Element {
       if (s.compatibleBaseUrl) setCompatibleBaseUrl(s.compatibleBaseUrl)
     })
 
-    const namedProviders: ProviderName[] = ['openai', 'anthropic']
+    const allProviders: ProviderName[] = ['openai', 'anthropic', 'compatible']
     void Promise.all(
-      namedProviders.map(async (p) => ({ p, models: await window.api.settings.getProviderModels(p) }))
+      allProviders.map(async (p) => ({ p, models: await window.api.settings.getProviderModels(p) }))
     ).then((results) => {
       setProviderModels(Object.fromEntries(results.map((r) => [r.p, r.models])))
     })
@@ -239,8 +240,8 @@ export default function LLMPrefsPage(): React.JSX.Element {
       const p = provider as ProviderName
       setTestResult((prev) => ({ ...prev, [p]: result as TestConnectionResult }))
       setTestState((prev) => ({ ...prev, [p]: result.success ? 'success' : 'error' }))
-      if (result.success && result.models?.length) {
-        setProviderModels((prev) => ({ ...prev, [p]: result.models }))
+      if (result.success) {
+        setProviderModels((prev) => ({ ...prev, [p]: result.models ?? [] }))
       }
 
       if (result.success) {
@@ -310,24 +311,31 @@ export default function LLMPrefsPage(): React.JSX.Element {
       </p>
 
       {/* Provider selector */}
-      <div className="flex flex-col gap-1.5 mb-6">
-        <span className="text-xs text-[var(--color-text-muted)]">Active provider</span>
-        <div className="flex gap-2">
-          {PROVIDERS.map(({ id, label }) => (
-            <button
-              key={id}
-              onClick={() => handleProviderChange(id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors cursor-default
-                ${activeProvider === id
-                  ? 'bg-[var(--color-accent-subtle)] border-[var(--color-accent)] text-[var(--color-accent-text)]'
-                  : 'bg-[var(--color-surface-overlay)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
-                }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {(() => {
+        const verifiedProviders = PROVIDERS.filter(({ id }) => providerModels[id] !== null && providerModels[id] !== undefined)
+        return (
+          <div className="flex flex-col gap-1.5 mb-6">
+            <span className="text-xs text-[var(--color-text-muted)]">Active provider</span>
+            {verifiedProviders.length === 0 ? (
+              <p className="text-xs text-[var(--color-text-muted)] italic">
+                Test a connection below to make a provider available.
+              </p>
+            ) : (
+              <select
+                value={verifiedProviders.some((p) => p.id === activeProvider) ? activeProvider : verifiedProviders[0].id}
+                onChange={(e) => handleProviderChange(e.target.value as ProviderName)}
+                className="w-48 px-3 py-1.5 rounded-lg bg-[var(--color-surface-overlay)] border border-[var(--color-border)]
+                  text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]
+                  cursor-default transition-colors"
+              >
+                {verifiedProviders.map(({ id, label }) => (
+                  <option key={id} value={id}>{label}</option>
+                ))}
+              </select>
+            )}
+          </div>
+        )
+      })()}
 
       {/* ── OpenAI ──────────────────────────────────────────────────────── */}
       <div>
