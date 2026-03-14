@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRecorder } from '../hooks/useRecorder'
 import Waveform from '../components/Waveform'
-import type { SessionMeta } from '../../../preload/index.d'
+import type { LLMSettings, SessionMeta } from '../../../preload/index.d'
+
+const PROVIDER_LABEL: Record<string, string> = {
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  compatible: 'OpenAI-compatible'
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -175,6 +181,7 @@ export default function SessionListPage(): React.JSX.Element {
   const [elapsed, setElapsed] = useState(0)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [sessions, setSessions] = useState<SessionMeta[]>([])
+  const [llmSettings, setLlmSettings] = useState<LLMSettings | null>(null)
 
   // Per-session live transcription state (not persisted — derived from IPC events)
   const [transcriptionProgress, setTranscriptionProgress] = useState<
@@ -189,9 +196,10 @@ export default function SessionListPage(): React.JSX.Element {
     setSessions(list)
   }, [])
 
-  // Load session list on mount
+  // Load session list and LLM settings on mount
   useEffect(() => {
     loadSessions()
+    void window.api.settings.getLLMSettings().then(setLlmSettings)
   }, [loadSessions])
 
   // Timer and post-stop refresh
@@ -310,6 +318,36 @@ export default function SessionListPage(): React.JSX.Element {
         )}
 
         {error && <p className="text-xs text-red-400 max-w-xs text-center">{error}</p>}
+
+        {/* LLM provider note */}
+        {llmSettings !== null && (
+          llmSettings.activeProvider ? (
+            <p className="text-xs text-[var(--color-text-muted)] text-center">
+              Summarization via{' '}
+              <span className="text-[var(--color-text-secondary)]">
+                {PROVIDER_LABEL[llmSettings.activeProvider] ?? llmSettings.activeProvider}
+              </span>
+              {llmSettings.models?.[llmSettings.activeProvider] && (
+                <>
+                  {' · '}
+                  <span className="text-[var(--color-text-secondary)] font-mono">
+                    {llmSettings.models[llmSettings.activeProvider]}
+                  </span>
+                </>
+              )}
+            </p>
+          ) : (
+            <p className="text-xs text-[var(--color-text-muted)] text-center">
+              No AI provider configured —{' '}
+              <button
+                onClick={() => window.electron.ipcRenderer.send('audist:prefs:open', { section: 'llm' })}
+                className="underline underline-offset-2 hover:text-[var(--color-text-secondary)] transition-colors cursor-default"
+              >
+                set one up in Preferences
+              </button>
+            </p>
+          )
+        )}
       </div>
 
       {/* Divider */}

@@ -48,6 +48,32 @@ interface TranscriptionAPI {
   onError: (cb: (data: { sessionId: string; code: string; message: string }) => void) => IpcUnsub
 }
 
+export type ProviderName = 'openai' | 'anthropic' | 'compatible'
+
+export interface LLMSettings {
+  activeProvider?: ProviderName
+  models?: Partial<Record<ProviderName, string>>
+  compatibleBaseUrl?: string
+}
+
+export type TestConnectionResult =
+  | { success: true; model: string; models: string[]; latencyMs: number }
+  | { success: false; code: string; message: string }
+
+interface SettingsAPI {
+  setCredential: (key: string, value: string) => Promise<void>
+  clearCredential: (key: string) => Promise<void>
+  isCredentialSet: (key: string) => Promise<boolean>
+  setProvider: (provider: ProviderName) => Promise<void>
+  setModel: (provider: ProviderName, model: string) => Promise<void>
+  setCompatibleBaseUrl: (url: string) => Promise<void>
+  getLLMSettings: () => Promise<LLMSettings>
+  getProviderModels: (provider: ProviderName) => Promise<string[] | null>
+  onCredentialStatus: (cb: (data: { key: string; isSet: boolean }) => void) => IpcUnsub
+  testConnection: (provider: ProviderName) => Promise<void>
+  onTestResult: (cb: (data: { provider: string; result: TestConnectionResult }) => void) => IpcUnsub
+}
+
 interface RecordingAPI {
   getScreenSource: () => Promise<string>
   start: (payload: { sessionDir: string; micSampleRate: number; systemSampleRate: number }) => Promise<void>
@@ -63,6 +89,7 @@ interface AppAPI {
   permissions: PermissionsAPI
   whisper: WhisperAPI
   transcription: TranscriptionAPI
+  settings: SettingsAPI
   recording: RecordingAPI
 }
 

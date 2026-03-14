@@ -1,4 +1,4 @@
-import { _electron as electron, ElectronApplication, Page } from '@playwright/test'
+import { _electron as electron, ElectronApplication, Page, expect } from '@playwright/test'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'
@@ -52,6 +52,8 @@ export async function launchApp(opts?: {
   permissions?: 'granted' | 'not-determined' | 'denied'
   whisper?: 'ready' | 'not-ready'
   testMode?: boolean
+  /** Mock LLM testConnection result: 'success' | 'auth_error' | 'rate_limit' | 'connection_error' */
+  llm?: 'success' | 'auth_error' | 'rate_limit' | 'connection_error'
 }): Promise<LaunchResult> {
   const tmpUserData = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-test-'))
 
@@ -75,7 +77,8 @@ export async function launchApp(opts?: {
       ...process.env,
       AUDIST_TEST_PERMISSIONS: permissionsOverride,
       AUDIST_TEST_WHISPER: whisperOverride,
-      ...(opts?.testMode ? { AUDIST_TEST_MODE: '1' } : {})
+      ...(opts?.testMode ? { AUDIST_TEST_MODE: '1' } : {}),
+      ...(opts?.llm ? { AUDIST_TEST_LLM: opts.llm } : {})
     }
   })
 
@@ -91,6 +94,21 @@ export async function launchApp(opts?: {
   }
 
   return { app, page, cleanup }
+}
+
+/**
+ * Open the prefs window by clicking the gear icon and navigate to the LLM section.
+ * Returns the prefs window Page.
+ */
+export async function openLLMPrefsPage(app: ElectronApplication, mainPage: Page): Promise<Page> {
+  const [prefsPage] = await Promise.all([
+    app.waitForEvent('window'),
+    mainPage.getByTitle('Preferences (⌘,)').click()
+  ])
+  await prefsPage.waitForLoadState('domcontentloaded')
+  await prefsPage.getByText('AI / LLM').click()
+  await expect(prefsPage.getByText('Active provider')).toBeVisible()
+  return prefsPage
 }
 
 /**

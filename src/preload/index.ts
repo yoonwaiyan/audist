@@ -43,6 +43,31 @@ const api = {
     onError: (cb: IpcListener<{ sessionId: string; code: string; message: string }>) =>
       listen('audist:transcription:error', cb)
   },
+  settings: {
+    setCredential: (key: string, value: string): Promise<void> =>
+      ipcRenderer.invoke('audist:settings:setCredential', { key, value }),
+    clearCredential: (key: string): Promise<void> =>
+      ipcRenderer.invoke('audist:settings:clearCredential', { key }),
+    isCredentialSet: (key: string): Promise<boolean> =>
+      ipcRenderer.invoke('audist:settings:isCredentialSet', { key }),
+    setProvider: (provider: string): Promise<void> =>
+      ipcRenderer.invoke('audist:settings:setProvider', { provider }),
+    setModel: (provider: string, model: string): Promise<void> =>
+      ipcRenderer.invoke('audist:settings:setModel', { provider, model }),
+    setCompatibleBaseUrl: (url: string): Promise<void> =>
+      ipcRenderer.invoke('audist:settings:setCompatibleBaseUrl', { url }),
+    getLLMSettings: (): Promise<unknown> =>
+      ipcRenderer.invoke('audist:settings:getLLMSettings'),
+    getProviderModels: (provider: string): Promise<string[] | null> =>
+      ipcRenderer.invoke('audist:settings:getProviderModels', { provider }),
+    onCredentialStatus: (cb: IpcListener<{ key: string; isSet: boolean }>) =>
+      listen('audist:settings:credentialStatus', cb),
+    testConnection: (provider: string): Promise<void> =>
+      ipcRenderer.invoke('audist:llm:testConnection', { provider }),
+    onTestResult: (
+      cb: IpcListener<{ provider: string; result: unknown }>
+    ) => listen('audist:llm:testResult', cb)
+  },
   recording: {
     getScreenSource: (): Promise<string> =>
       ipcRenderer.invoke('audist:recording:get-screen-source'),
