@@ -4,7 +4,9 @@ import {
   clearCredential,
   isCredentialSet,
   getLLMSettings,
-  setLLMSettings
+  setLLMSettings,
+  getCachedModels,
+  setCachedModels
 } from '../store'
 import { llmRegistry } from '../llm/registry'
 import type { ProviderName } from '../llm/types'
@@ -71,11 +73,11 @@ export function registerSettingsHandlers(): void {
   // Return current LLM settings (non-sensitive — no credentials)
   ipcMain.handle('audist:settings:getLLMSettings', () => getLLMSettings())
 
-  // Return the available model list for a provider (from provider.availableModels)
+  // Return cached model list for a provider (populated after a successful testConnection)
   ipcMain.handle(
     'audist:settings:getProviderModels',
     (_, { provider }: { provider: string }): string[] => {
-      return llmRegistry.get(provider)?.availableModels ?? []
+      return getCachedModels(provider as ProviderName)
     }
   )
 
@@ -88,6 +90,9 @@ export function registerSettingsHandlers(): void {
       if (!p || !win) return
 
       const result = await p.testConnection()
+      if (result.success) {
+        setCachedModels(provider as ProviderName, result.models)
+      }
       if (!win.isDestroyed()) {
         win.webContents.send('audist:llm:testResult', { provider, result })
       }

@@ -6,6 +6,7 @@ import type { ProviderName } from './llm/types'
 interface LLMSettings {
   activeProvider?: ProviderName
   models?: Partial<Record<ProviderName, string>>
+  cachedModels?: Partial<Record<ProviderName, string[]>>
   compatibleBaseUrl?: string
 }
 
@@ -50,6 +51,15 @@ export function getLLMSettings(): LLMSettings {
 
 export function setLLMSettings(llm: LLMSettings): void {
   write({ ...read(), llm: { ...getLLMSettings(), ...llm } })
+}
+
+export function getCachedModels(provider: ProviderName): string[] {
+  return getLLMSettings().cachedModels?.[provider] ?? []
+}
+
+export function setCachedModels(provider: ProviderName, models: string[]): void {
+  const current = getLLMSettings()
+  setLLMSettings({ cachedModels: { ...current.cachedModels, [provider]: models } })
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

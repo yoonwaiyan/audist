@@ -29,7 +29,12 @@ export class MockLLMProvider implements LLMProvider {
     const mode = (process.env['AUDIST_TEST_LLM'] ?? 'success').toLowerCase()
 
     if (mode === 'success') {
-      return { success: true, model: this.availableModels[0] ?? 'mock-model', latencyMs: 50 }
+      return {
+        success: true,
+        model: this.availableModels[0] ?? 'mock-model',
+        models: this.availableModels,
+        latencyMs: 50
+      }
     }
 
     const errorMap: Record<string, { code: string; message: string }> = {

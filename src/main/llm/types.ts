@@ -10,7 +10,7 @@ export interface LLMOptions {
 }
 
 export type TestConnectionResult =
-  | { success: true; model: string; latencyMs: number }
+  | { success: true; model: string; models: string[]; latencyMs: number }
   | { success: false; code: string; message: string }
 
 export interface LLMProvider {

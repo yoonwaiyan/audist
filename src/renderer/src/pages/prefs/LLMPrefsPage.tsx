@@ -239,6 +239,9 @@ export default function LLMPrefsPage(): React.JSX.Element {
       const p = provider as ProviderName
       setTestResult((prev) => ({ ...prev, [p]: result as TestConnectionResult }))
       setTestState((prev) => ({ ...prev, [p]: result.success ? 'success' : 'error' }))
+      if (result.success && result.models?.length) {
+        setProviderModels((prev) => ({ ...prev, [p]: result.models }))
+      }
 
       if (result.success) {
         if (successTimers.current[p]) clearTimeout(successTimers.current[p])

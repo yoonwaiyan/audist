@@ -57,7 +57,7 @@ export interface LLMSettings {
 }
 
 export type TestConnectionResult =
-  | { success: true; model: string; latencyMs: number }
+  | { success: true; model: string; models: string[]; latencyMs: number }
   | { success: false; code: string; message: string }
 
 interface SettingsAPI {

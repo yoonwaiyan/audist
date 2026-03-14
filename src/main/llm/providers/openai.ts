@@ -14,11 +14,13 @@ export class OpenAIProvider implements LLMProvider {
     const start = Date.now()
     try {
       const client = new OpenAI({ apiKey: getCredential('openai.apiKey') })
-      const models = await client.models.list()
-      const available = models.data.map((m) => m.id)
+      const resp = await client.models.list()
+      const available = resp.data.map((m) => m.id).filter((id) => id.startsWith('gpt-'))
+      const best = available.includes('gpt-4o') ? 'gpt-4o' : (available[0] ?? 'gpt-4o')
       return {
         success: true,
-        model: available.includes('gpt-4o') ? 'gpt-4o' : (available[0] ?? 'gpt-4o'),
+        model: best,
+        models: available.length > 0 ? available : this.availableModels,
         latencyMs: Date.now() - start
       }
     } catch (err: unknown) {
