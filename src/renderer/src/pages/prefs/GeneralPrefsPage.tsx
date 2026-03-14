@@ -33,7 +33,7 @@ export default function GeneralPrefsPage(): React.JSX.Element {
 
         <div className="flex items-center gap-2 mt-1">
           <span
-            className="flex-1 text-sm text-[var(--color-text-primary)] bg-[var(--color-surface-panel)]
+            className="flex-1 text-sm text-[var(--color-text-primary)] bg-[var(--color-bg-surface)]
               border border-[var(--color-border)] rounded-md px-3 py-2 truncate min-w-0"
             title={saveDir ?? undefined}
           >
@@ -49,7 +49,7 @@ export default function GeneralPrefsPage(): React.JSX.Element {
             onClick={handleChange}
             disabled={picking}
             className="shrink-0 px-3 py-2 rounded-md text-sm font-medium
-              bg-[var(--color-surface-hover)] text-[var(--color-text-primary)]
+              bg-[var(--color-bg-surface-hover)] text-[var(--color-text-primary)]
               hover:bg-[var(--color-border)] transition-colors disabled:opacity-50
               disabled:cursor-not-allowed cursor-default"
           >

@@ -87,7 +87,7 @@ interface MicRowProps {
 
 function MicRow({ status, onRequest, requesting }: MicRowProps): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-3 p-4 rounded-xl bg-[var(--color-surface-panel)] border border-[var(--color-border-subtle)]">
+    <div className="flex flex-col gap-3 p-4 rounded-xl bg-[var(--color-bg-surface)] border border-[var(--color-border)]">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="text-[var(--color-text-secondary)]">
@@ -102,14 +102,14 @@ function MicRow({ status, onRequest, requesting }: MicRowProps): React.JSX.Eleme
         </div>
 
         {isGranted(status) ? (
-          <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-400 shrink-0">
+          <span className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-success)] shrink-0">
             <CheckIcon />
             Granted
           </span>
         ) : status === 'denied' ? (
           <button
             onClick={() => window.api.permissions.openSettings('microphone')}
-            className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-[var(--color-surface-hover)]
+            className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-[var(--color-bg-surface-hover)]
               text-[var(--color-text-primary)] hover:bg-[var(--color-border)] transition-colors cursor-default"
           >
             Open System Settings
@@ -128,7 +128,7 @@ function MicRow({ status, onRequest, requesting }: MicRowProps): React.JSX.Eleme
       </div>
 
       {status === 'denied' && (
-        <p className="text-xs text-amber-400">
+        <p className="text-xs text-[var(--color-warning)]">
           Microphone access was denied. Enable it in System Settings → Privacy &amp; Security →
           Microphone.
         </p>
@@ -143,7 +143,7 @@ interface ScreenRowProps {
 
 function ScreenRow({ status }: ScreenRowProps): React.JSX.Element {
   return (
-    <div className="flex flex-col gap-3 p-4 rounded-xl bg-[var(--color-surface-panel)] border border-[var(--color-border-subtle)]">
+    <div className="flex flex-col gap-3 p-4 rounded-xl bg-[var(--color-bg-surface)] border border-[var(--color-border)]">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="text-[var(--color-text-secondary)]">
@@ -158,14 +158,14 @@ function ScreenRow({ status }: ScreenRowProps): React.JSX.Element {
         </div>
 
         {isGranted(status) ? (
-          <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-400 shrink-0">
+          <span className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-success)] shrink-0">
             <CheckIcon />
             Granted
           </span>
         ) : (
           <button
             onClick={() => window.api.permissions.openSettings('screen')}
-            className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-[var(--color-surface-hover)]
+            className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-[var(--color-bg-surface-hover)]
               text-[var(--color-text-primary)] hover:bg-[var(--color-border)] transition-colors cursor-default"
           >
             Open System Settings
@@ -249,7 +249,7 @@ export default function PermissionsPage(): React.JSX.Element {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-[var(--color-surface-base)] px-8">
+    <div className="flex flex-col items-center justify-center h-full bg-[var(--color-bg-base)] px-8">
       {/* Drag region for macOS title bar */}
       <div className="absolute top-0 left-0 right-0 h-10 [-webkit-app-region:drag]" />
 

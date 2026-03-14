@@ -24,7 +24,7 @@ export default function SetupPage(): React.JSX.Element {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-[var(--color-surface-base)] px-8">
+    <div className="flex flex-col items-center justify-center h-full bg-[var(--color-bg-base)] px-8">
       {/* Reserve space for macOS traffic lights */}
       <div className="absolute top-0 left-0 right-0 h-10 [-webkit-app-region:drag]" />
 
@@ -67,7 +67,7 @@ export default function SetupPage(): React.JSX.Element {
           {picking ? 'Opening…' : 'Choose Folder'}
         </button>
 
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && <p className="text-xs text-[var(--color-error)]">{error}</p>}
       </div>
     </div>
   )

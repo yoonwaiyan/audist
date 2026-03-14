@@ -60,7 +60,7 @@ export default function WhisperSetupPage(): React.JSX.Element {
   }, [navigate, runInstall])
 
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-[var(--color-surface-base)] px-8">
+    <div className="flex flex-col items-center justify-center h-full bg-[var(--color-bg-base)] px-8">
       {/* Reserve space for macOS traffic lights */}
       <div className="absolute top-0 left-0 right-0 h-10 [-webkit-app-region:drag]" />
 
@@ -99,7 +99,7 @@ export default function WhisperSetupPage(): React.JSX.Element {
         {/* Progress bar */}
         {stage !== 'error' && (
           <div className="w-full flex flex-col gap-2">
-            <div className="w-full h-2 bg-[var(--color-surface-panel)] rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-[var(--color-bg-surface)] rounded-full overflow-hidden">
               <div
                 className="h-full bg-[var(--color-accent)] rounded-full transition-all duration-300"
                 style={{ width: `${percent}%` }}
@@ -114,7 +114,7 @@ export default function WhisperSetupPage(): React.JSX.Element {
 
         {error && (
           <div className="flex flex-col items-center gap-3">
-            <p className="text-xs text-red-400 max-w-xs text-center whitespace-pre-line">{error}</p>
+            <p className="text-xs text-[var(--color-error)] max-w-xs text-center whitespace-pre-line">{error}</p>
             <button
               onClick={() => runInstall(
                 window.api.whisper.onBootstrap(({ stage: s, percent: p }) => { setStage(s as BootstrapStage); setPercent(p) }),

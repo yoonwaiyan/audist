@@ -55,10 +55,10 @@ const STATUS_LABEL: Record<SessionMeta['status'], string> = {
 }
 
 const STATUS_COLOR: Record<SessionMeta['status'], string> = {
-  complete: 'text-emerald-400',
+  complete: 'text-[var(--color-success)]',
   transcribing: 'text-blue-400',
-  summarising: 'text-violet-400',
-  error: 'text-red-400'
+  summarising: 'text-[var(--color-accent)]',
+  error: 'text-[var(--color-error)]'
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -135,7 +135,7 @@ function SessionRow({
   }
 
   return (
-    <li className="flex flex-col rounded-xl bg-[var(--color-surface-panel)] overflow-hidden">
+    <li className="flex flex-col rounded-xl bg-[var(--color-bg-surface)] overflow-hidden">
       {/* Header row */}
       <div
         className={`flex items-center justify-between px-4 py-3 ${hasSummary || summaryLoading ? 'cursor-default' : ''}`}
@@ -165,7 +165,7 @@ function SessionRow({
 
       {/* Transcription progress bar */}
       {isTranscribing && progress !== null && (
-        <div className="mx-4 mb-3 h-1 bg-[var(--color-surface-overlay)] rounded-full overflow-hidden">
+        <div className="mx-4 mb-3 h-1 bg-[var(--color-bg-base)] rounded-full overflow-hidden">
           <div
             className="h-full bg-blue-400 rounded-full transition-all duration-300"
             style={{ width: `${progress.percent}%` }}
@@ -175,14 +175,14 @@ function SessionRow({
 
       {/* Summarising indicator */}
       {isSummarising && (
-        <p className="px-4 pb-3 text-xs text-violet-400">Generating summary…</p>
+        <p className="px-4 pb-3 text-xs text-[var(--color-accent)]">Generating summary…</p>
       )}
 
       {/* Error state */}
       {isError && (
         <div className="flex flex-col gap-2 px-4 pb-3">
           {errorMessage && (
-            <p className="text-xs text-red-400 leading-relaxed">{errorMessage}</p>
+            <p className="text-xs text-[var(--color-error)] leading-relaxed">{errorMessage}</p>
           )}
           <div className="flex gap-2">
             {isMissingBinary ? (
@@ -196,8 +196,8 @@ function SessionRow({
             ) : (
               <button
                 onClick={handleRetry}
-                className="text-xs px-3 py-1 rounded-lg bg-[var(--color-surface-overlay)]
-                  text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]
+                className="text-xs px-3 py-1 rounded-lg bg-[var(--color-bg-base)]
+                  text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-surface-hover)]
                   transition-colors cursor-default"
               >
                 Retry Transcription
@@ -230,7 +230,7 @@ function SessionRow({
               <div className="flex gap-2 px-4 pb-3 border-t border-[var(--color-border)] pt-2">
                 <button
                   onClick={handleOpenInFinder}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-[var(--color-surface-overlay)]
+                  className="text-xs px-2.5 py-1 rounded-lg bg-[var(--color-bg-base)]
                     border border-[var(--color-border)] text-[var(--color-text-secondary)]
                     hover:text-[var(--color-text-primary)] transition-colors cursor-default"
                 >
@@ -238,7 +238,7 @@ function SessionRow({
                 </button>
                 <button
                   onClick={handleCopy}
-                  className="text-xs px-2.5 py-1 rounded-lg bg-[var(--color-surface-overlay)]
+                  className="text-xs px-2.5 py-1 rounded-lg bg-[var(--color-bg-base)]
                     border border-[var(--color-border)] text-[var(--color-text-secondary)]
                     hover:text-[var(--color-text-primary)] transition-colors cursor-default"
                 >
@@ -401,7 +401,7 @@ export default function SessionListPage(): React.JSX.Element {
 
         {state === 'recording' && (
           <div className="flex items-center gap-2 text-[var(--color-text-secondary)] text-sm -mt-2">
-            <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            <span className="inline-block w-2 h-2 rounded-full bg-[var(--color-error)] animate-pulse" />
             <span className="tabular-nums font-mono">{formatElapsed(elapsed)}</span>
           </div>
         )}
@@ -409,7 +409,7 @@ export default function SessionListPage(): React.JSX.Element {
         {state === 'idle' && (
           <button
             onClick={startRecording}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--color-success)] hover:bg-[var(--color-success)]/90
               text-white font-medium text-sm transition-colors cursor-default select-none"
           >
             <RecordIcon />
@@ -420,7 +420,7 @@ export default function SessionListPage(): React.JSX.Element {
         {state === 'recording' && (
           <button
             onClick={handleStop}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-red-600 hover:bg-red-500
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--color-error)] hover:bg-[var(--color-error)]/90
               text-white font-medium text-sm transition-colors cursor-default select-none"
           >
             <StopIcon />
@@ -432,14 +432,14 @@ export default function SessionListPage(): React.JSX.Element {
           <button
             disabled
             className="flex items-center gap-2 px-6 py-3 rounded-xl
-              bg-[var(--color-surface-panel)] text-[var(--color-text-muted)]
+              bg-[var(--color-bg-surface)] text-[var(--color-text-muted)]
               font-medium text-sm cursor-default select-none opacity-60"
           >
             Stopping…
           </button>
         )}
 
-        {error && <p className="text-xs text-red-400 max-w-xs text-center">{error}</p>}
+        {error && <p className="text-xs text-[var(--color-error)] max-w-xs text-center">{error}</p>}
 
         {/* LLM provider note */}
         {llmSettings !== null && (

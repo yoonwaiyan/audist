@@ -32,10 +32,10 @@ export default function PrefsLayout(): React.JSX.Element {
   }, [navigate])
 
   return (
-    <div className="flex h-full bg-[var(--color-surface-base)]">
+    <div className="flex h-full bg-[var(--color-bg-base)]">
       {/* Sidebar */}
       {/* pt-[52px] reserves space for macOS traffic lights in hiddenInset mode */}
-      <nav className="w-40 shrink-0 bg-[var(--color-surface-overlay)] border-r border-[var(--color-border)] pt-[52px] flex flex-col gap-0.5 px-2 [-webkit-app-region:drag]">
+      <nav className="w-40 shrink-0 bg-[var(--color-bg-base)] border-r border-[var(--color-border)] pt-[52px] flex flex-col gap-0.5 px-2 [-webkit-app-region:drag]">
         {NAV_ITEMS.map(({ label, to }) => (
           <NavLink
             key={to}
@@ -45,8 +45,8 @@ export default function PrefsLayout(): React.JSX.Element {
               [
                 'block px-3 py-1.5 rounded text-sm font-medium transition-colors [-webkit-app-region:no-drag]',
                 isActive
-                  ? 'bg-[var(--color-accent-subtle)] text-[var(--color-accent-text)]'
-                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)]'
+                  ? 'bg-[var(--color-bg-surface)] text-[var(--color-accent)]'
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-surface-hover)]'
               ].join(' ')
             }
           >
