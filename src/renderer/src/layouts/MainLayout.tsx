@@ -42,7 +42,7 @@ export default function MainLayout(): React.JSX.Element {
   }, [navigate])
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-surface-base)]">
+    <div className="flex flex-col h-full bg-[var(--color-bg-base)]">
       {/* [-webkit-app-region:drag] makes the header the window drag handle.
           Buttons must opt out with [-webkit-app-region:no-drag]. */}
       <header
@@ -56,7 +56,7 @@ export default function MainLayout(): React.JSX.Element {
         <button
           onClick={openPrefs}
           title="Preferences (⌘,)"
-          className="[-webkit-app-region:no-drag] p-1.5 rounded text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-default"
+          className="[-webkit-app-region:no-drag] p-1.5 rounded text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-surface-hover)] transition-colors cursor-default"
         >
           <GearIcon />
         </button>

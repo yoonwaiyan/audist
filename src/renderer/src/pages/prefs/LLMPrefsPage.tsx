@@ -48,9 +48,9 @@ function TestConnectionButton({
   }
 
   const colorClass = (): string => {
-    if (state === 'success') return 'bg-emerald-600/20 text-emerald-400 border-emerald-600/30'
-    if (state === 'error') return 'bg-red-600/20 text-red-400 border-red-600/30'
-    return 'bg-[var(--color-surface-overlay)] text-[var(--color-text-secondary)] border-[var(--color-border)]'
+    if (state === 'success') return 'bg-[var(--color-success)]/20 text-[var(--color-success)] border-[var(--color-success)]/30'
+    if (state === 'error') return 'bg-[var(--color-error)]/20 text-[var(--color-error)] border-[var(--color-error)]/30'
+    return 'bg-[var(--color-bg-base)] text-[var(--color-text-secondary)] border-[var(--color-border)]'
   }
 
   const prefix = state === 'success' ? '✓ ' : state === 'error' ? '✕ ' : ''
@@ -70,7 +70,7 @@ function TestConnectionButton({
       </button>
 
       {state === 'error' && result && !result.success && (
-        <p className="text-xs text-red-400 leading-relaxed select-text max-w-sm">
+        <p className="text-xs text-[var(--color-error)] leading-relaxed select-text max-w-sm">
           {result.message}
         </p>
       )}
@@ -119,20 +119,20 @@ function ApiKeyField({ label, credKey, isSet, onSave, onClear, onEdit }: ApiKeyF
       <div className="flex items-center gap-2">
         {isSet && !editing ? (
           <>
-            <span className="flex-1 px-3 py-1.5 rounded-lg bg-[var(--color-surface-overlay)] border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] font-mono">
+            <span className="flex-1 px-3 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] font-mono">
               ••••••••••••••••
             </span>
             <button
               onClick={() => setEditing(true)}
-              className="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--color-surface-overlay)] border border-[var(--color-border)]
+              className="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
                 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors cursor-default"
             >
               Replace
             </button>
             <button
               onClick={handleClear}
-              className="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--color-surface-overlay)] border border-[var(--color-border)]
-                text-red-400 hover:text-red-300 transition-colors cursor-default"
+              className="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
+                text-[var(--color-error)] hover:text-[var(--color-error)] transition-colors cursor-default"
             >
               Clear
             </button>
@@ -145,7 +145,7 @@ function ApiKeyField({ label, credKey, isSet, onSave, onClear, onEdit }: ApiKeyF
               onChange={(e) => handleChange(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSave()}
               placeholder="Paste API key…"
-              className="flex-1 px-3 py-1.5 rounded-lg bg-[var(--color-surface-overlay)] border border-[var(--color-border)]
+              className="flex-1 px-3 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
                 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]
                 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
             />
@@ -161,7 +161,7 @@ function ApiKeyField({ label, credKey, isSet, onSave, onClear, onEdit }: ApiKeyF
             {isSet && (
               <button
                 onClick={() => { setEditing(false); setValue('') }}
-                className="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--color-surface-overlay)] border border-[var(--color-border)]
+                className="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
                   text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors cursor-default"
               >
                 Cancel
@@ -324,7 +324,7 @@ export default function LLMPrefsPage(): React.JSX.Element {
               <select
                 value={verifiedProviders.some((p) => p.id === activeProvider) ? activeProvider : verifiedProviders[0].id}
                 onChange={(e) => handleProviderChange(e.target.value as ProviderName)}
-                className="w-48 px-3 py-1.5 rounded-lg bg-[var(--color-surface-overlay)] border border-[var(--color-border)]
+                className="w-48 px-3 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
                   text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]
                   cursor-default transition-colors"
               >
@@ -361,7 +361,7 @@ export default function LLMPrefsPage(): React.JSX.Element {
             <select
               value={models.openai ?? providerModels.openai?.[0] ?? ''}
               onChange={(e) => handleModelChange('openai', e.target.value)}
-              className="w-48 px-3 py-1.5 rounded-lg bg-[var(--color-surface-overlay)] border border-[var(--color-border)]
+              className="w-48 px-3 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
                 text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]
                 cursor-default transition-colors"
             >
@@ -399,7 +399,7 @@ export default function LLMPrefsPage(): React.JSX.Element {
             <select
               value={models.anthropic ?? providerModels.anthropic?.[0] ?? ''}
               onChange={(e) => handleModelChange('anthropic', e.target.value)}
-              className="w-48 px-3 py-1.5 rounded-lg bg-[var(--color-surface-overlay)] border border-[var(--color-border)]
+              className="w-48 px-3 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
                 text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]
                 cursor-default transition-colors"
             >
@@ -437,7 +437,7 @@ export default function LLMPrefsPage(): React.JSX.Element {
                 }
               }}
               placeholder="http://localhost:11434/v1"
-              className="w-72 px-3 py-1.5 rounded-lg bg-[var(--color-surface-overlay)] border border-[var(--color-border)]
+              className="w-72 px-3 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
                 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]
                 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
             />
@@ -464,7 +464,7 @@ export default function LLMPrefsPage(): React.JSX.Element {
               value={models.compatible ?? ''}
               onChange={(e) => handleModelChange('compatible', e.target.value)}
               placeholder="e.g. llama3, mistral"
-              className="w-48 px-3 py-1.5 rounded-lg bg-[var(--color-surface-overlay)] border border-[var(--color-border)]
+              className="w-48 px-3 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
                 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]
                 focus:outline-none focus:border-[var(--color-accent)] transition-colors"
             />
