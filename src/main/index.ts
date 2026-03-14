@@ -9,8 +9,11 @@ import { registerPermissionHandlers } from './ipc/permissions'
 import { registerRecordingHandlers } from './ipc/recording'
 import { registerSessionHandlers } from './ipc/session'
 import { registerTranscriptionHandlers } from './ipc/transcription'
+import { registerSettingsHandlers } from './ipc/settings'
 import { mixAudio } from './ipc/mix'
 import { bootstrapWhisper } from './whisper/bootstrap'
+import { llmRegistry } from './llm/registry'
+import { OpenAIProvider } from './llm/providers/openai'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -50,12 +53,16 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
+  // Register LLM providers
+  llmRegistry.register(new OpenAIProvider())
+
   setApplicationMenu()
   registerDirectoryHandlers()
   registerPermissionHandlers()
   registerRecordingHandlers()
   registerSessionHandlers()
   registerTranscriptionHandlers()
+  registerSettingsHandlers()
 
   // Bootstrap IPC — renderer calls this from the whisper setup screen
   ipcMain.handle('audist:whisper:install', async (event): Promise<void> => {
