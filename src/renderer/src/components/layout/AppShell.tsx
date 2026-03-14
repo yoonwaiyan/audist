@@ -26,7 +26,7 @@ function PlusIcon(): React.JSX.Element {
 
 function AppShellInner(): React.JSX.Element {
   const navigate = useNavigate()
-  const { state: recorderState, startRecording } = useRecorderContext()
+  const { state: recorderState } = useRecorderContext()
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
 
   const isRecording = recorderState === 'recording' || recorderState === 'stopping'
@@ -44,7 +44,7 @@ function AppShellInner(): React.JSX.Element {
   }, [navigate])
 
   const handleNewRecording = (): void => {
-    void startRecording()
+    navigate('/')
   }
 
   const handleSelectSession = (session: SessionMeta): void => {

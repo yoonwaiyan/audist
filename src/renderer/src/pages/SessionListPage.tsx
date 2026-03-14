@@ -1,13 +1,5 @@
-import { useRef } from 'react'
-import { AppLogo, TemplateDropdown } from '../components/ui'
+import { AppLogo } from '../components/ui'
 import { useRecorderContext } from '../contexts/RecorderContext'
-
-// Placeholder templates until the template backend (AUD-52) is implemented
-const DEFAULT_TEMPLATES = [
-  { id: 'general-meeting', name: 'General Meeting' },
-  { id: 'interview', name: 'Interview' },
-  { id: 'lecture', name: 'Lecture' }
-]
 
 function MicIcon(): React.JSX.Element {
   return (
@@ -21,28 +13,15 @@ function MicIcon(): React.JSX.Element {
 
 export default function SessionListPage(): React.JSX.Element {
   const { startRecording, error } = useRecorderContext()
-  const selectedTemplateRef = useRef(DEFAULT_TEMPLATES[0].id)
 
   const handleStart = (): void => {
     void startRecording()
-  }
-
-  const handleManageTemplates = (): void => {
-    window.electron.ipcRenderer.send('audist:prefs:open', { section: 'prompt' })
   }
 
   return (
     <div className="flex flex-col items-center justify-center h-full gap-6 px-8 select-none">
       {/* Logo */}
       <AppLogo size="lg" />
-
-      {/* Template selector */}
-      <TemplateDropdown
-        templates={DEFAULT_TEMPLATES}
-        value={selectedTemplateRef.current}
-        onChange={(id) => { selectedTemplateRef.current = id }}
-        onManage={handleManageTemplates}
-      />
 
       {/* Mic button */}
       <button
