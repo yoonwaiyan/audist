@@ -14,6 +14,7 @@ import { mixAudio } from './ipc/mix'
 import { bootstrapWhisper } from './whisper/bootstrap'
 import { llmRegistry } from './llm/registry'
 import { OpenAIProvider } from './llm/providers/openai'
+import { MockLLMProvider } from './llm/providers/mock'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -53,8 +54,14 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // Register LLM providers
-  llmRegistry.register(new OpenAIProvider())
+  // Register LLM providers (mock replaces real providers in e2e tests)
+  if (process.env['AUDIST_TEST_LLM']) {
+    llmRegistry.register(new MockLLMProvider('openai', ['gpt-4o', 'gpt-4o-mini']))
+    llmRegistry.register(new MockLLMProvider('anthropic', ['claude-sonnet-4-5', 'claude-haiku-4-5']))
+    llmRegistry.register(new MockLLMProvider('compatible', []))
+  } else {
+    llmRegistry.register(new OpenAIProvider())
+  }
 
   setApplicationMenu()
   registerDirectoryHandlers()

@@ -31,9 +31,14 @@ export function registerSettingsHandlers(): void {
   )
 
   // Query whether a credential is currently stored (renderer never gets the value)
+  // In e2e test mode with a mock LLM provider, always report credentials as set
+  // so that the Test Connection button is enabled for all providers.
   ipcMain.handle(
     'audist:settings:isCredentialSet',
-    (_, { key }: { key: string }): boolean => isCredentialSet(key)
+    (_, { key }: { key: string }): boolean => {
+      if (process.env['AUDIST_TEST_LLM']) return true
+      return isCredentialSet(key)
+    }
   )
 
   // Persist active provider selection
