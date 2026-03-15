@@ -3,7 +3,7 @@ import { useLocation, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import {
-  FolderOpen, Copy, Check, Loader2, Sparkles, MoreHorizontal
+  FolderOpen, Copy, Check, Loader2, Sparkles
 } from 'lucide-react'
 import type { SessionMeta } from '../../../preload/index.d'
 import { Tooltip } from '../components/ui'
@@ -156,7 +156,7 @@ export default function SessionDetail(): React.JSX.Element {
               </button>
             </Tooltip>
             <Tooltip
-              label="Summary copied to clipboard"
+              label="Copy summary to clipboard"
               open={copied || undefined}
             >
               <button
@@ -171,9 +171,7 @@ export default function SessionDetail(): React.JSX.Element {
                 }
               </button>
             </Tooltip>
-            <button className="p-1.5 hover:bg-[var(--color-bg-surface-hover)] rounded transition-colors cursor-default">
-              <MoreHorizontal className="w-4 h-4 text-[var(--color-text-secondary)]" />
-            </button>
+
           </div>
         </div>
 
