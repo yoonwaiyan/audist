@@ -302,8 +302,8 @@ test.describe('Summary display in session list (AUD-37)', () => {
 
     try {
       await page.locator('[data-testid="session-item"]').first().click()
-      await expect(page.locator('button[title="Reveal in Finder"]')).toBeVisible({ timeout: 5000 })
-      await expect(page.locator('button[title="Copy summary"]')).toBeVisible()
+      await expect(page.locator('button[aria-label="Reveal in Finder"]')).toBeVisible({ timeout: 5000 })
+      await expect(page.locator('button[aria-label="Copy summary"]')).toBeVisible()
     } finally {
       await app.close()
       cleanup()

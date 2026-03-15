@@ -148,6 +148,7 @@ export default function SessionDetail(): React.JSX.Element {
           <div className="flex items-center gap-1 shrink-0 ml-3">
             <Tooltip label="Reveal in Finder">
               <button
+                aria-label="Reveal in Finder"
                 onClick={handleOpenFolder}
                 className="p-1.5 hover:bg-[var(--color-bg-surface-hover)] rounded transition-colors cursor-default"
               >
@@ -159,6 +160,7 @@ export default function SessionDetail(): React.JSX.Element {
               open={copied || undefined}
             >
               <button
+                aria-label="Copy summary"
                 onClick={handleCopy}
                 disabled={!summary}
                 className="p-1.5 hover:bg-[var(--color-bg-surface-hover)] rounded transition-colors disabled:opacity-30 cursor-default"
