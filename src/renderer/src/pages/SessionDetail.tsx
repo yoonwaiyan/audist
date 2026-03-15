@@ -1,14 +1,13 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import {
-  FolderOpen, Copy, Play, Pause, Check, Loader2, Sparkles, MoreHorizontal
+  FolderOpen, Copy, Check, Loader2, Sparkles, MoreHorizontal
 } from 'lucide-react'
 import type { SessionMeta } from '../../../preload/index.d'
 
 const TABS = ['Summary', 'Transcript'] as const
-const SPEEDS = [0.75, 1, 1.25, 1.5, 2]
 
 function formatTimestamp(id: string): { name: string; date: string; time: string } {
   const match = id.match(/^(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})$/)
@@ -69,12 +68,6 @@ export default function SessionDetail(): React.JSX.Element {
   const [transcript, setTranscript] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  // Audio player state
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [playbackSpeed, setPlaybackSpeed] = useState(1)
-  const [speedOpen, setSpeedOpen] = useState(false)
-  const playIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Reset and load session whenever the route id changes
   useEffect(() => {
@@ -121,20 +114,6 @@ export default function SessionDetail(): React.JSX.Element {
     return () => { unsubSC(); unsubTC() }
   }, [session])
 
-  // Simulated audio playback
-  useEffect(() => {
-    if (!isPlaying || !session) return
-    playIntervalRef.current = setInterval(() => {
-      setCurrentTime((t) => {
-        if (t >= session.duration) { setIsPlaying(false); return session.duration }
-        return t + playbackSpeed
-      })
-    }, 1000)
-    return () => {
-      if (playIntervalRef.current) clearInterval(playIntervalRef.current)
-    }
-  }, [isPlaying, playbackSpeed, session])
-
   if (!session) {
     return (
       <div className="flex items-center justify-center h-full text-[var(--color-text-muted)] text-sm">
@@ -144,8 +123,6 @@ export default function SessionDetail(): React.JSX.Element {
   }
 
   const { name, date, time } = formatTimestamp(session.id)
-  const total = session.duration
-  const progressPct = total > 0 ? (currentTime / total) * 100 : 0
   const isTranscribed = session.status === 'complete' || session.status === 'summarising'
   const isSummarized = session.status === 'complete' && summary != null
 
@@ -237,72 +214,6 @@ export default function SessionDetail(): React.JSX.Element {
               {session.error ?? 'Error'}
             </span>
           )}
-        </div>
-      </div>
-
-      {/* Audio player */}
-      <div className="border-b border-[var(--color-border)] px-5 py-3 bg-[var(--color-bg-surface)] shrink-0">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsPlaying(!isPlaying)}
-            className="w-8 h-8 rounded-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] flex items-center justify-center transition-colors shrink-0 cursor-default"
-          >
-            {isPlaying
-              ? <Pause className="w-4 h-4 text-white" />
-              : <Play className="w-4 h-4 text-white ml-0.5" />
-            }
-          </button>
-
-          <span className="text-xs font-mono text-[var(--color-text-secondary)] tabular-nums shrink-0">
-            {formatTime(currentTime)}
-          </span>
-
-          {/* Scrubber */}
-          <div className="flex-1 relative group">
-            <div className="h-1 bg-[var(--color-border)] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-[var(--color-accent)] rounded-full transition-all"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={total}
-              value={currentTime}
-              onChange={(e) => setCurrentTime(Number(e.target.value))}
-              className="absolute inset-0 w-full opacity-0 cursor-pointer h-full"
-            />
-          </div>
-
-          <span className="text-xs font-mono text-[var(--color-text-secondary)] tabular-nums shrink-0">
-            {formatTime(total)}
-          </span>
-
-          {/* Speed selector */}
-          <div className="relative shrink-0">
-            <button
-              onClick={() => setSpeedOpen(!speedOpen)}
-              className="text-xs font-mono text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] px-2 py-1 rounded hover:bg-[var(--color-bg-surface-hover)] transition-colors cursor-default"
-            >
-              {playbackSpeed}×
-            </button>
-            {speedOpen && (
-              <div className="absolute right-0 bottom-full mb-1 bg-[var(--color-bg-surface-hover)] border border-[var(--color-border)] rounded-lg shadow-lg py-1 z-50 min-w-[64px]">
-                {SPEEDS.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => { setPlaybackSpeed(s); setSpeedOpen(false) }}
-                    className={`w-full text-center px-3 py-1.5 text-xs font-mono hover:bg-[var(--color-bg-surface)] transition-colors cursor-default ${
-                      s === playbackSpeed ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]'
-                    }`}
-                  >
-                    {s}×
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
