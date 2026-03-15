@@ -75,8 +75,6 @@ export default function SessionDetail(): React.JSX.Element {
     setSession(null)
     setSummary(null)
     setTranscript(null)
-    setCurrentTime(0)
-    setIsPlaying(false)
 
     const fromState = (location.state as { session?: SessionMeta } | null)?.session
     if (fromState?.id === id) {

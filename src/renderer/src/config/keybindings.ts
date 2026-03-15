@@ -8,7 +8,7 @@ export interface KeyBinding {
   preventDefault?: boolean
 }
 
-export const KEYBINDINGS = {
+export const KEYBINDINGS: Record<string, KeyBinding> = {
   SESSION_SELECT_NEXT: {
     key: 'ArrowDown',
     description: 'Select next session',
@@ -19,6 +19,6 @@ export const KEYBINDINGS = {
     description: 'Select previous session',
     preventDefault: true
   }
-} satisfies Record<string, KeyBinding>
+}
 
-export type KeyBindingId = keyof typeof KEYBINDINGS
+export type KeyBindingId = 'SESSION_SELECT_NEXT' | 'SESSION_SELECT_PREV'
