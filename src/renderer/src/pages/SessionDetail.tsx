@@ -9,6 +9,19 @@ import type { SessionMeta } from '../../../preload/index.d'
 
 const TABS = ['Summary', 'Transcript'] as const
 
+function Tooltip({ label, children }: { label: string; children: React.ReactNode }): React.JSX.Element {
+  return (
+    <div className="relative group/tip">
+      {children}
+      <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+        <div className="whitespace-nowrap rounded px-2 py-1 text-[11px] font-medium bg-[var(--color-bg-surface-hover)] text-[var(--color-text-primary)] border border-[var(--color-border)] shadow-sm">
+          {label}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function formatTimestamp(id: string): { name: string; date: string; time: string } {
   const match = id.match(/^(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})$/)
   if (!match) return { name: id, date: id, time: '' }
@@ -145,21 +158,35 @@ export default function SessionDetail(): React.JSX.Element {
             {name}
           </h2>
           <div className="flex items-center gap-1 shrink-0 ml-3">
-            <button
-              onClick={handleOpenFolder}
-              title="Reveal in Finder"
-              className="p-1.5 hover:bg-[var(--color-bg-surface-hover)] rounded transition-colors cursor-default"
-            >
-              <FolderOpen className="w-4 h-4 text-[var(--color-text-secondary)]" />
-            </button>
-            <button
-              onClick={handleCopy}
-              title={copied ? 'Copied!' : 'Copy summary'}
-              disabled={!summary}
-              className="p-1.5 hover:bg-[var(--color-bg-surface-hover)] rounded transition-colors disabled:opacity-30 cursor-default"
-            >
-              <Copy className="w-4 h-4 text-[var(--color-text-secondary)]" />
-            </button>
+            <Tooltip label="Reveal in Finder">
+              <button
+                onClick={handleOpenFolder}
+                className="p-1.5 hover:bg-[var(--color-bg-surface-hover)] rounded transition-colors cursor-default"
+              >
+                <FolderOpen className="w-4 h-4 text-[var(--color-text-secondary)]" />
+              </button>
+            </Tooltip>
+            <div className="relative group/copy">
+              <Tooltip label={copied ? 'Copied!' : 'Copy summary'}>
+                <button
+                  onClick={handleCopy}
+                  disabled={!summary}
+                  className="p-1.5 hover:bg-[var(--color-bg-surface-hover)] rounded transition-colors disabled:opacity-30 cursor-default"
+                >
+                  {copied
+                    ? <Check className="w-4 h-4 text-[var(--color-success)]" />
+                    : <Copy className="w-4 h-4 text-[var(--color-text-secondary)]" />
+                  }
+                </button>
+              </Tooltip>
+              {copied && (
+                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-7 z-50">
+                  <div className="whitespace-nowrap rounded px-2 py-1 text-[11px] font-medium bg-[var(--color-success)]/15 text-[var(--color-success)] border border-[var(--color-success)]/30 shadow-sm">
+                    Summary copied to clipboard
+                  </div>
+                </div>
+              )}
+            </div>
             <button className="p-1.5 hover:bg-[var(--color-bg-surface-hover)] rounded transition-colors cursor-default">
               <MoreHorizontal className="w-4 h-4 text-[var(--color-text-secondary)]" />
             </button>
