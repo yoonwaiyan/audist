@@ -212,7 +212,7 @@ test.describe('Summarisation pipeline (AUD-36)', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 test.describe('Summary display in session list (AUD-37)', () => {
-  test('session with summary.md shows expand indicator', async () => {
+  test('clicking session navigates to detail showing summary content', async () => {
     const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
     seedSessions(saveDir, [{
       id: '2026-01-01_10-00-00',
@@ -228,7 +228,8 @@ test.describe('Summary display in session list (AUD-37)', () => {
     })
 
     try {
-      await expect(page.getByText('▼')).toBeVisible({ timeout: 5000 })
+      await page.locator('[data-testid="session-item"]').first().click()
+      await expect(page.getByText('Meeting Summary')).toBeVisible({ timeout: 5000 })
     } finally {
       await app.close()
       cleanup()
@@ -236,7 +237,7 @@ test.describe('Summary display in session list (AUD-37)', () => {
     }
   })
 
-  test('session without summary.md shows no expand indicator', async () => {
+  test('session without summary.md shows placeholder in detail', async () => {
     const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
     seedSessions(saveDir, [{ id: '2026-01-01_10-00-00', duration: 60, status: 'complete' }])
 
@@ -247,8 +248,9 @@ test.describe('Summary display in session list (AUD-37)', () => {
     })
 
     try {
+      await page.locator('[data-testid="session-item"]').first().click()
       await page.waitForTimeout(500) // allow summary load attempt
-      await expect(page.getByText('▼')).not.toBeVisible()
+      await expect(page.getByText('No summary available.')).toBeVisible()
     } finally {
       await app.close()
       cleanup()
@@ -256,7 +258,7 @@ test.describe('Summary display in session list (AUD-37)', () => {
     }
   })
 
-  test('clicking session row expands to show rendered summary', async () => {
+  test('session detail renders summary with headings and content', async () => {
     const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
     seedSessions(saveDir, [{
       id: '2026-01-01_10-00-00',
@@ -272,11 +274,9 @@ test.describe('Summary display in session list (AUD-37)', () => {
     })
 
     try {
-      await expect(page.getByText('▼')).toBeVisible({ timeout: 5000 })
-      await page.getByText('▼').click()
-
-      await expect(page.getByRole('heading', { name: 'Meeting Summary' })).toBeVisible()
-      await expect(page.getByRole('heading', { name: 'Key Points' })).toBeVisible()
+      await page.locator('[data-testid="session-item"]').first().click()
+      await expect(page.getByText('Meeting Summary')).toBeVisible({ timeout: 5000 })
+      await expect(page.getByText('Key Points')).toBeVisible()
       await expect(page.getByText('Discussed roadmap')).toBeVisible()
     } finally {
       await app.close()
@@ -285,7 +285,7 @@ test.describe('Summary display in session list (AUD-37)', () => {
     }
   })
 
-  test('expanded summary shows Open in Finder and Copy text buttons', async () => {
+  test('session detail shows Reveal in Finder and Copy summary buttons', async () => {
     const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
     seedSessions(saveDir, [{
       id: '2026-01-01_10-00-00',
@@ -301,11 +301,9 @@ test.describe('Summary display in session list (AUD-37)', () => {
     })
 
     try {
-      await expect(page.getByText('▼')).toBeVisible({ timeout: 5000 })
-      await page.getByText('▼').click()
-
-      await expect(page.getByRole('button', { name: 'Open in Finder' })).toBeVisible()
-      await expect(page.getByRole('button', { name: 'Copy text' })).toBeVisible()
+      await page.locator('[data-testid="session-item"]').first().click()
+      await expect(page.locator('button[title="Reveal in Finder"]')).toBeVisible({ timeout: 5000 })
+      await expect(page.locator('button[title="Copy summary"]')).toBeVisible()
     } finally {
       await app.close()
       cleanup()
@@ -313,7 +311,7 @@ test.describe('Summary display in session list (AUD-37)', () => {
     }
   })
 
-  test('summary written live via IPC appears in session row', async () => {
+  test('summary written live via IPC appears in session detail', async () => {
     const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
     // Seed session with transcript but no summary yet
     seedSessions(saveDir, [{
@@ -334,17 +332,16 @@ test.describe('Summary display in session list (AUD-37)', () => {
     const sessionDir = path.join(saveDir, '2026-01-01_10-00-00')
 
     try {
-      // No summary yet — no expand indicator
+      // Navigate to session detail — no summary yet
+      await page.locator('[data-testid="session-item"]').first().click()
       await page.waitForTimeout(500)
-      await expect(page.getByText('▼')).not.toBeVisible()
+      await expect(page.getByText('No summary available.')).toBeVisible()
 
       // Trigger summarisation
       await invokeSummarise(page, sessionDir)
 
-      // Expand indicator should appear after complete event
-      await expect(page.getByText('▼')).toBeVisible({ timeout: 5000 })
-      await page.getByText('▼').click()
-      await expect(page.getByText(MOCK_SUMMARY)).toBeVisible()
+      // Summary should appear in the detail view after the complete event
+      await expect(page.getByText(MOCK_SUMMARY)).toBeVisible({ timeout: 5000 })
     } finally {
       await app.close()
       cleanup()

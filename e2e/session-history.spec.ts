@@ -25,7 +25,7 @@ test.describe('Session history list', () => {
       whisper: 'ready'
     })
 
-    await expect(page.getByText('No recordings yet. Press Start to begin.')).toBeVisible()
+    await expect(page.getByText('No recordings yet')).toBeVisible()
 
     await app.close()
     cleanup()
@@ -39,8 +39,7 @@ test.describe('Session history list', () => {
     ])
 
     await expect(page.getByText('No recordings yet')).not.toBeVisible()
-    // At least one list item rendered
-    await expect(page.locator('li').first()).toBeVisible()
+    await expect(page.locator('[data-testid="session-item"]').first()).toBeVisible()
 
     await app.close()
     cleanup()
@@ -53,41 +52,41 @@ test.describe('Session history list', () => {
       { id: '2026-03-13_10-00-00', duration: 90, status: 'complete' }
     ])
 
-    // 90 seconds → "1m 30s"
-    await expect(page.getByText('1m 30s')).toBeVisible()
+    // 90 seconds → "01:30"
+    await expect(page.getByText('01:30')).toBeVisible()
 
     await app.close()
     cleanup()
     fs.rmSync(saveDir, { recursive: true, force: true })
   })
 
-  test('session row displays Complete status badge', async () => {
+  test('complete session row is visible and clickable', async () => {
     const saveDir = makeSaveDir()
     const { app, page, cleanup } = await launchWithSessions(saveDir, [
       { id: '2026-03-13_10-00-00', duration: 60, status: 'complete' }
     ])
 
-    await expect(page.getByText('Complete')).toBeVisible()
+    await expect(page.locator('[data-testid="session-item"]').first()).toBeVisible()
 
     await app.close()
     cleanup()
     fs.rmSync(saveDir, { recursive: true, force: true })
   })
 
-  test('session row with transcribing status shows Transcribing label', async () => {
+  test('session row with transcribing status shows progress indicator', async () => {
     const saveDir = makeSaveDir()
     const { app, page, cleanup } = await launchWithSessions(saveDir, [
       { id: '2026-03-13_11-00-00', duration: 45, status: 'transcribing' }
     ])
 
-    await expect(page.getByText('Transcribing')).toBeVisible()
+    await expect(page.locator('[data-testid="session-item"] .animate-pulse').first()).toBeVisible()
 
     await app.close()
     cleanup()
     fs.rmSync(saveDir, { recursive: true, force: true })
   })
 
-  test('session row with error status shows Error label and Retry button', async () => {
+  test('error session row is visible in the sidebar', async () => {
     const saveDir = makeSaveDir()
     const { app, page, cleanup } = await launchWithSessions(saveDir, [
       {
@@ -98,15 +97,14 @@ test.describe('Session history list', () => {
       }
     ])
 
-    await expect(page.getByText('Error')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Retry Transcription' })).toBeVisible()
+    await expect(page.locator('[data-testid="session-item"]').first()).toBeVisible()
 
     await app.close()
     cleanup()
     fs.rmSync(saveDir, { recursive: true, force: true })
   })
 
-  test('error row shows the human-readable error message', async () => {
+  test('error session detail shows the human-readable error message', async () => {
     const saveDir = makeSaveDir()
     const { app, page, cleanup } = await launchWithSessions(saveDir, [
       {
@@ -117,6 +115,7 @@ test.describe('Session history list', () => {
       }
     ])
 
+    await page.locator('[data-testid="session-item"]').first().click()
     await expect(page.getByText('Transcription process crashed')).toBeVisible()
 
     await app.close()
@@ -132,13 +131,13 @@ test.describe('Session history list', () => {
       { id: '2026-03-13_10-00-00', duration: 90, status: 'complete' }
     ])
 
-    const rows = page.locator('li')
+    const rows = page.locator('[data-testid="session-item"]')
     await expect(rows).toHaveCount(3)
 
-    // Newest first: 11:00 → 10:00 → 09:00; check duration order (2m 0s, 1m 30s, 1m 0s)
-    await expect(rows.nth(0).getByText('2m 0s')).toBeVisible()
-    await expect(rows.nth(1).getByText('1m 30s')).toBeVisible()
-    await expect(rows.nth(2).getByText('1m 0s')).toBeVisible()
+    // Newest first: 11:00 → 10:00 → 09:00; check duration order (02:00, 01:30, 01:00)
+    await expect(rows.nth(0).getByText('02:00')).toBeVisible()
+    await expect(rows.nth(1).getByText('01:30')).toBeVisible()
+    await expect(rows.nth(2).getByText('01:00')).toBeVisible()
 
     await app.close()
     cleanup()
@@ -151,13 +150,13 @@ test.describe('Session history list', () => {
 
     // First launch
     const first = await launchApp({ saveDirectory: saveDir, permissions: 'granted', whisper: 'ready' })
-    await expect(first.page.getByText('1m 15s')).toBeVisible()
+    await expect(first.page.getByText('01:15')).toBeVisible()
     await first.app.close()
     first.cleanup()
 
     // Second launch — same saveDir, no re-seeding
     const second = await launchApp({ saveDirectory: saveDir, permissions: 'granted', whisper: 'ready' })
-    await expect(second.page.getByText('1m 15s')).toBeVisible()
+    await expect(second.page.getByText('01:15')).toBeVisible()
     await second.app.close()
     second.cleanup()
 

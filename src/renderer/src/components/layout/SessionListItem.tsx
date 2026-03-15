@@ -40,6 +40,7 @@ export default function SessionListItem({ session, active, onClick }: SessionLis
 
   return (
     <button
+      data-testid="session-item"
       onClick={onClick}
       className={[
         'w-full text-left px-5 py-2.5 transition-all relative cursor-default select-none',

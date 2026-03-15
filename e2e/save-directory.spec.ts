@@ -38,7 +38,7 @@ test.describe('Subsequent launch (save directory configured)', () => {
     const { app, page, cleanup } = await launchAppWithSaveDir()
 
     // Should land on main window — Audist header is visible
-    await expect(page.locator('header').getByText('Audist', { exact: true })).toBeVisible()
+    await expect(page.getByRole('complementary').getByText('audist')).toBeVisible()
     await expect(page.locator('button[title*="Preferences"]')).toBeVisible()
 
     // Setup page must NOT appear

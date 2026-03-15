@@ -117,7 +117,7 @@ test.describe('Permissions — granted state', () => {
     const { app, page, cleanup } = await launchAppWithSaveDir()
 
     // Main window should be shown directly — no permissions gate
-    await expect(page.locator('header').getByText('Audist', { exact: true })).toBeVisible()
+    await expect(page.getByRole('complementary').getByText('audist')).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Permissions Required' })).not.toBeVisible()
 
     await app.close()
