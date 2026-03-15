@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { SessionMeta } from '../../../../preload/index.d'
 import { useRecorderContext } from '../../contexts/RecorderContext'
+import { useKeybindings } from '../../hooks/useKeybindings'
 import SessionListItem from './SessionListItem'
 
 interface SessionListProps {
@@ -36,6 +37,23 @@ export default function SessionList({ activeSessionId, onSelectSession }: Sessio
   }, [reload])
 
   const isRecording = recorderState === 'recording' || recorderState === 'stopping'
+
+  const completeSessions = sessions.filter((s) => s.status === 'complete')
+
+  useKeybindings({
+    SESSION_SELECT_NEXT: () => {
+      if (completeSessions.length === 0) return
+      const idx = completeSessions.findIndex((s) => s.id === activeSessionId)
+      const next = completeSessions[idx + 1] ?? completeSessions[0]
+      onSelectSession(next)
+    },
+    SESSION_SELECT_PREV: () => {
+      if (completeSessions.length === 0) return
+      const idx = completeSessions.findIndex((s) => s.id === activeSessionId)
+      const prev = completeSessions[idx - 1] ?? completeSessions[completeSessions.length - 1]
+      onSelectSession(prev)
+    }
+  })
 
   return (
     <div className="flex flex-col gap-0.5 px-2">
