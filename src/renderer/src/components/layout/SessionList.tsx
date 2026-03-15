@@ -41,12 +41,15 @@ export default function SessionList({ activeSessionId, onSelectSession }: Sessio
     <div className="flex flex-col gap-0.5 px-2">
       {/* In-progress recording item */}
       {isRecording && (
-        <div className="flex items-start gap-2.5 px-[10px] py-2.5 rounded-[var(--radius-sm)] bg-[var(--color-error)]/10 border-l-2 border-[var(--color-error)]">
-          <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 bg-[var(--color-error)] animate-pulse" />
-          <div>
-            <p className="text-xs font-semibold text-[var(--color-text-primary)]">Recording…</p>
-            <p className="text-xs text-[var(--color-text-muted)]">New session</p>
+        <div className="mx-3 my-2 px-4 py-2.5 rounded-md bg-[var(--color-recording)]/10 border border-[var(--color-recording)]/20">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-recording)] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-recording)]" />
+            </span>
+            <span className="text-xs font-medium text-[var(--color-recording)]">Recording…</span>
           </div>
+          <p className="text-xs text-[var(--color-text-tertiary)] pl-4">New session</p>
         </div>
       )}
 

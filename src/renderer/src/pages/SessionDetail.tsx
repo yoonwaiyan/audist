@@ -1,94 +1,110 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { TabBar, StatusBadge } from '../components/ui'
+import {
+  FolderOpen, Copy, Play, Pause, Check, Loader2, Sparkles, MoreHorizontal
+} from 'lucide-react'
 import type { SessionMeta } from '../../../preload/index.d'
 
-const TABS = [
-  { id: 'summary', label: 'Summary' },
-  { id: 'transcript', label: 'Transcript' }
-]
+const TABS = ['Summary', 'Transcript'] as const
+const SPEEDS = [0.75, 1, 1.25, 1.5, 2]
 
-function FolderIcon(): React.JSX.Element {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-    </svg>
-  )
-}
-
-function CopyIcon(): React.JSX.Element {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
-  )
-}
-
-function formatTimestamp(id: string): { date: string; time: string } {
+function formatTimestamp(id: string): { name: string; date: string; time: string } {
   const match = id.match(/^(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})$/)
-  if (!match) return { date: id, time: '' }
+  if (!match) return { name: id, date: id, time: '' }
   const [, year, month, day, hour, min] = match
   const dt = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(min))
-  return {
-    date: dt.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }),
-    time: dt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
-  }
+  const date = dt.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+  const time = dt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+  return { name: `${date} Recording`, date, time }
 }
 
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  if (h > 0) return `${h}h ${m}m`
-  if (m > 0) return `${m}m ${s}s`
-  return `${s}s`
+function formatTime(s: number): string {
+  const m = Math.floor(s / 60)
+  const sec = s % 60
+  return `${m}:${String(sec).padStart(2, '0')}`
 }
 
-// Render a transcript line like "[00:01:34] some text" with accent-coloured timestamps
-function TranscriptLine({ line }: { line: string }): React.JSX.Element {
-  const match = line.match(/^(\[\d{2}:\d{2}:\d{2}\])\s*(.*)$/)
-  if (!match) return <p className="text-[var(--color-text-muted)]">{line}</p>
-  const [, ts, text] = match
+function TranscriptParagraph({ text }: { text: string }): React.JSX.Element {
+  const lines = text.split('\n').filter(Boolean)
   return (
-    <p>
-      <span className="text-[var(--color-accent)] select-all">{ts}</span>
-      {' '}
-      <span className="text-[var(--color-text-muted)]">{text}</span>
-    </p>
+    <div className="space-y-0.5">
+      {lines.map((line, i) => {
+        const match = line.match(/^(\[\d{2}:\d{2}:\d{2}\])\s+(\w[\w\s]*):\s+(.*)$/)
+        if (match) {
+          return (
+            <span key={i} className="block">
+              <span className="text-[var(--color-text-tertiary)]">{match[1]} </span>
+              <span className="text-[var(--color-accent)] font-medium">{match[2]}: </span>
+              <span className="text-[var(--color-text-primary)]">{match[3]}</span>
+            </span>
+          )
+        }
+        // fallback: timestamp-only line
+        const tsOnly = line.match(/^(\[\d{2}:\d{2}:\d{2}\])\s*(.*)$/)
+        if (tsOnly) {
+          return (
+            <span key={i} className="block">
+              <span className="text-[var(--color-accent)] select-all">{tsOnly[1]} </span>
+              <span className="text-[var(--color-text-muted)]">{tsOnly[2]}</span>
+            </span>
+          )
+        }
+        return (
+          <span key={i} className="block text-[var(--color-text-muted)]">{line}</span>
+        )
+      })}
+    </div>
   )
 }
 
 export default function SessionDetail(): React.JSX.Element {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
-  const sessionFromState = (location.state as { session?: SessionMeta } | null)?.session
 
-  const [session, setSession] = useState<SessionMeta | null>(sessionFromState ?? null)
-  const [activeTab, setActiveTab] = useState('summary')
+  const [session, setSession] = useState<SessionMeta | null>(null)
+  const [activeTab, setActiveTab] = useState<'Summary' | 'Transcript'>('Summary')
   const [summary, setSummary] = useState<string | null>(null)
   const [transcript, setTranscript] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  // If session wasn't passed via state (e.g. deep link), find it from the list
+  // Audio player state
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [playbackSpeed, setPlaybackSpeed] = useState(1)
+  const [speedOpen, setSpeedOpen] = useState(false)
+  const playIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Reset and load session whenever the route id changes
   useEffect(() => {
-    if (session || !id) return
+    if (!id) return
+    setSession(null)
+    setSummary(null)
+    setTranscript(null)
+    setCurrentTime(0)
+    setIsPlaying(false)
+
+    const fromState = (location.state as { session?: SessionMeta } | null)?.session
+    if (fromState?.id === id) {
+      setSession(fromState)
+      return
+    }
     window.api.session.list().then((list) => {
       const found = list.find((s) => s.id === id)
       if (found) setSession(found)
     })
-  }, [id, session])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
 
-  // Load summary and transcript once we have session dir
+  // Load summary and transcript once we have the session dir
   useEffect(() => {
     if (!session) return
     window.api.summary.read(session.dir).then(setSummary)
     window.api.transcription.read(session.dir).then(setTranscript)
-  }, [session])
+  }, [session?.dir])
 
-  // Reload summary/transcript when background processing completes
+  // Reload when background processing completes
   useEffect(() => {
     if (!session) return
     const unsubSC = window.api.summary.onComplete(({ sessionId }) => {
@@ -105,6 +121,20 @@ export default function SessionDetail(): React.JSX.Element {
     return () => { unsubSC(); unsubTC() }
   }, [session])
 
+  // Simulated audio playback
+  useEffect(() => {
+    if (!isPlaying || !session) return
+    playIntervalRef.current = setInterval(() => {
+      setCurrentTime((t) => {
+        if (t >= session.duration) { setIsPlaying(false); return session.duration }
+        return t + playbackSpeed
+      })
+    }, 1000)
+    return () => {
+      if (playIntervalRef.current) clearInterval(playIntervalRef.current)
+    }
+  }, [isPlaying, playbackSpeed, session])
+
   if (!session) {
     return (
       <div className="flex items-center justify-center h-full text-[var(--color-text-muted)] text-sm">
@@ -113,7 +143,9 @@ export default function SessionDetail(): React.JSX.Element {
     )
   }
 
-  const { date, time } = formatTimestamp(session.id)
+  const { name, date, time } = formatTimestamp(session.id)
+  const total = session.duration
+  const progressPct = total > 0 ? (currentTime / total) * 100 : 0
   const isTranscribed = session.status === 'complete' || session.status === 'summarising'
   const isSummarized = session.status === 'complete' && summary != null
 
@@ -131,71 +163,171 @@ export default function SessionDetail(): React.JSX.Element {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Header */}
-      <div className="px-6 pt-4 pb-3 shrink-0 border-b border-[var(--color-border)]">
-        {/* Title row */}
-        <div className="flex items-start justify-between gap-4">
-          <h1 className="text-[22px] font-bold text-[var(--color-text-primary)] leading-snug">
-            {date} Recording
-          </h1>
-          {/* Action icons */}
-          <div className="flex items-center gap-1 pt-0.5 shrink-0">
+      {/* Session header */}
+      <div className="border-b border-[var(--color-border)] px-5 py-3 shrink-0">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)] truncate">
+            {name}
+          </h2>
+          <div className="flex items-center gap-1 shrink-0 ml-3">
             <button
               onClick={handleOpenFolder}
-              title="Open in Finder"
-              className="p-1.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-surface)] transition-colors cursor-default"
+              title="Reveal in Finder"
+              className="p-1.5 hover:bg-[var(--color-bg-surface-hover)] rounded transition-colors cursor-default"
             >
-              <FolderIcon />
+              <FolderOpen className="w-4 h-4 text-[var(--color-text-secondary)]" />
             </button>
             <button
               onClick={handleCopy}
               title={copied ? 'Copied!' : 'Copy summary'}
               disabled={!summary}
-              className="p-1.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-surface)] disabled:opacity-30 transition-colors cursor-default"
+              className="p-1.5 hover:bg-[var(--color-bg-surface-hover)] rounded transition-colors disabled:opacity-30 cursor-default"
             >
-              <CopyIcon />
+              <Copy className="w-4 h-4 text-[var(--color-text-secondary)]" />
+            </button>
+            <button className="p-1.5 hover:bg-[var(--color-bg-surface-hover)] rounded transition-colors cursor-default">
+              <MoreHorizontal className="w-4 h-4 text-[var(--color-text-secondary)]" />
             </button>
           </div>
         </div>
 
-        {/* Metadata row */}
-        <div className="flex items-center gap-1.5 mt-1 text-xs text-[var(--color-text-muted)]">
-          <span>{date}</span>
-          <span aria-hidden="true">·</span>
-          <span>{time}</span>
-          <span aria-hidden="true">·</span>
-          <span>{formatDuration(session.duration)}</span>
-        </div>
+        {/* Meta row */}
+        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+          <span className="text-[11px] text-[var(--color-text-primary)]/60">{date}</span>
+          <span className="text-[var(--color-border)]/50 text-[10px]">·</span>
+          <span className="text-[11px] text-[var(--color-text-primary)]/60">{time}</span>
+          <span className="text-[var(--color-border)]/50 text-[10px]">·</span>
+          <span className="font-mono text-[11px] text-[var(--color-text-primary)]/60">
+            {formatTime(session.duration)}
+          </span>
+          <span className="text-[var(--color-border)]/50 text-[10px]">·</span>
 
-        {/* Status badges */}
-        <div className="flex items-center gap-2 mt-2">
-          {isTranscribed && <StatusBadge variant="transcribed" />}
-          {isSummarized && <StatusBadge variant="summarized" />}
-          {session.status === 'transcribing' && (
-            <span className="text-xs text-[var(--color-text-muted)] animate-pulse">Transcribing…</span>
+          {/* Transcription status */}
+          {session.status === 'transcribing' ? (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--color-accent-secondary)]/15 text-[var(--color-accent-secondary)] border border-[var(--color-accent-secondary)]/20">
+              <Loader2 className="w-2.5 h-2.5 animate-spin" />
+              Transcribing
+            </span>
+          ) : isTranscribed ? (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--color-success)]/12 text-[var(--color-success)] border border-[var(--color-success)]/20">
+              <Check className="w-2.5 h-2.5" />
+              Transcribed
+            </span>
+          ) : null}
+
+          {session.status !== 'transcribing' && (
+            <>
+              <span className="text-[var(--color-border)]/50 text-[10px]">·</span>
+              {session.status === 'summarising' ? (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--color-accent)]/15 text-[var(--color-accent)] border border-[var(--color-accent)]/20">
+                  <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                  Summarising…
+                </span>
+              ) : isSummarized ? (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--color-accent)]/12 text-[var(--color-accent)] border border-[var(--color-accent)]/20">
+                  <Sparkles className="w-2.5 h-2.5" />
+                  Summarized
+                </span>
+              ) : null}
+            </>
           )}
-          {session.status === 'summarising' && (
-            <span className="text-xs text-[var(--color-text-muted)] animate-pulse">Summarising…</span>
-          )}
+
           {session.status === 'error' && (
-            <span className="text-xs text-[var(--color-error)]">{session.error ?? 'Error'}</span>
+            <span className="text-[11px] text-[var(--color-error)]">
+              {session.error ?? 'Error'}
+            </span>
           )}
         </div>
       </div>
 
-      {/* Tab bar */}
-      <TabBar
-        tabs={TABS}
-        value={activeTab}
-        onChange={setActiveTab}
-        className="px-6 shrink-0"
-      />
+      {/* Audio player */}
+      <div className="border-b border-[var(--color-border)] px-5 py-3 bg-[var(--color-bg-surface)] shrink-0">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsPlaying(!isPlaying)}
+            className="w-8 h-8 rounded-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] flex items-center justify-center transition-colors shrink-0 cursor-default"
+          >
+            {isPlaying
+              ? <Pause className="w-4 h-4 text-white" />
+              : <Play className="w-4 h-4 text-white ml-0.5" />
+            }
+          </button>
 
-      {/* Tab content */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        {activeTab === 'summary' && (
+          <span className="text-xs font-mono text-[var(--color-text-secondary)] tabular-nums shrink-0">
+            {formatTime(currentTime)}
+          </span>
+
+          {/* Scrubber */}
+          <div className="flex-1 relative group">
+            <div className="h-1 bg-[var(--color-border)] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[var(--color-accent)] rounded-full transition-all"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={total}
+              value={currentTime}
+              onChange={(e) => setCurrentTime(Number(e.target.value))}
+              className="absolute inset-0 w-full opacity-0 cursor-pointer h-full"
+            />
+          </div>
+
+          <span className="text-xs font-mono text-[var(--color-text-secondary)] tabular-nums shrink-0">
+            {formatTime(total)}
+          </span>
+
+          {/* Speed selector */}
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setSpeedOpen(!speedOpen)}
+              className="text-xs font-mono text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] px-2 py-1 rounded hover:bg-[var(--color-bg-surface-hover)] transition-colors cursor-default"
+            >
+              {playbackSpeed}×
+            </button>
+            {speedOpen && (
+              <div className="absolute right-0 bottom-full mb-1 bg-[var(--color-bg-surface-hover)] border border-[var(--color-border)] rounded-lg shadow-lg py-1 z-50 min-w-[64px]">
+                {SPEEDS.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => { setPlaybackSpeed(s); setSpeedOpen(false) }}
+                    className={`w-full text-center px-3 py-1.5 text-xs font-mono hover:bg-[var(--color-bg-surface)] transition-colors cursor-default ${
+                      s === playbackSpeed ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]'
+                    }`}
+                  >
+                    {s}×
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="border-b border-[var(--color-border)] px-5 flex gap-4 shrink-0 bg-[var(--color-bg-surface)]">
+        {TABS.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`py-2.5 text-sm font-medium border-b-2 transition-colors cursor-default ${
+              activeTab === tab
+                ? 'border-[var(--color-accent)] text-[var(--color-text-primary)]'
+                : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-6 py-5">
+        {activeTab === 'Summary' && (
           summary ? (
-            <div className="prose prose-sm max-w-none text-[var(--color-text-primary)] [&_h1]:text-lg [&_h1]:font-bold [&_h1]:text-[var(--color-text-primary)] [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-[var(--color-text-primary)] [&_h3]:text-sm [&_h3]:font-medium [&_h3]:text-[var(--color-text-primary)] [&_p]:text-[var(--color-text-muted)] [&_li]:text-[var(--color-text-muted)] [&_strong]:text-[var(--color-text-primary)] [&_a]:text-[var(--color-accent)] [&_hr]:border-[var(--color-border)]">
+            <div className="prose prose-sm max-w-none text-[var(--color-text-primary)] [&_h1]:text-base [&_h1]:font-bold [&_h1]:text-[var(--color-text-primary)] [&_h1]:mb-3 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-[var(--color-text-primary)] [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:text-[var(--color-text-secondary)] [&_h3]:mt-3 [&_h3]:mb-1 [&_p]:text-sm [&_p]:text-[var(--color-text-secondary)] [&_p]:mb-1 [&_li]:text-sm [&_li]:text-[var(--color-text-secondary)] [&_strong]:text-[var(--color-text-primary)] [&_a]:text-[var(--color-accent)] [&_hr]:border-[var(--color-border)]">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{summary}</ReactMarkdown>
             </div>
           ) : (
@@ -205,11 +337,11 @@ export default function SessionDetail(): React.JSX.Element {
           )
         )}
 
-        {activeTab === 'transcript' && (
+        {activeTab === 'Transcript' && (
           transcript ? (
-            <div className="font-mono text-xs leading-relaxed space-y-1">
-              {transcript.split('\n').filter(Boolean).map((line, i) => (
-                <TranscriptLine key={i} line={line} />
+            <div className="font-mono text-sm leading-relaxed space-y-3">
+              {transcript.split('\n\n').filter(Boolean).map((para, i) => (
+                <TranscriptParagraph key={i} text={para} />
               ))}
             </div>
           ) : (

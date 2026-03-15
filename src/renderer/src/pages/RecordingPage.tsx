@@ -37,7 +37,10 @@ export default function RecordingPage(): React.JSX.Element {
     <div className="flex flex-col items-center justify-center h-full gap-8 px-8 select-none">
       {/* Timer */}
       <div className="flex items-center gap-2.5">
-        <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-error)] animate-pulse shrink-0" />
+        <span className="relative flex h-3 w-3 shrink-0">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-recording opacity-75" />
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-recording" />
+        </span>
         <span className="text-5xl font-bold font-mono text-[var(--color-text-primary)] tabular-nums tracking-tight">
           {formatElapsed(elapsed)}
         </span>

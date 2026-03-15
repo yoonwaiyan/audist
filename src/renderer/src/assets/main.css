@@ -30,6 +30,17 @@
   --color-success: var(--color-success);
   --color-warning: var(--color-warning);
   --color-error: var(--color-error);
+  --color-recording: var(--color-recording);
+
+  /* Surface aliases — matches Figma token names */
+  --color-surface: var(--color-bg-surface);
+  --color-surface-raised: var(--color-bg-surface-hover);
+
+  /* Extended text */
+  --color-text-tertiary: var(--color-text-tertiary);
+
+  /* Secondary accent */
+  --color-accent-secondary: var(--color-accent-secondary);
 
   /* Radius */
   --radius-sm: var(--radius-sm);
