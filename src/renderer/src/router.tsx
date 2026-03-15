@@ -1,7 +1,8 @@
 import { createHashRouter, redirect } from 'react-router-dom'
-import MainLayout from './layouts/MainLayout'
+import AppShell from './components/layout/AppShell'
 import PrefsLayout from './layouts/PrefsLayout'
 import SessionListPage from './pages/SessionListPage'
+import SessionDetail from './pages/SessionDetail'
 import SetupPage from './pages/SetupPage'
 import PermissionsPage from './pages/PermissionsPage'
 import WhisperSetupPage from './pages/WhisperSetupPage'
@@ -30,9 +31,12 @@ async function requireSetup(): Promise<Response | null> {
 const router = createHashRouter([
   {
     path: '/',
-    element: <MainLayout />,
+    element: <AppShell />,
     loader: requireSetup,
-    children: [{ index: true, element: <SessionListPage /> }]
+    children: [
+      { index: true, element: <SessionListPage /> },
+      { path: 'sessions/:id', element: <SessionDetail /> }
+    ]
   },
   {
     path: '/setup',

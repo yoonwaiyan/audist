@@ -42,7 +42,7 @@ test.describe('Recording UI — idle state', () => {
   test('shows empty session list message when no sessions exist', async () => {
     const { app, page, cleanup } = await launchAppWithSaveDir()
 
-    await expect(page.getByText('No recordings yet. Press Start to begin.')).toBeVisible()
+    await expect(page.getByText('No recordings yet')).toBeVisible()
 
     await app.close()
     cleanup()

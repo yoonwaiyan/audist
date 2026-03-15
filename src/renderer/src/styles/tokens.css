@@ -28,6 +28,13 @@
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
+  --color-recording: #ef4444;  /* Active recording indicator */
+
+  /* Extended text */
+  --color-text-tertiary: #4a4e6a;
+
+  /* Secondary accent (blue) */
+  --color-accent-secondary: #6a8fff;
 
   /* Radius */
   --radius-sm: 6px;    /* Buttons, inputs */
