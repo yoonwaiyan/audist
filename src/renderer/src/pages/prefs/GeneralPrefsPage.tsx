@@ -92,7 +92,7 @@ export default function GeneralPrefsPage(): React.JSX.Element {
           <button
             onClick={handleChange}
             disabled={picking}
-            className="shrink-0 px-3 py-1.5 rounded-md text-xs font-medium
+            className="shrink-0 px-3 py-1.5 rounded text-xs font-medium
               bg-[var(--color-bg-base)] border border-[var(--color-border)]
               text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]
               hover:border-[var(--color-accent)]/50 transition-colors

@@ -61,7 +61,7 @@ export default function PrefsLayout(): React.JSX.Element {
                 end={to === '/prefs'}
                 className={({ isActive }) =>
                   [
-                    'flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors [-webkit-app-region:no-drag]',
+                    'flex items-center gap-2.5 px-3 py-2 rounded text-sm font-medium transition-colors [-webkit-app-region:no-drag]',
                     isActive
                       ? 'bg-[var(--color-bg-surface-hover)] text-[var(--color-text-primary)]'
                       : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-surface)]'
