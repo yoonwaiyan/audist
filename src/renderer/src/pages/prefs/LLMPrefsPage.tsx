@@ -124,11 +124,11 @@ function ApiKeyField({
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs text-[var(--color-text-muted)]">{label}</label>
+      <label className="text-sm font-medium text-[var(--color-text-primary)]">{label}</label>
       <div className="flex items-center gap-2">
         {isSet && !editing ? (
           <>
-            <span className="flex-1 px-3 py-1.5 rounded bg-[var(--color-bg-base)] border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] font-mono">
+            <span className="flex-1 px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-muted)] font-mono">
               ••••••••••••••••
             </span>
             <button
@@ -154,9 +154,9 @@ function ApiKeyField({
               onChange={(e) => handleChange(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSave()}
               placeholder="Paste API key…"
-              className="flex-1 px-3 py-1.5 rounded bg-[var(--color-bg-base)] border border-[var(--color-border)]
-                text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]
-                focus:outline-none focus:border-[var(--color-accent)] transition-colors"
+              className="flex-1 px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] font-mono
+                focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)] transition-colors"
             />
             <button
               onClick={handleSave}
@@ -328,6 +328,20 @@ export default function LLMPrefsPage(): React.JSX.Element {
       {/* OpenAI */}
       {tab === 'openai' && (
         <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-[var(--color-text-primary)]">Model</label>
+            <select
+              value={models.openai ?? providerModels.openai?.[0] ?? ''}
+              onChange={(e) => handleModelChange('openai', e.target.value)}
+              className="w-full px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                text-sm text-[var(--color-text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]
+                cursor-default transition-colors"
+            >
+              {(providerModels.openai ?? []).map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </div>
           <ApiKeyField
             label="API Key"
             credKey="openai.apiKey"
@@ -336,20 +350,6 @@ export default function LLMPrefsPage(): React.JSX.Element {
             onClear={handleClearCredential}
             onEdit={() => resetTestState('openai')}
           />
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-[var(--color-text-muted)]">Model</label>
-            <select
-              value={models.openai ?? providerModels.openai?.[0] ?? ''}
-              onChange={(e) => handleModelChange('openai', e.target.value)}
-              className="w-48 px-3 py-1.5 rounded bg-[var(--color-bg-base)] border border-[var(--color-border)]
-                text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]
-                cursor-default transition-colors"
-            >
-              {(providerModels.openai ?? []).map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          </div>
           <TestConnectionButton
             provider="openai"
             isConfigured={isProviderConfigured('openai')}
@@ -363,6 +363,20 @@ export default function LLMPrefsPage(): React.JSX.Element {
       {/* Anthropic */}
       {tab === 'anthropic' && (
         <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-[var(--color-text-primary)]">Model</label>
+            <select
+              value={models.anthropic ?? providerModels.anthropic?.[0] ?? ''}
+              onChange={(e) => handleModelChange('anthropic', e.target.value)}
+              className="w-full px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                text-sm text-[var(--color-text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]
+                cursor-default transition-colors"
+            >
+              {(providerModels.anthropic ?? []).map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </div>
           <ApiKeyField
             label="API Key"
             credKey="anthropic.apiKey"
@@ -371,20 +385,6 @@ export default function LLMPrefsPage(): React.JSX.Element {
             onClear={handleClearCredential}
             onEdit={() => resetTestState('anthropic')}
           />
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-[var(--color-text-muted)]">Model</label>
-            <select
-              value={models.anthropic ?? providerModels.anthropic?.[0] ?? ''}
-              onChange={(e) => handleModelChange('anthropic', e.target.value)}
-              className="w-48 px-3 py-1.5 rounded bg-[var(--color-bg-base)] border border-[var(--color-border)]
-                text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]
-                cursor-default transition-colors"
-            >
-              {(providerModels.anthropic ?? []).map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          </div>
           <TestConnectionButton
             provider="anthropic"
             isConfigured={isProviderConfigured('anthropic')}
@@ -399,7 +399,7 @@ export default function LLMPrefsPage(): React.JSX.Element {
       {tab === 'compatible' && (
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-[var(--color-text-muted)]">Base URL</label>
+            <label className="text-sm font-medium text-[var(--color-text-primary)]">Base URL</label>
             <input
               type="text"
               value={compatibleBaseUrl}
@@ -413,19 +413,23 @@ export default function LLMPrefsPage(): React.JSX.Element {
                 }
               }}
               placeholder="http://localhost:11434/v1"
-              className="w-72 px-3 py-1.5 rounded bg-[var(--color-bg-base)] border border-[var(--color-border)]
-                text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]
-                focus:outline-none focus:border-[var(--color-accent)] transition-colors"
+              className="w-full px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] font-mono
+                focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)] transition-colors"
             />
           </div>
-          <ApiKeyField
-            label="API Key (optional)"
-            credKey="compatible.apiKey"
-            isSet={!!credentialStatus['compatible.apiKey']}
-            onSave={handleSaveCredential}
-            onClear={handleClearCredential}
-            onEdit={() => resetTestState('compatible')}
-          />
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-[var(--color-text-primary)]">Model name</label>
+            <input
+              type="text"
+              value={models.compatible ?? ''}
+              onChange={(e) => handleModelChange('compatible', e.target.value)}
+              placeholder="llama3"
+              className="w-full px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]
+                focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)] transition-colors"
+            />
+          </div>
           <TestConnectionButton
             provider="compatible"
             isConfigured={isProviderConfigured('compatible')}
@@ -433,18 +437,6 @@ export default function LLMPrefsPage(): React.JSX.Element {
             state={testState.compatible}
             result={testResult.compatible}
           />
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-[var(--color-text-muted)]">Model</label>
-            <input
-              type="text"
-              value={models.compatible ?? ''}
-              onChange={(e) => handleModelChange('compatible', e.target.value)}
-              placeholder="e.g. llama3, mistral"
-              className="w-48 px-3 py-1.5 rounded bg-[var(--color-bg-base)] border border-[var(--color-border)]
-                text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]
-                focus:outline-none focus:border-[var(--color-accent)] transition-colors"
-            />
-          </div>
         </div>
       )}
     </div>
