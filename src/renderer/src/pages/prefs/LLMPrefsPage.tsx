@@ -309,15 +309,15 @@ export default function LLMPrefsPage(): React.JSX.Element {
       </p>
 
       {/* Provider tab bar */}
-      <div className="flex items-center gap-1 p-1 bg-[var(--color-bg-surface)] rounded-lg border border-[var(--color-border)] mb-6">
+      <div className="flex gap-4 border-b border-[var(--color-border)] mb-6">
         {PROVIDERS.map(({ id, label }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors cursor-default
+            className={`py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors cursor-default
               ${tab === id
-                ? 'bg-[var(--color-accent)] text-white'
-                : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+                ? 'border-[var(--color-accent)] text-[var(--color-text-primary)]'
+                : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
               }`}
           >
             {label}
