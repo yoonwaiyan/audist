@@ -40,16 +40,17 @@ function TestConnectionButton({
 }: TestConnectionButtonProps): React.JSX.Element {
   const label = (): string => {
     if (state === 'loading') return 'Testing…'
-    if (state === 'success' && result?.success)
-      return `Connected · ${result.latencyMs} ms`
+    if (state === 'success' && result?.success) return `Connected · ${result.latencyMs} ms`
     if (state === 'error' && result && !result.success)
       return ERROR_LABELS[result.code] ?? 'Failed'
     return 'Test Connection'
   }
 
   const colorClass = (): string => {
-    if (state === 'success') return 'bg-[var(--color-success)]/20 text-[var(--color-success)] border-[var(--color-success)]/30'
-    if (state === 'error') return 'bg-[var(--color-error)]/20 text-[var(--color-error)] border-[var(--color-error)]/30'
+    if (state === 'success')
+      return 'bg-[var(--color-success)]/20 text-[var(--color-success)] border-[var(--color-success)]/30'
+    if (state === 'error')
+      return 'bg-[var(--color-error)]/20 text-[var(--color-error)] border-[var(--color-error)]/30'
     return 'bg-[var(--color-bg-base)] text-[var(--color-text-secondary)] border-[var(--color-border)]'
   }
 
@@ -66,7 +67,8 @@ function TestConnectionButton({
         {state === 'loading' && (
           <span className="inline-block w-3 h-3 border border-current border-t-transparent rounded-full animate-spin mr-1.5 align-middle" />
         )}
-        {prefix}{label()}
+        {prefix}
+        {label()}
       </button>
 
       {state === 'error' && result && !result.success && (
@@ -80,7 +82,7 @@ function TestConnectionButton({
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API Key Field
-// ─────────────────────────────────────────name────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface ApiKeyFieldProps {
   label: string
@@ -91,7 +93,14 @@ interface ApiKeyFieldProps {
   onEdit: () => void
 }
 
-function ApiKeyField({ label, credKey, isSet, onSave, onClear, onEdit }: ApiKeyFieldProps): React.JSX.Element {
+function ApiKeyField({
+  label,
+  credKey,
+  isSet,
+  onSave,
+  onClear,
+  onEdit
+}: ApiKeyFieldProps): React.JSX.Element {
   const [value, setValue] = useState('')
   const [editing, setEditing] = useState(false)
 
@@ -160,7 +169,10 @@ function ApiKeyField({ label, credKey, isSet, onSave, onClear, onEdit }: ApiKeyF
             </button>
             {isSet && (
               <button
-                onClick={() => { setEditing(false); setValue('') }}
+                onClick={() => {
+                  setEditing(false)
+                  setValue('')
+                }}
                 className="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
                   text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors cursor-default"
               >
@@ -175,29 +187,21 @@ function ApiKeyField({ label, credKey, isSet, onSave, onClear, onEdit }: ApiKeyF
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Provider section wrapper
-// ─────────────────────────────────────────────────────────────────────────────
-
-function SectionDivider(): React.JSX.Element {
-  return <div className="border-t border-[var(--color-border)] my-6" />
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function LLMPrefsPage(): React.JSX.Element {
-  const [activeProvider, setActiveProvider] = useState<ProviderName>('openai')
+  const [tab, setTab] = useState<ProviderName>('openai')
   const [models, setModels] = useState<Partial<Record<ProviderName, string>>>({
     openai: 'gpt-4o-mini',
     anthropic: 'claude-haiku-4-5'
   })
   const [credentialStatus, setCredentialStatus] = useState<Record<string, boolean>>({})
   const [compatibleBaseUrl, setCompatibleBaseUrl] = useState('')
-  // null = not yet verified; string[] = verified (populated after successful test)
-  const [providerModels, setProviderModels] = useState<Partial<Record<ProviderName, string[] | null>>>({})
+  const [providerModels, setProviderModels] = useState<
+    Partial<Record<ProviderName, string[] | null>>
+  >({})
 
-  // Per-provider test connection state
   const [testState, setTestState] = useState<Record<ProviderName, TestState>>({
     openai: 'idle',
     anthropic: 'idle',
@@ -210,10 +214,8 @@ export default function LLMPrefsPage(): React.JSX.Element {
   })
   const successTimers = useRef<Partial<Record<ProviderName, ReturnType<typeof setTimeout>>>>({})
 
-  // Load initial state
   useEffect(() => {
     void window.api.settings.getLLMSettings().then((s) => {
-      if (s.activeProvider) setActiveProvider(s.activeProvider)
       if (s.models) setModels(s.models)
       if (s.compatibleBaseUrl) setCompatibleBaseUrl(s.compatibleBaseUrl)
     })
@@ -243,7 +245,6 @@ export default function LLMPrefsPage(): React.JSX.Element {
       if (result.success) {
         setProviderModels((prev) => ({ ...prev, [p]: result.models ?? [] }))
       }
-
       if (result.success) {
         if (successTimers.current[p]) clearTimeout(successTimers.current[p])
         successTimers.current[p] = setTimeout(() => {
@@ -260,11 +261,6 @@ export default function LLMPrefsPage(): React.JSX.Element {
     }
   }, [])
 
-  const handleProviderChange = (p: ProviderName): void => {
-    setActiveProvider(p)
-    void window.api.settings.setProvider(p)
-  }
-
   const handleModelChange = (provider: ProviderName, model: string): void => {
     setModels((prev) => ({ ...prev, [provider]: model }))
     void window.api.settings.setModel(provider, model)
@@ -272,7 +268,6 @@ export default function LLMPrefsPage(): React.JSX.Element {
 
   const handleSaveCredential = (key: string, value: string): void => {
     void window.api.settings.setCredential(key, value)
-    // Reset test state when credential changes
     const provider = key.split('.')[0] as ProviderName
     resetTestState(provider)
   }
@@ -296,57 +291,42 @@ export default function LLMPrefsPage(): React.JSX.Element {
     void window.api.settings.testConnection(provider)
   }
 
-  const isProviderConfigured = useCallback((provider: ProviderName): boolean => {
-    if (provider === 'compatible') {
-      return !!compatibleBaseUrl.trim()
-    }
-    return !!credentialStatus[`${provider}.apiKey`]
-  }, [credentialStatus, compatibleBaseUrl])
+  const isProviderConfigured = useCallback(
+    (provider: ProviderName): boolean => {
+      if (provider === 'compatible') return !!compatibleBaseUrl.trim()
+      return !!credentialStatus[`${provider}.apiKey`]
+    },
+    [credentialStatus, compatibleBaseUrl]
+  )
 
   return (
     <div className="max-w-lg">
-      <h2 className="text-base font-semibold text-[var(--color-text-primary)] mb-1">AI / LLM</h2>
+      <h2 className="text-base font-semibold text-[var(--color-text-primary)] mb-1">
+        Language Model
+      </h2>
       <p className="text-xs text-[var(--color-text-muted)] mb-6">
         Configure your AI provider. API keys are encrypted and never leave your device.
       </p>
 
-      {/* Active provider tab bar */}
-      {(() => {
-        const verifiedProviders = PROVIDERS.filter(({ id }) => providerModels[id] !== null && providerModels[id] !== undefined)
-        return (
-          <div className="flex flex-col gap-1.5 mb-6">
-            <span className="text-xs text-[var(--color-text-muted)]">Active provider</span>
-            {verifiedProviders.length === 0 ? (
-              <p className="text-xs text-[var(--color-text-muted)] italic">
-                Test a connection below to make a provider available.
-              </p>
-            ) : (
-              <div className="flex items-center gap-1 p-1 bg-[var(--color-bg-surface)] rounded-lg border border-[var(--color-border)]">
-                {verifiedProviders.map(({ id, label }) => {
-                  const isActive = activeProvider === id || (!verifiedProviders.some((p) => p.id === activeProvider) && verifiedProviders[0].id === id)
-                  return (
-                    <button
-                      key={id}
-                      onClick={() => handleProviderChange(id)}
-                      className={`px-3 py-1.5 rounded text-xs font-medium transition-colors cursor-default
-                        ${isActive
-                          ? 'bg-[var(--color-accent)] text-white'
-                          : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
-                        }`}
-                    >
-                      {label}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )
-      })()}
+      {/* Provider tab bar */}
+      <div className="flex items-center gap-1 p-1 bg-[var(--color-bg-surface)] rounded-lg border border-[var(--color-border)] mb-6">
+        {PROVIDERS.map(({ id, label }) => (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-colors cursor-default
+              ${tab === id
+                ? 'bg-[var(--color-accent)] text-white'
+                : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+              }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
-      {/* ── OpenAI ──────────────────────────────────────────────────────── */}
-      <div>
-        <h3 className="text-sm font-medium text-[var(--color-text-primary)] mb-3">OpenAI</h3>
+      {/* OpenAI */}
+      {tab === 'openai' && (
         <div className="flex flex-col gap-4">
           <ApiKeyField
             label="API Key"
@@ -355,13 +335,6 @@ export default function LLMPrefsPage(): React.JSX.Element {
             onSave={handleSaveCredential}
             onClear={handleClearCredential}
             onEdit={() => resetTestState('openai')}
-          />
-          <TestConnectionButton
-            provider="openai"
-            isConfigured={isProviderConfigured('openai')}
-            onTest={() => handleTest('openai')}
-            state={testState.openai}
-            result={testResult.openai}
           />
           <div className="flex flex-col gap-1">
             <label className="text-xs text-[var(--color-text-muted)]">Model</label>
@@ -377,14 +350,18 @@ export default function LLMPrefsPage(): React.JSX.Element {
               ))}
             </select>
           </div>
+          <TestConnectionButton
+            provider="openai"
+            isConfigured={isProviderConfigured('openai')}
+            onTest={() => handleTest('openai')}
+            state={testState.openai}
+            result={testResult.openai}
+          />
         </div>
-      </div>
+      )}
 
-      <SectionDivider />
-
-      {/* ── Anthropic ───────────────────────────────────────────────────── */}
-      <div>
-        <h3 className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Anthropic</h3>
+      {/* Anthropic */}
+      {tab === 'anthropic' && (
         <div className="flex flex-col gap-4">
           <ApiKeyField
             label="API Key"
@@ -393,13 +370,6 @@ export default function LLMPrefsPage(): React.JSX.Element {
             onSave={handleSaveCredential}
             onClear={handleClearCredential}
             onEdit={() => resetTestState('anthropic')}
-          />
-          <TestConnectionButton
-            provider="anthropic"
-            isConfigured={isProviderConfigured('anthropic')}
-            onTest={() => handleTest('anthropic')}
-            state={testState.anthropic}
-            result={testResult.anthropic}
           />
           <div className="flex flex-col gap-1">
             <label className="text-xs text-[var(--color-text-muted)]">Model</label>
@@ -415,19 +385,18 @@ export default function LLMPrefsPage(): React.JSX.Element {
               ))}
             </select>
           </div>
+          <TestConnectionButton
+            provider="anthropic"
+            isConfigured={isProviderConfigured('anthropic')}
+            onTest={() => handleTest('anthropic')}
+            state={testState.anthropic}
+            result={testResult.anthropic}
+          />
         </div>
-      </div>
+      )}
 
-      <SectionDivider />
-
-      {/* ── OpenAI-compatible ───────────────────────────────────────────── */}
-      <div>
-        <h3 className="text-sm font-medium text-[var(--color-text-primary)] mb-3">
-          OpenAI-compatible
-          <span className="ml-2 text-xs font-normal text-[var(--color-text-muted)]">
-            Ollama, LM Studio, etc.
-          </span>
-        </h3>
+      {/* OpenAI-compatible */}
+      {tab === 'compatible' && (
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-xs text-[var(--color-text-muted)]">Base URL</label>
@@ -477,7 +446,7 @@ export default function LLMPrefsPage(): React.JSX.Element {
             />
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

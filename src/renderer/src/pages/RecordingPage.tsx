@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Waveform from '../components/Waveform'
 import { useRecorderContext } from '../contexts/RecorderContext'
+import type { ProviderName } from '../../../preload/index.d'
+
+const PROVIDER_LABELS: Record<ProviderName, string> = {
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  compatible: 'OpenAI-compatible'
+}
 
 function formatElapsed(seconds: number): string {
   const h = Math.floor(seconds / 3600)
@@ -13,8 +20,15 @@ function formatElapsed(seconds: number): string {
 export default function RecordingPage(): React.JSX.Element {
   const { state, analyserRef, stopRecording } = useRecorderContext()
   const [elapsed, setElapsed] = useState(0)
+  const [activeProvider, setActiveProvider] = useState<ProviderName | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const isStopping = state === 'stopping'
+
+  useEffect(() => {
+    void window.api.settings.getLLMSettings().then((s) => {
+      if (s.activeProvider) setActiveProvider(s.activeProvider)
+    })
+  }, [])
 
   // Timer
   useEffect(() => {
@@ -60,10 +74,20 @@ export default function RecordingPage(): React.JSX.Element {
         )}
       </button>
 
-      {/* Template label */}
-      <p className="text-sm text-[var(--color-text-muted)]">
-        Using template: <span className="text-[var(--color-text-primary)] font-medium">General Meeting</span>
-      </p>
+      {/* Active settings labels */}
+      <div className="flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
+        <span>
+          Template: <span className="text-[var(--color-text-secondary)] font-medium">General Meeting</span>
+        </span>
+        {activeProvider && (
+          <>
+            <span className="text-[var(--color-border)]">·</span>
+            <span>
+              LLM: <span className="text-[var(--color-text-secondary)] font-medium">{PROVIDER_LABELS[activeProvider]}</span>
+            </span>
+          </>
+        )}
+      </div>
 
       {/* Waveform */}
       <Waveform active={!isStopping} analyserRef={analyserRef} />

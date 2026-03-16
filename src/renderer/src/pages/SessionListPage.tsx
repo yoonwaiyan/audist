@@ -1,5 +1,14 @@
+import { useEffect, useRef, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import { AppLogo } from '../components/ui'
 import { useRecorderContext } from '../contexts/RecorderContext'
+import type { ProviderName } from '../../../preload/index.d'
+
+const PROVIDER_LABELS: Record<ProviderName, string> = {
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  compatible: 'OpenAI-compatible'
+}
 
 function MicIcon(): React.JSX.Element {
   return (
@@ -13,6 +22,47 @@ function MicIcon(): React.JSX.Element {
 
 export default function SessionListPage(): React.JSX.Element {
   const { startRecording, error } = useRecorderContext()
+  const [activeProvider, setActiveProvider] = useState<ProviderName | null>(null)
+  const [verifiedProviders, setVerifiedProviders] = useState<ProviderName[]>([])
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    void window.api.settings.getLLMSettings().then((s) => {
+      if (s.activeProvider) setActiveProvider(s.activeProvider)
+    })
+
+    const allProviders: ProviderName[] = ['openai', 'anthropic', 'compatible']
+    void Promise.all(
+      allProviders.map(async (p) => ({ p, models: await window.api.settings.getProviderModels(p) }))
+    ).then((results) => {
+      const verified = results.filter((r) => r.models !== null).map((r) => r.p)
+      setVerifiedProviders(verified)
+    })
+  }, [])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!dropdownOpen) return
+    const handleClick = (e: MouseEvent): void => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [dropdownOpen])
+
+  const handleSelectProvider = (p: ProviderName): void => {
+    setActiveProvider(p)
+    void window.api.settings.setProvider(p)
+    setDropdownOpen(false)
+  }
+
+  const handleOpenLLMPrefs = (): void => {
+    setDropdownOpen(false)
+    window.electron.ipcRenderer.send('audist:prefs:open', { section: 'llm' })
+  }
 
   const handleStart = (): void => {
     void startRecording()
@@ -22,6 +72,60 @@ export default function SessionListPage(): React.JSX.Element {
     <div className="flex flex-col items-center justify-center h-full gap-6 px-8 select-none">
       {/* Logo */}
       <AppLogo size="lg" />
+
+      {/* LLM provider selector */}
+      <div ref={dropdownRef} className="relative">
+        <button
+          onClick={() => setDropdownOpen((o) => !o)}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--color-bg-surface-hover)]
+            border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]
+            hover:border-[var(--color-accent)]/50 transition-colors cursor-default"
+        >
+          <span className="text-[var(--color-text-muted)] text-xs">LLM:</span>
+          <span>
+            {activeProvider
+              ? PROVIDER_LABELS[activeProvider]
+              : verifiedProviders.length > 0
+                ? PROVIDER_LABELS[verifiedProviders[0]]
+                : 'Not configured'}
+          </span>
+          <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+        </button>
+
+        {dropdownOpen && (
+          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-52
+            bg-[var(--color-bg-surface-hover)] border border-[var(--color-border)]
+            rounded-lg shadow-lg py-1 z-50">
+            {verifiedProviders.length === 0 ? (
+              <p className="px-4 py-2 text-xs text-[var(--color-text-muted)] italic">
+                No provider verified yet.
+              </p>
+            ) : (
+              verifiedProviders.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => handleSelectProvider(p)}
+                  className="w-full text-left px-4 py-2 text-sm text-[var(--color-text-primary)]
+                    hover:bg-[var(--color-bg-surface)] transition-colors flex items-center justify-between cursor-default"
+                >
+                  {PROVIDER_LABELS[p]}
+                  {activeProvider === p && (
+                    <span className="text-[var(--color-accent)] text-xs">✓</span>
+                  )}
+                </button>
+              ))
+            )}
+            <div className="border-t border-[var(--color-border)] my-1" />
+            <button
+              onClick={handleOpenLLMPrefs}
+              className="w-full text-left px-4 py-2 text-sm text-[var(--color-accent)]
+                hover:bg-[var(--color-bg-surface)] transition-colors cursor-default"
+            >
+              Configure LLM Settings →
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Mic button */}
       <button
