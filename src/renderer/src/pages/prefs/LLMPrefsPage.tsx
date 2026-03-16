@@ -310,7 +310,7 @@ export default function LLMPrefsPage(): React.JSX.Element {
         Configure your AI provider. API keys are encrypted and never leave your device.
       </p>
 
-      {/* Provider selector */}
+      {/* Active provider tab bar */}
       {(() => {
         const verifiedProviders = PROVIDERS.filter(({ id }) => providerModels[id] !== null && providerModels[id] !== undefined)
         return (
@@ -321,17 +321,24 @@ export default function LLMPrefsPage(): React.JSX.Element {
                 Test a connection below to make a provider available.
               </p>
             ) : (
-              <select
-                value={verifiedProviders.some((p) => p.id === activeProvider) ? activeProvider : verifiedProviders[0].id}
-                onChange={(e) => handleProviderChange(e.target.value as ProviderName)}
-                className="w-48 px-3 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
-                  text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]
-                  cursor-default transition-colors"
-              >
-                {verifiedProviders.map(({ id, label }) => (
-                  <option key={id} value={id}>{label}</option>
-                ))}
-              </select>
+              <div className="flex items-center gap-1 p-1 bg-[var(--color-bg-surface)] rounded-lg border border-[var(--color-border)]">
+                {verifiedProviders.map(({ id, label }) => {
+                  const isActive = activeProvider === id || (!verifiedProviders.some((p) => p.id === activeProvider) && verifiedProviders[0].id === id)
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => handleProviderChange(id)}
+                      className={`px-3 py-1.5 rounded text-xs font-medium transition-colors cursor-default
+                        ${isActive
+                          ? 'bg-[var(--color-accent)] text-white'
+                          : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+                        }`}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
             )}
           </div>
         )

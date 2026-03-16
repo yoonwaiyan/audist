@@ -73,6 +73,8 @@ interface SettingsAPI {
   onCredentialStatus: (cb: (data: { key: string; isSet: boolean }) => void) => IpcUnsub
   testConnection: (provider: ProviderName) => Promise<void>
   onTestResult: (cb: (data: { provider: string; result: TestConnectionResult }) => void) => IpcUnsub
+  getSummarisationEnabled: () => Promise<boolean>
+  setSummarisationEnabled: (enabled: boolean) => Promise<void>
 }
 
 interface SummaryAPI {
