@@ -34,15 +34,22 @@ export function registerDirectoryHandlers(): void {
   ipcMain.handle(
     'audist:directory:select',
     async (event): Promise<{ path: string | null; error: string | null }> => {
-      const win = BrowserWindow.fromWebContents(event.sender)
-      const result = await dialog.showOpenDialog(win!, {
-        properties: ['openDirectory', 'createDirectory'],
-        title: 'Choose Save Folder',
-        buttonLabel: 'Select Folder'
-      })
-      if (result.canceled || result.filePaths.length === 0) return { path: null, error: null }
+      let rawSelected: string | null = null
 
-      const selected = normalize(result.filePaths[0])
+      if (process.env['AUDIST_TEST_SELECT_DIR']) {
+        rawSelected = process.env['AUDIST_TEST_SELECT_DIR']
+      } else {
+        const win = BrowserWindow.fromWebContents(event.sender)
+        const result = await dialog.showOpenDialog(win!, {
+          properties: ['openDirectory', 'createDirectory'],
+          title: 'Choose Save Folder',
+          buttonLabel: 'Select Folder'
+        })
+        if (result.canceled || result.filePaths.length === 0) return { path: null, error: null }
+        rawSelected = result.filePaths[0]
+      }
+
+      const selected = normalize(rawSelected)
 
       if (!existsSync(selected)) {
         return { path: null, error: 'Selected folder does not exist.' }
