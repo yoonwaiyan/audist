@@ -1,7 +1,22 @@
 import { test, expect } from '@playwright/test'
+import fs from 'fs'
 import path from 'path'
 import os from 'os'
 import { launchApp, launchAppWithSaveDir } from './helpers/electron'
+import type { Page } from '@playwright/test'
+import type { ElectronApplication } from '@playwright/test'
+
+async function openGeneralPrefsPage(
+  app: ElectronApplication,
+  mainPage: Page
+): Promise<Page> {
+  const [prefsPage] = await Promise.all([
+    app.waitForEvent('window'),
+    mainPage.getByTitle('Preferences (⌘,)').click()
+  ])
+  await prefsPage.waitForLoadState('domcontentloaded')
+  return prefsPage
+}
 
 test.describe('First launch (no save directory configured)', () => {
   test('lands on setup page with Choose Folder button', async () => {
@@ -76,5 +91,84 @@ test.describe('Subsequent launch (save directory configured)', () => {
 
     await app.close()
     cleanup()
+  })
+})
+
+test.describe('Change save directory — validation (AUD-40)', () => {
+  test('valid selection updates the displayed path', async () => {
+    const newDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-newdir-'))
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-')),
+      permissions: 'granted',
+      whisper: 'ready',
+      selectDir: newDir
+    })
+    try {
+      const prefsPage = await openGeneralPrefsPage(app, page)
+
+      await prefsPage.getByRole('button', { name: 'Change…' }).click()
+
+      await expect(prefsPage.getByText(newDir)).toBeVisible({ timeout: 3000 })
+      await expect(
+        prefsPage.getByText(/not writable|does not exist|application bundle/i)
+      ).not.toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(newDir, { recursive: true, force: true })
+    }
+  })
+
+  test('non-existent path shows inline error and preserves old path', async () => {
+    const originalDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    const missingDir = path.join(os.tmpdir(), 'audist-no-such-dir-' + Date.now())
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: originalDir,
+      permissions: 'granted',
+      whisper: 'ready',
+      selectDir: missingDir
+    })
+    try {
+      const prefsPage = await openGeneralPrefsPage(app, page)
+
+      await prefsPage.getByRole('button', { name: 'Change…' }).click()
+
+      await expect(prefsPage.getByText('Selected folder does not exist.')).toBeVisible({
+        timeout: 3000
+      })
+      await expect(prefsPage.getByText(originalDir)).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(originalDir, { recursive: true, force: true })
+    }
+  })
+
+  test('non-writable path shows inline error and preserves old path', async () => {
+    const originalDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    const readOnlyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-readonly-'))
+    fs.chmodSync(readOnlyDir, 0o444)
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: originalDir,
+      permissions: 'granted',
+      whisper: 'ready',
+      selectDir: readOnlyDir
+    })
+    try {
+      const prefsPage = await openGeneralPrefsPage(app, page)
+
+      await prefsPage.getByRole('button', { name: 'Change…' }).click()
+
+      await expect(prefsPage.getByText('Selected folder is not writable.')).toBeVisible({
+        timeout: 3000
+      })
+      await expect(prefsPage.getByText(originalDir)).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.chmodSync(readOnlyDir, 0o755)
+      fs.rmSync(originalDir, { recursive: true, force: true })
+      fs.rmSync(readOnlyDir, { recursive: true, force: true })
+    }
   })
 })

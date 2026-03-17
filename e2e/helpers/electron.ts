@@ -64,6 +64,8 @@ export async function launchApp(opts?: {
   llm?: 'success' | 'auth_error' | 'rate_limit' | 'connection_error'
   /** Seed extra LLM settings fields (e.g. { summarisationEnabled: false }) */
   llmSettings?: Record<string, unknown>
+  /** Mock the directory picker to return this path instead of showing the OS dialog */
+  selectDir?: string
 }): Promise<LaunchResult> {
   const tmpUserData = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-test-'))
 
@@ -88,7 +90,8 @@ export async function launchApp(opts?: {
       AUDIST_TEST_PERMISSIONS: permissionsOverride,
       AUDIST_TEST_WHISPER: whisperOverride,
       ...(opts?.testMode ? { AUDIST_TEST_MODE: '1' } : {}),
-      ...(opts?.llm ? { AUDIST_TEST_LLM: opts.llm } : {})
+      ...(opts?.llm ? { AUDIST_TEST_LLM: opts.llm } : {}),
+      ...(opts?.selectDir !== undefined ? { AUDIST_TEST_SELECT_DIR: opts.selectDir } : {})
     }
   })
 
