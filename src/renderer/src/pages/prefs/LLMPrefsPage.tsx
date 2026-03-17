@@ -40,16 +40,17 @@ function TestConnectionButton({
 }: TestConnectionButtonProps): React.JSX.Element {
   const label = (): string => {
     if (state === 'loading') return 'Testing…'
-    if (state === 'success' && result?.success)
-      return `Connected · ${result.latencyMs} ms`
+    if (state === 'success' && result?.success) return `Connected · ${result.latencyMs} ms`
     if (state === 'error' && result && !result.success)
       return ERROR_LABELS[result.code] ?? 'Failed'
     return 'Test Connection'
   }
 
   const colorClass = (): string => {
-    if (state === 'success') return 'bg-[var(--color-success)]/20 text-[var(--color-success)] border-[var(--color-success)]/30'
-    if (state === 'error') return 'bg-[var(--color-error)]/20 text-[var(--color-error)] border-[var(--color-error)]/30'
+    if (state === 'success')
+      return 'bg-[var(--color-success)]/20 text-[var(--color-success)] border-[var(--color-success)]/30'
+    if (state === 'error')
+      return 'bg-[var(--color-error)]/20 text-[var(--color-error)] border-[var(--color-error)]/30'
     return 'bg-[var(--color-bg-base)] text-[var(--color-text-secondary)] border-[var(--color-border)]'
   }
 
@@ -60,13 +61,14 @@ function TestConnectionButton({
       <button
         onClick={onTest}
         disabled={!isConfigured || state === 'loading'}
-        className={`self-start px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-default
+        className={`self-start px-3 py-1.5 rounded border text-xs font-medium transition-colors cursor-default
           disabled:opacity-40 disabled:cursor-not-allowed ${colorClass()}`}
       >
         {state === 'loading' && (
           <span className="inline-block w-3 h-3 border border-current border-t-transparent rounded-full animate-spin mr-1.5 align-middle" />
         )}
-        {prefix}{label()}
+        {prefix}
+        {label()}
       </button>
 
       {state === 'error' && result && !result.success && (
@@ -80,7 +82,7 @@ function TestConnectionButton({
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API Key Field
-// ─────────────────────────────────────────name────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface ApiKeyFieldProps {
   label: string
@@ -91,7 +93,14 @@ interface ApiKeyFieldProps {
   onEdit: () => void
 }
 
-function ApiKeyField({ label, credKey, isSet, onSave, onClear, onEdit }: ApiKeyFieldProps): React.JSX.Element {
+function ApiKeyField({
+  label,
+  credKey,
+  isSet,
+  onSave,
+  onClear,
+  onEdit
+}: ApiKeyFieldProps): React.JSX.Element {
   const [value, setValue] = useState('')
   const [editing, setEditing] = useState(false)
 
@@ -115,23 +124,23 @@ function ApiKeyField({ label, credKey, isSet, onSave, onClear, onEdit }: ApiKeyF
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs text-[var(--color-text-muted)]">{label}</label>
+      <label className="text-sm font-medium text-[var(--color-text-primary)]">{label}</label>
       <div className="flex items-center gap-2">
         {isSet && !editing ? (
           <>
-            <span className="flex-1 px-3 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)] text-xs text-[var(--color-text-muted)] font-mono">
+            <span className="flex-1 px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-sm text-[var(--color-text-muted)] font-mono">
               ••••••••••••••••
             </span>
             <button
               onClick={() => setEditing(true)}
-              className="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
+              className="text-xs px-2.5 py-1.5 rounded bg-[var(--color-bg-base)] border border-[var(--color-border)]
                 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors cursor-default"
             >
               Replace
             </button>
             <button
               onClick={handleClear}
-              className="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
+              className="text-xs px-2.5 py-1.5 rounded bg-[var(--color-bg-base)] border border-[var(--color-border)]
                 text-[var(--color-error)] hover:text-[var(--color-error)] transition-colors cursor-default"
             >
               Clear
@@ -145,14 +154,14 @@ function ApiKeyField({ label, credKey, isSet, onSave, onClear, onEdit }: ApiKeyF
               onChange={(e) => handleChange(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSave()}
               placeholder="Paste API key…"
-              className="flex-1 px-3 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
-                text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]
-                focus:outline-none focus:border-[var(--color-accent)] transition-colors"
+              className="flex-1 px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] font-mono
+                focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)] transition-colors"
             />
             <button
               onClick={handleSave}
               disabled={!value.trim()}
-              className="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--color-accent)] text-white
+              className="text-xs px-2.5 py-1.5 rounded bg-[var(--color-accent)] text-white
                 hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:cursor-not-allowed
                 transition-colors cursor-default"
             >
@@ -160,8 +169,11 @@ function ApiKeyField({ label, credKey, isSet, onSave, onClear, onEdit }: ApiKeyF
             </button>
             {isSet && (
               <button
-                onClick={() => { setEditing(false); setValue('') }}
-                className="text-xs px-2.5 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
+                onClick={() => {
+                  setEditing(false)
+                  setValue('')
+                }}
+                className="text-xs px-2.5 py-1.5 rounded bg-[var(--color-bg-base)] border border-[var(--color-border)]
                   text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors cursor-default"
               >
                 Cancel
@@ -175,29 +187,21 @@ function ApiKeyField({ label, credKey, isSet, onSave, onClear, onEdit }: ApiKeyF
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Provider section wrapper
-// ─────────────────────────────────────────────────────────────────────────────
-
-function SectionDivider(): React.JSX.Element {
-  return <div className="border-t border-[var(--color-border)] my-6" />
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function LLMPrefsPage(): React.JSX.Element {
-  const [activeProvider, setActiveProvider] = useState<ProviderName>('openai')
+  const [tab, setTab] = useState<ProviderName>('openai')
   const [models, setModels] = useState<Partial<Record<ProviderName, string>>>({
     openai: 'gpt-4o-mini',
     anthropic: 'claude-haiku-4-5'
   })
   const [credentialStatus, setCredentialStatus] = useState<Record<string, boolean>>({})
   const [compatibleBaseUrl, setCompatibleBaseUrl] = useState('')
-  // null = not yet verified; string[] = verified (populated after successful test)
-  const [providerModels, setProviderModels] = useState<Partial<Record<ProviderName, string[] | null>>>({})
+  const [providerModels, setProviderModels] = useState<
+    Partial<Record<ProviderName, string[] | null>>
+  >({})
 
-  // Per-provider test connection state
   const [testState, setTestState] = useState<Record<ProviderName, TestState>>({
     openai: 'idle',
     anthropic: 'idle',
@@ -210,10 +214,8 @@ export default function LLMPrefsPage(): React.JSX.Element {
   })
   const successTimers = useRef<Partial<Record<ProviderName, ReturnType<typeof setTimeout>>>>({})
 
-  // Load initial state
   useEffect(() => {
     void window.api.settings.getLLMSettings().then((s) => {
-      if (s.activeProvider) setActiveProvider(s.activeProvider)
       if (s.models) setModels(s.models)
       if (s.compatibleBaseUrl) setCompatibleBaseUrl(s.compatibleBaseUrl)
     })
@@ -243,7 +245,6 @@ export default function LLMPrefsPage(): React.JSX.Element {
       if (result.success) {
         setProviderModels((prev) => ({ ...prev, [p]: result.models ?? [] }))
       }
-
       if (result.success) {
         if (successTimers.current[p]) clearTimeout(successTimers.current[p])
         successTimers.current[p] = setTimeout(() => {
@@ -260,11 +261,6 @@ export default function LLMPrefsPage(): React.JSX.Element {
     }
   }, [])
 
-  const handleProviderChange = (p: ProviderName): void => {
-    setActiveProvider(p)
-    void window.api.settings.setProvider(p)
-  }
-
   const handleModelChange = (provider: ProviderName, model: string): void => {
     setModels((prev) => ({ ...prev, [provider]: model }))
     void window.api.settings.setModel(provider, model)
@@ -272,7 +268,6 @@ export default function LLMPrefsPage(): React.JSX.Element {
 
   const handleSaveCredential = (key: string, value: string): void => {
     void window.api.settings.setCredential(key, value)
-    // Reset test state when credential changes
     const provider = key.split('.')[0] as ProviderName
     resetTestState(provider)
   }
@@ -296,51 +291,57 @@ export default function LLMPrefsPage(): React.JSX.Element {
     void window.api.settings.testConnection(provider)
   }
 
-  const isProviderConfigured = useCallback((provider: ProviderName): boolean => {
-    if (provider === 'compatible') {
-      return !!compatibleBaseUrl.trim()
-    }
-    return !!credentialStatus[`${provider}.apiKey`]
-  }, [credentialStatus, compatibleBaseUrl])
+  const isProviderConfigured = useCallback(
+    (provider: ProviderName): boolean => {
+      if (provider === 'compatible') return !!compatibleBaseUrl.trim()
+      return !!credentialStatus[`${provider}.apiKey`]
+    },
+    [credentialStatus, compatibleBaseUrl]
+  )
 
   return (
     <div className="max-w-lg">
-      <h2 className="text-base font-semibold text-[var(--color-text-primary)] mb-1">AI / LLM</h2>
+      <h2 className="text-base font-semibold text-[var(--color-text-primary)] mb-1">
+        Language Model
+      </h2>
       <p className="text-xs text-[var(--color-text-muted)] mb-6">
         Configure your AI provider. API keys are encrypted and never leave your device.
       </p>
 
-      {/* Provider selector */}
-      {(() => {
-        const verifiedProviders = PROVIDERS.filter(({ id }) => providerModels[id] !== null && providerModels[id] !== undefined)
-        return (
-          <div className="flex flex-col gap-1.5 mb-6">
-            <span className="text-xs text-[var(--color-text-muted)]">Active provider</span>
-            {verifiedProviders.length === 0 ? (
-              <p className="text-xs text-[var(--color-text-muted)] italic">
-                Test a connection below to make a provider available.
-              </p>
-            ) : (
-              <select
-                value={verifiedProviders.some((p) => p.id === activeProvider) ? activeProvider : verifiedProviders[0].id}
-                onChange={(e) => handleProviderChange(e.target.value as ProviderName)}
-                className="w-48 px-3 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
-                  text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]
-                  cursor-default transition-colors"
-              >
-                {verifiedProviders.map(({ id, label }) => (
-                  <option key={id} value={id}>{label}</option>
-                ))}
-              </select>
-            )}
-          </div>
-        )
-      })()}
+      {/* Provider tab bar */}
+      <div className="flex gap-4 border-b border-[var(--color-border)] mb-6">
+        {PROVIDERS.map(({ id, label }) => (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            className={`py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors cursor-default
+              ${tab === id
+                ? 'border-[var(--color-accent)] text-[var(--color-text-primary)]'
+                : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+              }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
-      {/* ── OpenAI ──────────────────────────────────────────────────────── */}
-      <div>
-        <h3 className="text-sm font-medium text-[var(--color-text-primary)] mb-3">OpenAI</h3>
+      {/* OpenAI */}
+      {tab === 'openai' && (
         <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-[var(--color-text-primary)]">Model</label>
+            <select
+              value={models.openai ?? providerModels.openai?.[0] ?? ''}
+              onChange={(e) => handleModelChange('openai', e.target.value)}
+              className="w-full px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                text-sm text-[var(--color-text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]
+                cursor-default transition-colors"
+            >
+              {(providerModels.openai ?? []).map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </div>
           <ApiKeyField
             label="API Key"
             credKey="openai.apiKey"
@@ -356,29 +357,26 @@ export default function LLMPrefsPage(): React.JSX.Element {
             state={testState.openai}
             result={testResult.openai}
           />
+        </div>
+      )}
+
+      {/* Anthropic */}
+      {tab === 'anthropic' && (
+        <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-[var(--color-text-muted)]">Model</label>
+            <label className="text-sm font-medium text-[var(--color-text-primary)]">Model</label>
             <select
-              value={models.openai ?? providerModels.openai?.[0] ?? ''}
-              onChange={(e) => handleModelChange('openai', e.target.value)}
-              className="w-48 px-3 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
-                text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]
+              value={models.anthropic ?? providerModels.anthropic?.[0] ?? ''}
+              onChange={(e) => handleModelChange('anthropic', e.target.value)}
+              className="w-full px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                text-sm text-[var(--color-text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]
                 cursor-default transition-colors"
             >
-              {(providerModels.openai ?? []).map((m) => (
+              {(providerModels.anthropic ?? []).map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>
           </div>
-        </div>
-      </div>
-
-      <SectionDivider />
-
-      {/* ── Anthropic ───────────────────────────────────────────────────── */}
-      <div>
-        <h3 className="text-sm font-medium text-[var(--color-text-primary)] mb-3">Anthropic</h3>
-        <div className="flex flex-col gap-4">
           <ApiKeyField
             label="API Key"
             credKey="anthropic.apiKey"
@@ -394,36 +392,14 @@ export default function LLMPrefsPage(): React.JSX.Element {
             state={testState.anthropic}
             result={testResult.anthropic}
           />
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-[var(--color-text-muted)]">Model</label>
-            <select
-              value={models.anthropic ?? providerModels.anthropic?.[0] ?? ''}
-              onChange={(e) => handleModelChange('anthropic', e.target.value)}
-              className="w-48 px-3 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
-                text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)]
-                cursor-default transition-colors"
-            >
-              {(providerModels.anthropic ?? []).map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          </div>
         </div>
-      </div>
+      )}
 
-      <SectionDivider />
-
-      {/* ── OpenAI-compatible ───────────────────────────────────────────── */}
-      <div>
-        <h3 className="text-sm font-medium text-[var(--color-text-primary)] mb-3">
-          OpenAI-compatible
-          <span className="ml-2 text-xs font-normal text-[var(--color-text-muted)]">
-            Ollama, LM Studio, etc.
-          </span>
-        </h3>
+      {/* OpenAI-compatible */}
+      {tab === 'compatible' && (
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-[var(--color-text-muted)]">Base URL</label>
+            <label className="text-sm font-medium text-[var(--color-text-primary)]">Base URL</label>
             <input
               type="text"
               value={compatibleBaseUrl}
@@ -437,19 +413,23 @@ export default function LLMPrefsPage(): React.JSX.Element {
                 }
               }}
               placeholder="http://localhost:11434/v1"
-              className="w-72 px-3 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
-                text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]
-                focus:outline-none focus:border-[var(--color-accent)] transition-colors"
+              className="w-full px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] font-mono
+                focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)] transition-colors"
             />
           </div>
-          <ApiKeyField
-            label="API Key (optional)"
-            credKey="compatible.apiKey"
-            isSet={!!credentialStatus['compatible.apiKey']}
-            onSave={handleSaveCredential}
-            onClear={handleClearCredential}
-            onEdit={() => resetTestState('compatible')}
-          />
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-[var(--color-text-primary)]">Model name</label>
+            <input
+              type="text"
+              value={models.compatible ?? ''}
+              onChange={(e) => handleModelChange('compatible', e.target.value)}
+              placeholder="llama3"
+              className="w-full px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]
+                focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)] transition-colors"
+            />
+          </div>
           <TestConnectionButton
             provider="compatible"
             isConfigured={isProviderConfigured('compatible')}
@@ -457,20 +437,8 @@ export default function LLMPrefsPage(): React.JSX.Element {
             state={testState.compatible}
             result={testResult.compatible}
           />
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-[var(--color-text-muted)]">Model</label>
-            <input
-              type="text"
-              value={models.compatible ?? ''}
-              onChange={(e) => handleModelChange('compatible', e.target.value)}
-              placeholder="e.g. llama3, mistral"
-              className="w-48 px-3 py-1.5 rounded-lg bg-[var(--color-bg-base)] border border-[var(--color-border)]
-                text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]
-                focus:outline-none focus:border-[var(--color-accent)] transition-colors"
-            />
-          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

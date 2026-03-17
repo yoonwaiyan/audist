@@ -68,7 +68,11 @@ const api = {
       ipcRenderer.invoke('audist:llm:testConnection', { provider }),
     onTestResult: (
       cb: IpcListener<{ provider: string; result: unknown }>
-    ) => listen('audist:llm:testResult', cb)
+    ) => listen('audist:llm:testResult', cb),
+    getSummarisationEnabled: (): Promise<boolean> =>
+      ipcRenderer.invoke('audist:settings:getSummarisationEnabled'),
+    setSummarisationEnabled: (enabled: boolean): Promise<void> =>
+      ipcRenderer.invoke('audist:settings:setSummarisationEnabled', { enabled })
   },
   summary: {
     read: (sessionDir: string): Promise<string | null> =>

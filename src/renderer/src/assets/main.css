@@ -42,12 +42,6 @@
   /* Secondary accent */
   --color-accent-secondary: var(--color-accent-secondary);
 
-  /* Radius */
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
-  --radius-lg: var(--radius-lg);
-  --radius-pill: var(--radius-pill);
-
   /* Typography */
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, monospace;

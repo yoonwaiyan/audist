@@ -6,7 +6,9 @@ import {
   getLLMSettings,
   setLLMSettings,
   getCachedModels,
-  setCachedModels
+  setCachedModels,
+  getSummarisationEnabled,
+  setSummarisationEnabled
 } from '../store'
 import { llmRegistry } from '../llm/registry'
 import type { ProviderName } from '../llm/types'
@@ -72,6 +74,18 @@ export function registerSettingsHandlers(): void {
 
   // Return current LLM settings (non-sensitive — no credentials)
   ipcMain.handle('audist:settings:getLLMSettings', () => getLLMSettings())
+
+  // Summarisation toggle
+  ipcMain.handle('audist:settings:getSummarisationEnabled', (): boolean => {
+    return getSummarisationEnabled()
+  })
+
+  ipcMain.handle(
+    'audist:settings:setSummarisationEnabled',
+    (_, { enabled }: { enabled: boolean }): void => {
+      setSummarisationEnabled(enabled)
+    }
+  )
 
   // Return cached model list for a provider, or null if never successfully tested
   ipcMain.handle(

@@ -43,12 +43,12 @@ async function launchWithPrefsNoMock() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 test.describe('LLM settings — layout', () => {
-  test('shows all three provider sections', async () => {
+  test('shows all three provider tabs', async () => {
     const { app, prefsPage, cleanup, saveDir } = await launchWithLLMPrefs()
     try {
-      await expect(prefsPage.getByRole('heading', { name: 'OpenAI', exact: true })).toBeVisible()
-      await expect(prefsPage.getByRole('heading', { name: 'Anthropic', exact: true })).toBeVisible()
-      await expect(prefsPage.getByRole('heading', { name: /OpenAI-compatible/ })).toBeVisible()
+      await expect(prefsPage.getByRole('button', { name: 'OpenAI', exact: true })).toBeVisible()
+      await expect(prefsPage.getByRole('button', { name: 'Anthropic', exact: true })).toBeVisible()
+      await expect(prefsPage.getByRole('button', { name: 'OpenAI-compatible', exact: true })).toBeVisible()
     } finally {
       await app.close()
       cleanup()
@@ -56,23 +56,19 @@ test.describe('LLM settings — layout', () => {
     }
   })
 
-  test('has separator lines between provider sections', async () => {
-    const { app, prefsPage, cleanup, saveDir } = await launchWithLLMPrefs()
-    try {
-      // Two <hr>-equivalent dividers sit between the three sections
-      const dividers = prefsPage.locator('.border-t.border-\\[var\\(--color-border\\)\\]')
-      await expect(dividers).toHaveCount(2)
-    } finally {
-      await app.close()
-      cleanup()
-      fs.rmSync(saveDir, { recursive: true, force: true })
-    }
-  })
-
-  test('shows placeholder when no provider has been tested yet', async () => {
+  test('switching tabs shows the correct provider form', async () => {
     const { app, prefsPage, cleanup, saveDir } = await launchWithPrefsNoMock()
     try {
-      await expect(prefsPage.getByText('Test a connection below to make a provider available.')).toBeVisible()
+      // OpenAI tab is active by default — API key input visible
+      await expect(prefsPage.getByPlaceholder('Paste API key…')).toBeVisible()
+
+      // Switch to Anthropic
+      await prefsPage.getByRole('button', { name: 'Anthropic', exact: true }).click()
+      await expect(prefsPage.getByPlaceholder('Paste API key…')).toBeVisible()
+
+      // Switch to OpenAI-compatible
+      await prefsPage.getByRole('button', { name: 'OpenAI-compatible', exact: true }).click()
+      await expect(prefsPage.getByPlaceholder('http://localhost:11434/v1')).toBeVisible()
     } finally {
       await app.close()
       cleanup()
@@ -80,17 +76,30 @@ test.describe('LLM settings — layout', () => {
     }
   })
 
-  test('provider appears in dropdown after successful test', async () => {
+  test('defaults to OpenAI tab with model and API key fields', async () => {
+    const { app, prefsPage, cleanup, saveDir } = await launchWithPrefsNoMock()
+    try {
+      // OpenAI tab selected by default — both form fields present
+      await expect(prefsPage.getByRole('button', { name: 'OpenAI', exact: true })).toBeVisible()
+      await expect(prefsPage.getByPlaceholder('Paste API key…')).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('model select is populated after successful connection test', async () => {
     const { app, prefsPage, cleanup, saveDir } = await launchWithLLMPrefs('success')
     try {
-      // Run Test Connection for OpenAI
       await prefsPage.getByRole('button', { name: 'Test Connection' }).first().click()
       await expect(prefsPage.getByText(/Connected/)).toBeVisible({ timeout: 3000 })
 
-      // The select should now contain OpenAI as an option
-      const select = prefsPage.locator('select').first()
-      await expect(select).toBeVisible()
-      await expect(select.locator('option', { hasText: 'OpenAI' })).toHaveCount(1)
+      // Model select should now have options populated from the test result
+      const modelSelect = prefsPage.locator('select').first()
+      await expect(modelSelect).toBeVisible()
+      const optionCount = await modelSelect.locator('option').count()
+      expect(optionCount).toBeGreaterThan(0)
     } finally {
       await app.close()
       cleanup()
