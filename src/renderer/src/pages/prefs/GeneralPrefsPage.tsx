@@ -38,6 +38,7 @@ export default function GeneralPrefsPage(): React.JSX.Element {
   const [saveDir, setSaveDir] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [picking, setPicking] = useState(false)
+  const [selectError, setSelectError] = useState<string | null>(null)
   const [summarisationEnabled, setSummarisationEnabled] = useState(true)
 
   useEffect(() => {
@@ -50,9 +51,11 @@ export default function GeneralPrefsPage(): React.JSX.Element {
 
   const handleChange = async (): Promise<void> => {
     setPicking(true)
+    setSelectError(null)
     try {
-      const selected = await window.api.directory.select()
-      if (selected) setSaveDir(selected)
+      const { path, error } = await window.api.directory.select()
+      if (path) setSaveDir(path)
+      if (error) setSelectError(error)
     } finally {
       setPicking(false)
     }
@@ -101,9 +104,13 @@ export default function GeneralPrefsPage(): React.JSX.Element {
             {picking ? 'Opening…' : 'Change…'}
           </button>
         </div>
-        <p className="text-xs text-[var(--color-text-muted)]">
-          Each session creates a subfolder with the audio file, transcript, and summary.
-        </p>
+        {selectError ? (
+          <p className="text-xs text-[var(--color-error)]">{selectError}</p>
+        ) : (
+          <p className="text-xs text-[var(--color-text-muted)]">
+            Each session creates a subfolder with the audio file, transcript, and summary.
+          </p>
+        )}
       </div>
 
       {/* Toggles */}
