@@ -116,8 +116,8 @@ export async function openLLMPrefsPage(app: ElectronApplication, mainPage: Page)
     mainPage.getByTitle('Preferences (⌘,)').click()
   ])
   await prefsPage.waitForLoadState('domcontentloaded')
-  await prefsPage.getByText('AI / LLM').click()
-  await expect(prefsPage.getByText('Active provider')).toBeVisible()
+  await prefsPage.getByRole('link', { name: 'LLM' }).click()
+  await expect(prefsPage.getByRole('heading', { name: 'Language Model' })).toBeVisible()
   return prefsPage
 }
 

@@ -23,7 +23,7 @@ test.describe('Preferences window', () => {
     // Use role-based selectors to avoid strict-mode ambiguity
     // (same text appears in sidebar links AND content h2)
     await expect(prefsPage.getByRole('link', { name: 'General' })).toBeVisible()
-    await expect(prefsPage.getByRole('link', { name: 'AI / LLM' })).toBeVisible()
+    await expect(prefsPage.getByRole('link', { name: 'LLM' })).toBeVisible()
     await expect(prefsPage.getByRole('link', { name: 'Prompt' })).toBeVisible()
 
     await app.close()
@@ -41,8 +41,8 @@ test.describe('Preferences window', () => {
     await expect(prefsPage.locator('h2').getByText('General')).toBeVisible()
 
     // Navigate to AI / LLM
-    await prefsPage.getByRole('link', { name: 'AI / LLM' }).click()
-    await expect(prefsPage.locator('h2').getByText('AI / LLM')).toBeVisible()
+    await prefsPage.getByRole('link', { name: 'LLM' }).click()
+    await expect(prefsPage.locator('h2').getByText('Language Model')).toBeVisible()
 
     // Navigate to Prompt
     await prefsPage.getByRole('link', { name: 'Prompt' }).click()
