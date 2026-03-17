@@ -1,6 +1,6 @@
-import { ipcMain, dialog, BrowserWindow } from 'electron'
+import { ipcMain, dialog, BrowserWindow, app } from 'electron'
 import { mkdirSync, existsSync, accessSync, constants } from 'fs'
-import { join } from 'path'
+import { join, normalize } from 'path'
 import { getSaveDirectory, setSaveDirectory } from '../store'
 
 function formatSessionName(): string {
@@ -31,18 +31,37 @@ export function registerDirectoryHandlers(): void {
     return existsSync(dir) && isDirectoryAccessible(dir)
   })
 
-  ipcMain.handle('audist:directory:select', async (event) => {
-    const win = BrowserWindow.fromWebContents(event.sender)
-    const result = await dialog.showOpenDialog(win!, {
-      properties: ['openDirectory', 'createDirectory'],
-      title: 'Choose Save Folder',
-      buttonLabel: 'Select Folder'
-    })
-    if (result.canceled || result.filePaths.length === 0) return null
-    const selected = result.filePaths[0]
-    setSaveDirectory(selected)
-    return selected
-  })
+  ipcMain.handle(
+    'audist:directory:select',
+    async (event): Promise<{ path: string | null; error: string | null }> => {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      const result = await dialog.showOpenDialog(win!, {
+        properties: ['openDirectory', 'createDirectory'],
+        title: 'Choose Save Folder',
+        buttonLabel: 'Select Folder'
+      })
+      if (result.canceled || result.filePaths.length === 0) return { path: null, error: null }
+
+      const selected = normalize(result.filePaths[0])
+
+      if (!existsSync(selected)) {
+        return { path: null, error: 'Selected folder does not exist.' }
+      }
+      try {
+        accessSync(selected, constants.W_OK)
+      } catch {
+        return { path: null, error: 'Selected folder is not writable.' }
+      }
+
+      const appPath = normalize(app.getAppPath())
+      if (selected === appPath || selected.startsWith(appPath + '/')) {
+        return { path: null, error: 'Cannot save inside the application bundle.' }
+      }
+
+      setSaveDirectory(selected)
+      return { path: selected, error: null }
+    }
+  )
 
   ipcMain.handle('audist:session:create', () => {
     const root = getSaveDirectory()
