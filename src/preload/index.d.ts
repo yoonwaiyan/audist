@@ -10,7 +10,7 @@ export interface PermissionsState {
 interface DirectoryAPI {
   get: () => Promise<string | null>
   verify: () => Promise<boolean>
-  select: () => Promise<string | null>
+  select: () => Promise<{ path: string | null; error: string | null }>
 }
 
 export interface SessionMeta {
