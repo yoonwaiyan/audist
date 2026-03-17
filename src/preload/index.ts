@@ -77,6 +77,8 @@ const api = {
   summary: {
     read: (sessionDir: string): Promise<string | null> =>
       ipcRenderer.invoke('audist:summary:read', { sessionDir }),
+    retry: (sessionDir: string): Promise<void> =>
+      ipcRenderer.invoke('audist:summary:retry', { sessionDir }),
     openInFinder: (sessionDir: string): Promise<void> =>
       ipcRenderer.invoke('audist:session:openInFinder', { sessionDir }),
     onProgress: (cb: IpcListener<{ sessionId: string; status: string }>) =>

@@ -1,4 +1,5 @@
 import type { LLMProvider, LLMMessage, LLMOptions, TestConnectionResult } from '../types'
+import { LLMError } from '../types'
 
 /**
  * Mock LLM provider for e2e tests.
@@ -54,6 +55,18 @@ export class MockLLMProvider implements LLMProvider {
   }
 
   async complete(_messages: LLMMessage[], _options: LLMOptions): Promise<string> {
-    return 'Mock LLM response'
+    const mode = (process.env['AUDIST_TEST_LLM'] ?? 'success').toLowerCase()
+    if (mode === 'success') return 'Mock LLM response'
+
+    const errorMap: Record<string, { code: string; message: string }> = {
+      auth_error: { code: 'AUTH_ERROR', message: 'API key rejected. Check your key in Settings.' },
+      rate_limit: { code: 'RATE_LIMIT', message: 'Rate limit reached. Wait a moment and retry.' },
+      connection_error: {
+        code: 'CONNECTION_ERROR',
+        message: 'Cannot reach local runtime. Make sure it is running.'
+      }
+    }
+    const err = errorMap[mode] ?? { code: 'CONNECTION_ERROR', message: 'Unknown mock error' }
+    throw new LLMError(err.code, err.message)
   }
 }

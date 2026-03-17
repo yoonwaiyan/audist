@@ -3,7 +3,7 @@ import { useLocation, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import {
-  FolderOpen, Copy, Check, Loader2, Sparkles
+  FolderOpen, Copy, Check, Loader2, Sparkles, AlertTriangle, RefreshCw, Settings
 } from 'lucide-react'
 import type { SessionMeta } from '../../../preload/index.d'
 import { Tooltip } from '../components/ui'
@@ -68,6 +68,8 @@ export default function SessionDetail(): React.JSX.Element {
   const [summary, setSummary] = useState<string | null>(null)
   const [transcript, setTranscript] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [summaryError, setSummaryError] = useState<{ code: string; message: string } | null>(null)
+  const [retrying, setRetrying] = useState(false)
 
 
   // Reset and load session whenever the route id changes
@@ -76,15 +78,24 @@ export default function SessionDetail(): React.JSX.Element {
     setSession(null)
     setSummary(null)
     setTranscript(null)
+    setSummaryError(null)
+    setRetrying(false)
 
     const fromState = (location.state as { session?: SessionMeta } | null)?.session
+    const seed = (s: SessionMeta): void => {
+      setSession(s)
+      // Restore persisted summary error across restarts
+      if (s.status === 'error' && s.error && s.summaryErrorCode) {
+        setSummaryError({ code: s.summaryErrorCode, message: s.error })
+      }
+    }
     if (fromState?.id === id) {
-      setSession(fromState)
+      seed(fromState)
       return
     }
     window.api.session.list().then((list) => {
       const found = list.find((s) => s.id === id)
-      if (found) setSession(found)
+      if (found) seed(found)
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
@@ -96,13 +107,28 @@ export default function SessionDetail(): React.JSX.Element {
     window.api.transcription.read(session.dir).then(setTranscript)
   }, [session?.dir])
 
-  // Reload when background processing completes
+  // Reload when background processing completes / errors
   useEffect(() => {
     if (!session) return
     const unsubSC = window.api.summary.onComplete(({ sessionId }) => {
       if (sessionId === session.id) {
         window.api.summary.read(session.dir).then(setSummary)
         setSession((prev) => prev ? { ...prev, status: 'complete' } : prev)
+        setSummaryError(null)
+        setRetrying(false)
+      }
+    })
+    const unsubSE = window.api.summary.onError(({ sessionId, code, message }) => {
+      if (sessionId === session.id) {
+        setSummaryError({ code, message })
+        setSession((prev) => prev ? { ...prev, status: 'error' } : prev)
+        setRetrying(false)
+      }
+    })
+    const unsubSP = window.api.summary.onProgress(({ sessionId }) => {
+      if (sessionId === session.id) {
+        setSummaryError(null)
+        setSession((prev) => prev ? { ...prev, status: 'summarising' } : prev)
       }
     })
     const unsubTC = window.api.transcription.onComplete(({ sessionId }) => {
@@ -110,7 +136,7 @@ export default function SessionDetail(): React.JSX.Element {
         window.api.transcription.read(session.dir).then(setTranscript)
       }
     })
-    return () => { unsubSC(); unsubTC() }
+    return () => { unsubSC(); unsubSE(); unsubSP(); unsubTC() }
   }, [session])
 
   if (!session) {
@@ -135,6 +161,16 @@ export default function SessionDetail(): React.JSX.Element {
 
   const handleOpenFolder = (): void => {
     void window.api.summary.openInFinder(session.dir)
+  }
+
+  const handleRetry = (): void => {
+    if (!session) return
+    setRetrying(true)
+    void window.api.summary.retry(session.dir)
+  }
+
+  const handleOpenSettings = (): void => {
+    window.electron.ipcRenderer.send('audist:prefs:open', { section: 'llm' })
   }
 
   return (
@@ -244,7 +280,41 @@ export default function SessionDetail(): React.JSX.Element {
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 py-5">
         {activeTab === 'Summary' && (
-          summary ? (
+          summaryError ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-start gap-2.5 p-3 rounded-lg bg-[var(--color-error)]/8 border border-[var(--color-error)]/20">
+                <AlertTriangle className="w-4 h-4 text-[var(--color-error)] shrink-0 mt-0.5" />
+                <p className="text-sm text-[var(--color-error)] leading-relaxed select-text">
+                  {summaryError.message}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRetry}
+                  disabled={retrying}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium
+                    bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                    text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]
+                    disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-default"
+                >
+                  <RefreshCw className={`w-3 h-3 ${retrying ? 'animate-spin' : ''}`} />
+                  {retrying ? 'Retrying…' : 'Retry'}
+                </button>
+                {(summaryError.code === 'AUTH_ERROR' || summaryError.code === 'NO_PROVIDER') && (
+                  <button
+                    onClick={handleOpenSettings}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium
+                      bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                      text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]
+                      transition-colors cursor-default"
+                  >
+                    <Settings className="w-3 h-3" />
+                    Open Settings
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : summary ? (
             <div className="prose prose-sm max-w-none text-[var(--color-text-primary)] [&_h1]:text-base [&_h1]:font-bold [&_h1]:text-[var(--color-text-primary)] [&_h1]:mb-3 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-[var(--color-text-primary)] [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:text-[var(--color-text-secondary)] [&_h3]:mt-3 [&_h3]:mb-1 [&_p]:text-sm [&_p]:text-[var(--color-text-secondary)] [&_p]:mb-1 [&_li]:text-sm [&_li]:text-[var(--color-text-secondary)] [&_strong]:text-[var(--color-text-primary)] [&_a]:text-[var(--color-accent)] [&_hr]:border-[var(--color-border)]">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{summary}</ReactMarkdown>
             </div>

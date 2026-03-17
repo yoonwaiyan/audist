@@ -4,6 +4,7 @@ import { writeFile } from 'fs/promises'
 import { join, basename } from 'path'
 import { llmRegistry } from '../llm/registry'
 import { getLLMSettings } from '../store'
+import { LLMError } from '../llm/types'
 import type { ProviderName } from '../llm/types'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,13 +41,29 @@ Use this exact structure:
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function updateSessionStatus(sessionDir: string, status: string): void {
+function updateSessionStatus(
+  sessionDir: string,
+  status: string,
+  errorMsg?: string,
+  summaryErrorCode?: string
+): void {
   const metaPath = join(sessionDir, 'session.json')
   try {
     const existing = existsSync(metaPath)
       ? (JSON.parse(readFileSync(metaPath, 'utf-8')) as Record<string, unknown>)
       : {}
-    writeFileSync(metaPath, JSON.stringify({ ...existing, status }), 'utf-8')
+    const update: Record<string, unknown> = { ...existing, status }
+    if (errorMsg !== undefined) {
+      update.error = errorMsg
+    } else {
+      delete update.error
+    }
+    if (summaryErrorCode !== undefined) {
+      update.summaryErrorCode = summaryErrorCode
+    } else {
+      delete update.summaryErrorCode
+    }
+    writeFileSync(metaPath, JSON.stringify(update), 'utf-8')
   } catch {
     // Non-critical
   }
@@ -69,21 +86,21 @@ export async function summariseSession(sessionDir: string, win: BrowserWindow): 
 
   const provider = llmRegistry.getActive()
   if (!provider) {
-    win.webContents.send('audist:summary:error', {
-      sessionId,
-      code: 'NO_PROVIDER',
-      message: 'No LLM provider configured. Set one up in Preferences.'
-    })
+    const message = 'No LLM provider configured. Add an API key in Settings.'
+    updateSessionStatus(sessionDir, 'error', message, 'NO_PROVIDER')
+    if (!win.isDestroyed()) {
+      win.webContents.send('audist:summary:error', { sessionId, code: 'NO_PROVIDER', message })
+    }
     return
   }
 
   const transcriptPath = join(sessionDir, 'transcript.txt')
   if (!existsSync(transcriptPath)) {
-    win.webContents.send('audist:summary:error', {
-      sessionId,
-      code: 'NO_TRANSCRIPT',
-      message: 'transcript.txt not found in session directory.'
-    })
+    const message = 'Transcript not found. Re-run transcription first.'
+    updateSessionStatus(sessionDir, 'error', message, 'NO_TRANSCRIPT')
+    if (!win.isDestroyed()) {
+      win.webContents.send('audist:summary:error', { sessionId, code: 'NO_TRANSCRIPT', message })
+    }
     return
   }
 
@@ -102,34 +119,59 @@ export async function summariseSession(sessionDir: string, win: BrowserWindow): 
     win.webContents.send('audist:summary:progress', { sessionId, status: 'started' })
   }
 
+  let response: string
   try {
-    const response = await provider.complete(
+    response = await provider.complete(
       [
         { role: 'system', content: DEFAULT_SYSTEM_PROMPT },
         { role: 'user', content: userPrompt }
       ],
       { model }
     )
-
-    const summaryPath = join(sessionDir, 'summary.md')
-    await writeFile(summaryPath, response, 'utf-8')
-
-    updateSessionStatus(sessionDir, 'complete')
-    if (!win.isDestroyed()) {
-      win.webContents.send('audist:summary:complete', { sessionId, filePath: summaryPath })
-    }
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Summarisation failed'
-    // Transcription succeeded — fall back to 'complete' so the session isn't stuck
-    updateSessionStatus(sessionDir, 'complete')
-    if (!win.isDestroyed()) {
-      win.webContents.send('audist:summary:error', { sessionId, code: 'LLM_ERROR', message })
+    let code: string
+    let message: string
+
+    if (err instanceof LLMError) {
+      code = err.code
+      message = err.message
+      // Enrich CONNECTION_ERROR for compatible provider with the configured base URL
+      if (code === 'CONNECTION_ERROR' && provider.name === 'compatible') {
+        const baseUrl = settings.compatibleBaseUrl ?? 'unknown'
+        message = `Cannot reach local runtime at ${baseUrl}. Make sure Ollama/LM Studio is running.`
+      }
+    } else {
+      code = 'API_ERROR'
+      message = `Summarisation failed: ${err instanceof Error ? err.message : 'Unknown error'}`
     }
+
+    updateSessionStatus(sessionDir, 'error', message, code)
+    if (!win.isDestroyed()) {
+      win.webContents.send('audist:summary:error', { sessionId, code, message })
+    }
+    return
+  }
+
+  const summaryPath = join(sessionDir, 'summary.md')
+  try {
+    await writeFile(summaryPath, response, 'utf-8')
+  } catch (err: unknown) {
+    const message = `Couldn't save summary.md. Check disk space and permissions.`
+    updateSessionStatus(sessionDir, 'error', message, 'FILE_ERROR')
+    if (!win.isDestroyed()) {
+      win.webContents.send('audist:summary:error', { sessionId, code: 'FILE_ERROR', message })
+    }
+    return
+  }
+
+  updateSessionStatus(sessionDir, 'complete')
+  if (!win.isDestroyed()) {
+    win.webContents.send('audist:summary:complete', { sessionId, filePath: summaryPath })
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// IPC handlers (summary read + open in Finder)
+// IPC handlers
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { ipcMain } from 'electron'
@@ -144,6 +186,13 @@ export function registerSummaryHandlers(): void {
     } catch {
       return null
     }
+  })
+
+  // Re-run the summarisation pipeline for a session
+  ipcMain.handle('audist:summary:retry', async (event, { sessionDir }: { sessionDir: string }): Promise<void> => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win) return
+    await summariseSession(sessionDir, win)
   })
 
   // Open the session directory in Finder / Explorer
