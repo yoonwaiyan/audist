@@ -15,6 +15,7 @@ import { mixAudio } from './ipc/mix'
 import { bootstrapWhisper } from './whisper/bootstrap'
 import { llmRegistry } from './llm/registry'
 import { OpenAIProvider } from './llm/providers/openai'
+import { AnthropicProvider } from './llm/providers/anthropic'
 import { CompatibleProvider } from './llm/providers/compatible'
 import { MockLLMProvider } from './llm/providers/mock'
 
@@ -63,6 +64,7 @@ app.whenReady().then(() => {
     llmRegistry.register(new MockLLMProvider('compatible', []))
   } else {
     llmRegistry.register(new OpenAIProvider())
+    llmRegistry.register(new AnthropicProvider())
     llmRegistry.register(new CompatibleProvider())
   }
 
