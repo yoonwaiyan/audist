@@ -258,12 +258,12 @@ export default function SessionDetail(): React.JSX.Element {
         </div>
 
         {/* Meta row */}
-        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-          <span className="text-[11px] text-[var(--color-text-primary)]/60">{date}</span>
+        <div className="flex items-center gap-2.5 mt-1.5 flex-wrap">
+          <span className="text-[11px] text-[var(--color-text-primary)]/40">Recorded</span>
+          <span className="text-[11px] text-[var(--color-text-primary)]/75">{date} · {time}</span>
           <span className="text-[var(--color-border)]/50 text-[10px]">·</span>
-          <span className="text-[11px] text-[var(--color-text-primary)]/60">{time}</span>
-          <span className="text-[var(--color-border)]/50 text-[10px]">·</span>
-          <span className="font-mono text-[11px] text-[var(--color-text-primary)]/60">
+          <span className="text-[11px] text-[var(--color-text-primary)]/40">Duration</span>
+          <span className="font-mono text-[11px] text-[var(--color-text-primary)]/75">
             {formatTime(session.duration)}
           </span>
           <span className="text-[var(--color-border)]/50 text-[10px]">·</span>
