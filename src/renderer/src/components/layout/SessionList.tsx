@@ -36,6 +36,15 @@ export default function SessionList({ activeSessionId, onSelectSession }: Sessio
     return () => { unsubTC(); unsubTE(); unsubSC(); unsubSE() }
   }, [reload])
 
+  // Patch title in-place when a session is renamed in the detail view
+  useEffect(() => {
+    return window.api.session.onRenamed(({ sessionDir, title }) => {
+      setSessions((prev) =>
+        prev.map((s) => (s.dir === sessionDir ? { ...s, title } : s))
+      )
+    })
+  }, [])
+
   const isRecording = recorderState === 'recording' || recorderState === 'stopping'
 
   const completeSessions = sessions.filter((s) => s.status === 'complete')

@@ -19,7 +19,9 @@ const api = {
     create: (): Promise<string> => ipcRenderer.invoke('audist:session:create'),
     list: () => ipcRenderer.invoke('audist:session:list'),
     rename: (sessionDir: string, title: string): Promise<void> =>
-      ipcRenderer.invoke('audist:session:rename', { sessionDir, title })
+      ipcRenderer.invoke('audist:session:rename', { sessionDir, title }),
+    onRenamed: (cb: IpcListener<{ sessionDir: string; title: string }>) =>
+      listen('audist:session:renamed', cb)
   },
   permissions: {
     check: (): Promise<{ microphone: string; screen: string }> =>

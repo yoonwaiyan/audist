@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { ipcMain, BrowserWindow } from 'electron'
 import { readdirSync, readFileSync, writeFileSync, existsSync, statSync } from 'fs'
 import { join } from 'path'
 import { getSaveDirectory } from '../store'
@@ -45,13 +45,17 @@ export function registerSessionHandlers(): void {
 
   ipcMain.handle(
     'audist:session:rename',
-    (_, { sessionDir, title }: { sessionDir: string; title: string }): void => {
+    (event, { sessionDir, title }: { sessionDir: string; title: string }): void => {
       const metaPath = join(sessionDir, 'session.json')
       try {
         const existing = existsSync(metaPath)
           ? (JSON.parse(readFileSync(metaPath, 'utf-8')) as Record<string, unknown>)
           : {}
         writeFileSync(metaPath, JSON.stringify({ ...existing, title }), 'utf-8')
+        const win = BrowserWindow.fromWebContents(event.sender)
+        if (win && !win.isDestroyed()) {
+          win.webContents.send('audist:session:renamed', { sessionDir, title })
+        }
       } catch {
         // Non-critical
       }
