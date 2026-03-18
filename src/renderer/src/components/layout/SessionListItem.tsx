@@ -1,3 +1,4 @@
+import { formatDistanceToNow, isToday, isYesterday, isThisYear, format } from 'date-fns'
 import type { SessionMeta } from '../../../../preload/index.d'
 
 interface SessionListItemProps {
@@ -13,15 +14,24 @@ const DOT_COLOR: Record<SessionMeta['status'], string> = {
   error: 'bg-[var(--color-error)]'
 }
 
-function parseSessionId(id: string): { name: string; time: string } {
+function sessionDate(id: string): Date | null {
   const match = id.match(/^(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})$/)
-  if (!match) return { name: id, time: '' }
-  const [, year, month, day, hour, min] = match
-  const dt = new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(min))
-  return {
-    name: dt.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }),
-    time: dt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
-  }
+  if (!match) return null
+  const [, year, month, day, hour, min, sec] = match
+  return new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(min), Number(sec))
+}
+
+function fallbackName(id: string): string {
+  const dt = sessionDate(id)
+  if (!dt) return id
+  return dt.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+}
+
+function formatRecordedTime(date: Date): string {
+  if (isToday(date)) return formatDistanceToNow(date, { addSuffix: true })
+  if (isYesterday(date)) return 'Yesterday'
+  if (isThisYear(date)) return format(date, 'MMM d')
+  return format(date, 'MMM d, yyyy')
 }
 
 function formatDuration(seconds: number): string {
@@ -35,7 +45,9 @@ function formatDuration(seconds: number): string {
 
 export default function SessionListItem({ session, active, onClick }: SessionListItemProps): React.JSX.Element {
   const isClickable = session.status === 'complete' || session.status === 'error'
-  const { name, time } = parseSessionId(session.id)
+  const name = session.title ?? fallbackName(session.id)
+  const dt = sessionDate(session.id)
+  const recordedTime = dt ? formatRecordedTime(dt) : null
   const dotColor = DOT_COLOR[session.status]
 
   return (
@@ -56,7 +68,7 @@ export default function SessionListItem({ session, active, onClick }: SessionLis
         <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-[var(--color-accent)] rounded-r" />
       )}
 
-      {/* Row 1: dot + name + time */}
+      {/* Row 1: dot + name (left) + recorded time (right) */}
       <div className="flex items-center gap-2 mb-0.5">
         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
         <span
@@ -66,9 +78,9 @@ export default function SessionListItem({ session, active, onClick }: SessionLis
         >
           {name}
         </span>
-        {time && (
-          <span className="text-[11px] text-[var(--color-text-primary)]/75 shrink-0 ml-1">
-            {time}
+        {recordedTime && (
+          <span className="text-[11px] text-[var(--color-text-muted)] shrink-0 ml-1">
+            {recordedTime}
           </span>
         )}
       </div>

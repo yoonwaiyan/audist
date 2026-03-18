@@ -144,6 +144,94 @@ test.describe('Session history list', () => {
     fs.rmSync(saveDir, { recursive: true, force: true })
   })
 
+  test('session detail shows Recorded and Duration labels in metadata row', async () => {
+    const saveDir = makeSaveDir()
+    const { app, page, cleanup } = await launchWithSessions(saveDir, [
+      { id: '2026-03-13_10-00-00', duration: 90, status: 'complete' }
+    ])
+
+    await page.locator('[data-testid="session-item"]').first().click()
+    await expect(page.getByText('Recorded')).toBeVisible()
+    await expect(page.getByText('Duration')).toBeVisible()
+    await expect(page.getByText('01:30')).toBeVisible()
+
+    await app.close()
+    cleanup()
+    fs.rmSync(saveDir, { recursive: true, force: true })
+  })
+
+  test('session without title shows timestamp-derived label in sidebar', async () => {
+    const saveDir = makeSaveDir()
+    const { app, page, cleanup } = await launchWithSessions(saveDir, [
+      { id: '2026-03-13_10-00-00', duration: 60, status: 'complete' }
+    ])
+
+    // No title seeded — should show the date-derived name "Mar 13"
+    await expect(page.locator('[data-testid="session-item"]').first()).toContainText('Mar 13')
+
+    await app.close()
+    cleanup()
+    fs.rmSync(saveDir, { recursive: true, force: true })
+  })
+
+  test('session with title shows custom title in sidebar', async () => {
+    const saveDir = makeSaveDir()
+    const { app, page, cleanup } = await launchWithSessions(saveDir, [
+      { id: '2026-03-13_10-00-00', duration: 60, status: 'complete', title: 'Design Review' }
+    ])
+
+    await expect(page.locator('[data-testid="session-item"]').first()).toContainText('Design Review')
+
+    await app.close()
+    cleanup()
+    fs.rmSync(saveDir, { recursive: true, force: true })
+  })
+
+  test('renaming a session in detail view updates the sidebar title', async () => {
+    const saveDir = makeSaveDir()
+    const { app, page, cleanup } = await launchWithSessions(saveDir, [
+      { id: '2026-03-13_10-00-00', duration: 60, status: 'complete' }
+    ])
+
+    // Open session detail
+    await page.locator('[data-testid="session-item"]').first().click()
+
+    // Click the title to enter edit mode
+    await page.locator('[data-testid="session-title"]').click()
+    const input = page.getByRole('textbox', { name: 'Session title' })
+    await expect(input).toBeVisible()
+    await input.fill('Q1 Planning')
+    await input.press('Enter')
+
+    // Sidebar should now reflect the new title
+    await expect(page.locator('[data-testid="session-item"]').first()).toContainText('Q1 Planning')
+
+    await app.close()
+    cleanup()
+    fs.rmSync(saveDir, { recursive: true, force: true })
+  })
+
+  test('renamed title persists after restart', async () => {
+    const saveDir = makeSaveDir()
+    seedSessions(saveDir, [{ id: '2026-03-13_10-00-00', duration: 60, status: 'complete' }])
+
+    const first = await launchApp({ saveDirectory: saveDir, permissions: 'granted', whisper: 'ready' })
+    await first.page.locator('[data-testid="session-item"]').first().click()
+    await first.page.locator('[data-testid="session-title"]').click()
+    const input = first.page.getByRole('textbox', { name: 'Session title' })
+    await input.fill('Sprint Retro')
+    await input.press('Enter')
+    await first.app.close()
+    first.cleanup()
+
+    const second = await launchApp({ saveDirectory: saveDir, permissions: 'granted', whisper: 'ready' })
+    await expect(second.page.locator('[data-testid="session-item"]').first()).toContainText('Sprint Retro')
+    await second.app.close()
+    second.cleanup()
+
+    fs.rmSync(saveDir, { recursive: true, force: true })
+  })
+
   test('session list persists across app restarts', async () => {
     const saveDir = makeSaveDir()
     seedSessions(saveDir, [{ id: '2026-03-13_10-00-00', duration: 75, status: 'complete' }])

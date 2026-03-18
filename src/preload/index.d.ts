@@ -20,11 +20,14 @@ export interface SessionMeta {
   status: 'complete' | 'transcribing' | 'summarising' | 'error'
   error?: string
   summaryErrorCode?: string
+  title?: string
 }
 
 interface SessionAPI {
   create: () => Promise<string>
   list: () => Promise<SessionMeta[]>
+  rename: (sessionDir: string, title: string) => Promise<void>
+  onRenamed: (cb: (data: { sessionDir: string; title: string }) => void) => IpcUnsub
 }
 
 interface PermissionsAPI {
