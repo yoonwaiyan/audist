@@ -34,7 +34,7 @@ function formatDuration(seconds: number): string {
 }
 
 export default function SessionListItem({ session, active, onClick }: SessionListItemProps): React.JSX.Element {
-  const isClickable = session.status === 'complete'
+  const isClickable = session.status === 'complete' || session.status === 'error'
   const { name, time } = parseSessionId(session.id)
   const dotColor = DOT_COLOR[session.status]
 

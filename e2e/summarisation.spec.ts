@@ -208,6 +208,193 @@ test.describe('Summarisation pipeline (AUD-36)', () => {
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Error handling (AUD-39)
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('Summarisation error handling (AUD-39)', () => {
+  test('emits AUTH_ERROR when provider.complete() throws auth failure', async () => {
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready',
+      testMode: true,
+      llm: 'auth_error'
+    })
+    const sessionDir = makeSessionDir(saveDir)
+    fs.writeFileSync(path.join(sessionDir, 'transcript.txt'), SAMPLE_TRANSCRIPT)
+
+    try {
+      const eventPromise = waitForSummaryEvent(page, 'audist:summary:error')
+      await invokeSummarise(page, sessionDir)
+      const event = await eventPromise
+
+      expect(event.code).toBe('AUTH_ERROR')
+      expect(typeof event.message).toBe('string')
+      expect(fs.existsSync(path.join(sessionDir, 'summary.md'))).toBe(false)
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('emits RATE_LIMIT error code', async () => {
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready',
+      testMode: true,
+      llm: 'rate_limit'
+    })
+    const sessionDir = makeSessionDir(saveDir)
+    fs.writeFileSync(path.join(sessionDir, 'transcript.txt'), SAMPLE_TRANSCRIPT)
+
+    try {
+      const eventPromise = waitForSummaryEvent(page, 'audist:summary:error')
+      await invokeSummarise(page, sessionDir)
+      const event = await eventPromise
+
+      expect(event.code).toBe('RATE_LIMIT')
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('emits CONNECTION_ERROR code', async () => {
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready',
+      testMode: true,
+      llm: 'connection_error'
+    })
+    const sessionDir = makeSessionDir(saveDir)
+    fs.writeFileSync(path.join(sessionDir, 'transcript.txt'), SAMPLE_TRANSCRIPT)
+
+    try {
+      const eventPromise = waitForSummaryEvent(page, 'audist:summary:error')
+      await invokeSummarise(page, sessionDir)
+      const event = await eventPromise
+
+      expect(event.code).toBe('CONNECTION_ERROR')
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('sets session status to error and persists error code in session.json', async () => {
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready',
+      testMode: true,
+      llm: 'auth_error'
+    })
+    const sessionDir = makeSessionDir(saveDir)
+    fs.writeFileSync(path.join(sessionDir, 'transcript.txt'), SAMPLE_TRANSCRIPT)
+
+    try {
+      const eventPromise = waitForSummaryEvent(page, 'audist:summary:error')
+      await invokeSummarise(page, sessionDir)
+      await eventPromise
+
+      const meta = JSON.parse(fs.readFileSync(path.join(sessionDir, 'session.json'), 'utf-8'))
+      expect(meta.status).toBe('error')
+      expect(meta.summaryErrorCode).toBe('AUTH_ERROR')
+      expect(typeof meta.error).toBe('string')
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('retry re-runs pipeline and emits complete on success', async () => {
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    // First launch with auth_error to put session in error state
+    const { app: app1, page: page1, cleanup: cleanup1 } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready',
+      testMode: true,
+      llm: 'auth_error'
+    })
+    const sessionDir = makeSessionDir(saveDir)
+    fs.writeFileSync(path.join(sessionDir, 'transcript.txt'), SAMPLE_TRANSCRIPT)
+
+    try {
+      const errPromise = waitForSummaryEvent(page1, 'audist:summary:error')
+      await invokeSummarise(page1, sessionDir)
+      await errPromise
+      await app1.close()
+      cleanup1()
+
+      // Re-launch with success mock and retry
+      const { app: app2, page: page2, cleanup: cleanup2 } = await launchApp({
+        saveDirectory: saveDir,
+        permissions: 'granted',
+        whisper: 'ready',
+        testMode: true,
+        llm: 'success'
+      })
+      try {
+        const completePromise = waitForSummaryEvent(page2, 'audist:summary:complete')
+        await page2.evaluate(async (dir) => {
+          await window.electron.ipcRenderer.invoke('audist:summary:retry', { sessionDir: dir })
+        }, sessionDir)
+        await completePromise
+
+        expect(fs.existsSync(path.join(sessionDir, 'summary.md'))).toBe(true)
+        const meta = JSON.parse(fs.readFileSync(path.join(sessionDir, 'session.json'), 'utf-8'))
+        expect(meta.status).toBe('complete')
+      } finally {
+        await app2.close()
+        cleanup2()
+      }
+    } finally {
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('NO_PROVIDER error shows Retry and Open Settings in session detail UI', async () => {
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    const sessionDir = path.join(saveDir, '2026-01-01_10-00-00')
+    fs.mkdirSync(sessionDir, { recursive: true })
+    fs.writeFileSync(path.join(sessionDir, 'session.json'), JSON.stringify({
+      duration: 60,
+      status: 'error',
+      error: 'No LLM provider configured. Add an API key in Settings.',
+      summaryErrorCode: 'NO_PROVIDER'
+    }))
+    fs.writeFileSync(path.join(sessionDir, 'transcript.txt'), SAMPLE_TRANSCRIPT)
+
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready'
+    })
+    try {
+      await page.locator('[data-testid="session-item"]').first().click()
+      await expect(page.getByRole('paragraph').filter({ hasText: 'No LLM provider configured' })).toBeVisible({ timeout: 3000 })
+      await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Open Settings' })).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
 // UI tests
 // ─────────────────────────────────────────────────────────────────────────────
 

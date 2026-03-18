@@ -9,6 +9,7 @@ export interface SessionMeta {
   duration: number
   status: 'complete' | 'transcribing' | 'summarising' | 'error'
   error?: string
+  summaryErrorCode?: string
 }
 
 export function registerSessionHandlers(): void {
@@ -31,7 +32,8 @@ export function registerSessionHandlers(): void {
             dir,
             duration: raw.duration ?? 0,
             status: raw.status ?? 'complete',
-            ...(raw.error ? { error: raw.error } : {})
+            ...(raw.error ? { error: raw.error } : {}),
+            ...(raw.summaryErrorCode ? { summaryErrorCode: raw.summaryErrorCode } : {})
           } as SessionMeta
         } catch {
           return { id: name, dir, duration: 0, status: 'complete' } as SessionMeta

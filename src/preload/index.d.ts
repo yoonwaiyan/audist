@@ -19,6 +19,7 @@ export interface SessionMeta {
   duration: number
   status: 'complete' | 'transcribing' | 'summarising' | 'error'
   error?: string
+  summaryErrorCode?: string
 }
 
 interface SessionAPI {
@@ -79,6 +80,7 @@ interface SettingsAPI {
 
 interface SummaryAPI {
   read: (sessionDir: string) => Promise<string | null>
+  retry: (sessionDir: string) => Promise<void>
   openInFinder: (sessionDir: string) => Promise<void>
   onProgress: (cb: (data: { sessionId: string; status: string }) => void) => IpcUnsub
   onComplete: (cb: (data: { sessionId: string; filePath: string }) => void) => IpcUnsub

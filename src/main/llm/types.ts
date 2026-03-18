@@ -21,4 +21,12 @@ export interface LLMProvider {
   complete(messages: LLMMessage[], options: LLMOptions): Promise<string>
 }
 
+/** Typed error thrown by provider.complete() with a machine-readable code. */
+export class LLMError extends Error {
+  constructor(public readonly code: string, message: string) {
+    super(message)
+    this.name = 'LLMError'
+  }
+}
+
 export type ProviderName = 'openai' | 'anthropic' | 'compatible'
