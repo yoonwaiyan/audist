@@ -28,10 +28,19 @@ export default function SessionListPage(): React.JSX.Element {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
+  const ALL_PROVIDERS: ProviderName[] = ['openai', 'anthropic', 'compatible']
+
   const loadSettings = useCallback(async (): Promise<void> => {
-    const s = await window.api.settings.getLLMSettings()
+    const [s, providerResults] = await Promise.all([
+      window.api.settings.getLLMSettings(),
+      Promise.all(
+        ALL_PROVIDERS.map(async (p) => ({ p, models: await window.api.settings.getProviderModels(p) }))
+      )
+    ])
     if (s.activeProvider) setActiveProvider(s.activeProvider)
     if (s.models) setSelectedModels(s.models)
+    const verified = providerResults.filter((r) => r.models !== null).map((r) => r.p)
+    setVerifiedProviders(verified)
   }, [])
 
   useEffect(() => {
@@ -40,15 +49,6 @@ export default function SessionListPage(): React.JSX.Element {
     // Refresh when window regains focus — picks up changes made in prefs window
     const handleFocus = (): void => { void loadSettings() }
     window.addEventListener('focus', handleFocus)
-
-    const allProviders: ProviderName[] = ['openai', 'anthropic', 'compatible']
-    void Promise.all(
-      allProviders.map(async (p) => ({ p, models: await window.api.settings.getProviderModels(p) }))
-    ).then((results) => {
-      const verified = results.filter((r) => r.models !== null).map((r) => r.p)
-      setVerifiedProviders(verified)
-    })
-
     return () => window.removeEventListener('focus', handleFocus)
   }, [loadSettings])
 
@@ -85,68 +85,85 @@ export default function SessionListPage(): React.JSX.Element {
       <AppLogo size="lg" />
 
       {/* LLM provider selector */}
-      <div ref={dropdownRef} className="relative">
-        <button
-          onClick={() => setDropdownOpen((o) => !o)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--color-bg-surface-hover)]
-            border border-[var(--color-border)] text-sm text-[var(--color-text-primary)]
-            hover:border-[var(--color-accent)]/50 transition-colors cursor-default"
-        >
-          <span className="text-[var(--color-text-muted)] text-xs">LLM:</span>
-          {(() => {
-            const p = activeProvider ?? (verifiedProviders.length > 0 ? verifiedProviders[0] : null)
-            const m = p ? selectedModels[p] : null
-            return p ? (
-              <span>
-                {PROVIDER_LABELS[p]}
-                {m && <span className="text-[var(--color-text-muted)]"> · {m}</span>}
-              </span>
-            ) : (
-              <span>Not configured</span>
-            )
-          })()}
-          <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
-        </button>
+      {(() => {
+        const displayProvider = activeProvider ?? (verifiedProviders.length > 0 ? verifiedProviders[0] : null)
+        const displayModel = displayProvider ? selectedModels[displayProvider] : null
+        const isConfigured = verifiedProviders.length > 0
 
-        {dropdownOpen && (
-          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-52
-            bg-[var(--color-bg-surface-hover)] border border-[var(--color-border)]
-            rounded-lg shadow-lg py-1 z-50">
-            {verifiedProviders.length === 0 ? (
-              <p className="px-4 py-2 text-xs text-[var(--color-text-muted)] italic">
-                No provider verified yet.
-              </p>
-            ) : (
-              verifiedProviders.map((p) => (
+        return (
+          <div className="flex flex-col items-center gap-1.5">
+            <div ref={dropdownRef} className="relative">
+              <button
+                onClick={() => isConfigured && setDropdownOpen((o) => !o)}
+                disabled={!isConfigured}
+                className={[
+                  'flex items-center gap-2 px-4 py-2 rounded-lg border text-sm transition-colors cursor-default',
+                  isConfigured
+                    ? 'bg-[var(--color-bg-surface-hover)] border-[var(--color-border)] text-[var(--color-text-primary)] hover:border-[var(--color-accent)]/50'
+                    : 'bg-[var(--color-bg-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] opacity-50 cursor-not-allowed'
+                ].join(' ')}
+              >
+                <span className="text-[var(--color-text-muted)] text-xs">LLM:</span>
+                {displayProvider ? (
+                  <span>
+                    {PROVIDER_LABELS[displayProvider]}
+                    {displayModel && <span className="text-[var(--color-text-muted)]"> · {displayModel}</span>}
+                  </span>
+                ) : (
+                  <span>Not configured</span>
+                )}
+                <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
+              </button>
+
+              {dropdownOpen && (
+                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-52
+                  bg-[var(--color-bg-surface-hover)] border border-[var(--color-border)]
+                  rounded-lg shadow-lg py-1 z-50">
+                  {verifiedProviders.map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => handleSelectProvider(p)}
+                      className="w-full text-left px-4 py-2 text-sm text-[var(--color-text-primary)]
+                        hover:bg-[var(--color-bg-surface)] transition-colors flex items-center justify-between cursor-default"
+                    >
+                      <div>
+                        <div>{PROVIDER_LABELS[p]}</div>
+                        {selectedModels[p] && (
+                          <div className="text-xs text-[var(--color-text-muted)]">{selectedModels[p]}</div>
+                        )}
+                      </div>
+                      {activeProvider === p && (
+                        <span className="text-[var(--color-accent)] text-xs">✓</span>
+                      )}
+                    </button>
+                  ))}
+                  <div className="border-t border-[var(--color-border)] my-1" />
+                  <button
+                    onClick={handleOpenLLMPrefs}
+                    className="w-full text-left px-4 py-2 text-sm text-[var(--color-accent)]
+                      hover:bg-[var(--color-bg-surface)] transition-colors cursor-default"
+                  >
+                    Configure LLM Settings →
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {!isConfigured && (
+              <p className="text-xs text-[var(--color-text-muted)] text-center">
+                No AI provider configured —{' '}
                 <button
-                  key={p}
-                  onClick={() => handleSelectProvider(p)}
-                  className="w-full text-left px-4 py-2 text-sm text-[var(--color-text-primary)]
-                    hover:bg-[var(--color-bg-surface)] transition-colors flex items-center justify-between cursor-default"
+                  onClick={handleOpenLLMPrefs}
+                  className="text-[var(--color-accent)] hover:underline cursor-default"
                 >
-                  <div>
-                    <div>{PROVIDER_LABELS[p]}</div>
-                    {selectedModels[p] && (
-                      <div className="text-xs text-[var(--color-text-muted)]">{selectedModels[p]}</div>
-                    )}
-                  </div>
-                  {activeProvider === p && (
-                    <span className="text-[var(--color-accent)] text-xs">✓</span>
-                  )}
-                </button>
-              ))
+                  set one up
+                </button>{' '}
+                to generate summaries.
+              </p>
             )}
-            <div className="border-t border-[var(--color-border)] my-1" />
-            <button
-              onClick={handleOpenLLMPrefs}
-              className="w-full text-left px-4 py-2 text-sm text-[var(--color-accent)]
-                hover:bg-[var(--color-bg-surface)] transition-colors cursor-default"
-            >
-              Configure LLM Settings →
-            </button>
           </div>
-        )}
-      </div>
+        )
+      })()}
 
       {/* Mic button */}
       <button
