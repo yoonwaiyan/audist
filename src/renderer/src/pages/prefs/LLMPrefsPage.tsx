@@ -261,6 +261,17 @@ export default function LLMPrefsPage(): React.JSX.Element {
     }
   }, [])
 
+  // When the compatible model list first loads, auto-save the first model so
+  // the main window can show it without the user needing to open the dropdown.
+  useEffect(() => {
+    const list = providerModels.compatible
+    if (list && list.length > 0 && !models.compatible) {
+      setModels((prev) => ({ ...prev, compatible: list[0] }))
+      void window.api.settings.setModel('compatible', list[0])
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [providerModels.compatible])
+
   const handleModelChange = (provider: ProviderName, model: string): void => {
     setModels((prev) => ({ ...prev, [provider]: model }))
     void window.api.settings.setModel(provider, model)
