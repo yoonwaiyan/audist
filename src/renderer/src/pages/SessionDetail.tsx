@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -70,6 +70,9 @@ export default function SessionDetail(): React.JSX.Element {
   const [copied, setCopied] = useState(false)
   const [summaryError, setSummaryError] = useState<{ code: string; message: string } | null>(null)
   const [retrying, setRetrying] = useState(false)
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [titleValue, setTitleValue] = useState('')
+  const titleInputRef = useRef<HTMLInputElement>(null)
 
 
   // Reset and load session whenever the route id changes
@@ -147,7 +150,8 @@ export default function SessionDetail(): React.JSX.Element {
     )
   }
 
-  const { name, date, time } = formatTimestamp(session.id)
+  const { name: fallbackName, date, time } = formatTimestamp(session.id)
+  const displayName = session.title ?? fallbackName
   const isTranscribed = session.status === 'complete' || session.status === 'summarising'
   const isSummarized = session.status === 'complete' && summary != null
 
@@ -173,14 +177,56 @@ export default function SessionDetail(): React.JSX.Element {
     window.electron.ipcRenderer.send('audist:prefs:open', { section: 'llm' })
   }
 
+  const handleTitleClick = (): void => {
+    setTitleValue(displayName)
+    setEditingTitle(true)
+    setTimeout(() => titleInputRef.current?.select(), 0)
+  }
+
+  const handleTitleConfirm = (): void => {
+    const trimmed = titleValue.trim()
+    if (trimmed && trimmed !== displayName) {
+      void window.api.session.rename(session.dir, trimmed)
+      setSession((prev) => prev ? { ...prev, title: trimmed } : prev)
+    }
+    setEditingTitle(false)
+  }
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent): void => {
+    if (e.key === 'Enter') handleTitleConfirm()
+    if (e.key === 'Escape') setEditingTitle(false)
+  }
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Session header */}
       <div className="border-b border-[var(--color-border)] px-5 py-3 shrink-0">
         <div className="flex items-center justify-between">
-          <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)] truncate">
-            {name}
-          </h2>
+          {editingTitle ? (
+            <input
+              ref={titleInputRef}
+              type="text"
+              value={titleValue}
+              onChange={(e) => setTitleValue(e.target.value)}
+              onBlur={handleTitleConfirm}
+              onKeyDown={handleTitleKeyDown}
+              className="text-[15px] font-semibold text-[var(--color-text-primary)] bg-transparent
+                border-b border-[var(--color-accent)] outline-none truncate w-full"
+              aria-label="Session title"
+            />
+          ) : (
+            <h2
+              role="button"
+              tabIndex={0}
+              onClick={handleTitleClick}
+              onKeyDown={(e) => e.key === 'Enter' && handleTitleClick()}
+              title="Click to rename"
+              className="text-[15px] font-semibold text-[var(--color-text-primary)] truncate
+                cursor-text hover:text-[var(--color-text-primary)] select-none"
+            >
+              {displayName}
+            </h2>
+          )}
           <div className="flex items-center gap-1 shrink-0 ml-3">
             <Tooltip label="Reveal in Finder">
               <button
