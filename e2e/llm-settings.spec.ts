@@ -295,3 +295,268 @@ test.describe('LLM settings — Test Connection (mocked OpenAI)', () => {
     }
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Anthropic tab
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('LLM settings — Anthropic tab', () => {
+  test('shows API key field and Test Connection button', async () => {
+    const { app, prefsPage, cleanup, saveDir } = await launchWithPrefsNoMock()
+    try {
+      await prefsPage.getByRole('button', { name: 'Anthropic', exact: true }).click()
+      await expect(prefsPage.getByPlaceholder('Paste API key…')).toBeVisible()
+      await expect(prefsPage.getByRole('button', { name: 'Test Connection' })).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('model dropdown appears after successful test connection', async () => {
+    const { app, prefsPage, cleanup, saveDir } = await launchWithLLMPrefs('success')
+    try {
+      await prefsPage.getByRole('button', { name: 'Anthropic', exact: true }).click()
+      await prefsPage.getByRole('button', { name: 'Test Connection' }).click()
+      await expect(prefsPage.getByText(/Connected · \d+ ms/)).toBeVisible({ timeout: 3000 })
+
+      const modelSelect = prefsPage.locator('select')
+      await expect(modelSelect).toBeVisible()
+      await expect(modelSelect.locator('option', { hasText: 'claude-sonnet-4-5' })).toHaveCount(1)
+      await expect(modelSelect.locator('option', { hasText: 'claude-haiku-4-5' })).toHaveCount(1)
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('shows AUTH_ERROR for invalid key', async () => {
+    const { app, prefsPage, cleanup, saveDir } = await launchWithLLMPrefs('auth_error')
+    try {
+      await prefsPage.getByRole('button', { name: 'Anthropic', exact: true }).click()
+      await prefsPage.getByRole('button', { name: 'Test Connection' }).click()
+      await expect(prefsPage.getByText('Invalid API key')).toBeVisible({ timeout: 3000 })
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OpenAI-compatible tab
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('LLM settings — OpenAI-compatible tab', () => {
+  test('shows base URL and optional API key fields', async () => {
+    const { app, prefsPage, cleanup, saveDir } = await launchWithPrefsNoMock()
+    try {
+      await prefsPage.getByRole('button', { name: 'OpenAI-compatible', exact: true }).click()
+      await expect(prefsPage.getByPlaceholder('http://localhost:11434/v1')).toBeVisible()
+      await expect(prefsPage.getByText('API Key (optional)')).toBeVisible()
+      await expect(prefsPage.getByRole('button', { name: 'Test Connection' })).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('shows hint to run Test Connection when base URL entered but no models loaded', async () => {
+    const { app, prefsPage, cleanup, saveDir } = await launchWithPrefsNoMock()
+    try {
+      await prefsPage.getByRole('button', { name: 'OpenAI-compatible', exact: true }).click()
+      await prefsPage.getByPlaceholder('http://localhost:11434/v1').fill('http://localhost:11434/v1')
+      await prefsPage.getByPlaceholder('http://localhost:11434/v1').blur()
+      await expect(prefsPage.getByText(/Run "Test Connection" to load available models/)).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('model dropdown appears after successful test connection', async () => {
+    const { app, prefsPage, cleanup, saveDir } = await launchWithLLMPrefs('success')
+    try {
+      await prefsPage.getByRole('button', { name: 'OpenAI-compatible', exact: true }).click()
+      await prefsPage.getByPlaceholder('http://localhost:11434/v1').fill('http://localhost:11434/v1')
+      await prefsPage.getByPlaceholder('http://localhost:11434/v1').blur()
+      await prefsPage.getByRole('button', { name: 'Test Connection' }).click()
+      await expect(prefsPage.getByText(/Connected · \d+ ms/)).toBeVisible({ timeout: 3000 })
+
+      const modelSelect = prefsPage.locator('select')
+      await expect(modelSelect).toBeVisible()
+      await expect(modelSelect.locator('option', { hasText: 'ollama-llama3' })).toHaveCount(1)
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Field ordering — credentials before model
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('LLM settings — field ordering', () => {
+  test('model dropdown is hidden before test, appears after success on OpenAI tab', async () => {
+    const { app, prefsPage, cleanup, saveDir } = await launchWithLLMPrefs('success')
+    try {
+      await expect(prefsPage.locator('select')).not.toBeVisible()
+      await expect(prefsPage.getByText('API Key', { exact: true })).toBeVisible()
+      await expect(prefsPage.getByRole('button', { name: 'Test Connection' })).toBeVisible()
+
+      await prefsPage.getByRole('button', { name: 'Test Connection' }).first().click()
+      await expect(prefsPage.getByText(/Connected/)).toBeVisible({ timeout: 3000 })
+      await expect(prefsPage.locator('select')).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('model dropdown is hidden before test, appears after success on Anthropic tab', async () => {
+    const { app, prefsPage, cleanup, saveDir } = await launchWithLLMPrefs('success')
+    try {
+      await prefsPage.getByRole('button', { name: 'Anthropic', exact: true }).click()
+      await expect(prefsPage.locator('select')).not.toBeVisible()
+      await expect(prefsPage.getByText('API Key', { exact: true })).toBeVisible()
+
+      await prefsPage.getByRole('button', { name: 'Test Connection' }).click()
+      await expect(prefsPage.getByText(/Connected/)).toBeVisible({ timeout: 3000 })
+      await expect(prefsPage.locator('select')).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main window — LLM selector
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('Main window — LLM selector', () => {
+  test('LLM button is disabled and shows Not configured when no provider is set', async () => {
+    const saveDir = makeSaveDir()
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready'
+    })
+    try {
+      const llmBtn = page.getByRole('button', { name: /LLM:/ })
+      await expect(llmBtn).toBeVisible()
+      await expect(llmBtn).toBeDisabled()
+      await expect(llmBtn).toContainText('Not configured')
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('shows "set one up" link when no provider is configured', async () => {
+    const saveDir = makeSaveDir()
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready'
+    })
+    try {
+      await expect(page.getByText(/No AI provider configured/)).toBeVisible()
+      await expect(page.getByRole('button', { name: 'set one up' })).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('shows OpenAI provider and selected model when configured', async () => {
+    const saveDir = makeSaveDir()
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready',
+      llm: 'success',
+      llmSettings: {
+        activeProvider: 'openai',
+        models: { openai: 'gpt-4o' },
+        cachedModels: { openai: ['gpt-4o', 'gpt-4o-mini'] }
+      }
+    })
+    try {
+      const llmBtn = page.getByRole('button', { name: /LLM:/ })
+      await expect(llmBtn).toBeEnabled()
+      await expect(llmBtn).toContainText('OpenAI')
+      await expect(llmBtn).toContainText('gpt-4o')
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('shows Anthropic provider and selected model when configured', async () => {
+    const saveDir = makeSaveDir()
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready',
+      llm: 'success',
+      llmSettings: {
+        activeProvider: 'anthropic',
+        models: { anthropic: 'claude-haiku-4-5' },
+        cachedModels: { anthropic: ['claude-sonnet-4-5', 'claude-haiku-4-5'] }
+      }
+    })
+    try {
+      const llmBtn = page.getByRole('button', { name: /LLM:/ })
+      await expect(llmBtn).toBeEnabled()
+      await expect(llmBtn).toContainText('Anthropic')
+      await expect(llmBtn).toContainText('claude-haiku-4-5')
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('dropdown lists configured providers with their models', async () => {
+    const saveDir = makeSaveDir()
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready',
+      llm: 'success',
+      llmSettings: {
+        activeProvider: 'openai',
+        models: { openai: 'gpt-4o', anthropic: 'claude-haiku-4-5' },
+        cachedModels: {
+          openai: ['gpt-4o', 'gpt-4o-mini'],
+          anthropic: ['claude-sonnet-4-5', 'claude-haiku-4-5']
+        }
+      }
+    })
+    try {
+      await page.getByRole('button', { name: /LLM:/ }).click()
+      // Both providers should appear in the dropdown
+      await expect(page.getByText('OpenAI').last()).toBeVisible()
+      await expect(page.getByText('gpt-4o').last()).toBeVisible()
+      await expect(page.getByText('Anthropic').last()).toBeVisible()
+      await expect(page.getByText('claude-haiku-4-5').last()).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+})
