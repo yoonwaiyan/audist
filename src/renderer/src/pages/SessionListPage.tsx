@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { AppLogo } from '../components/ui'
 import { useRecorderContext } from '../contexts/RecorderContext'
@@ -23,14 +23,23 @@ function MicIcon(): React.JSX.Element {
 export default function SessionListPage(): React.JSX.Element {
   const { startRecording, error } = useRecorderContext()
   const [activeProvider, setActiveProvider] = useState<ProviderName | null>(null)
+  const [selectedModels, setSelectedModels] = useState<Partial<Record<ProviderName, string>>>({})
   const [verifiedProviders, setVerifiedProviders] = useState<ProviderName[]>([])
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
+  const loadSettings = useCallback(async (): Promise<void> => {
+    const s = await window.api.settings.getLLMSettings()
+    if (s.activeProvider) setActiveProvider(s.activeProvider)
+    if (s.models) setSelectedModels(s.models)
+  }, [])
+
   useEffect(() => {
-    void window.api.settings.getLLMSettings().then((s) => {
-      if (s.activeProvider) setActiveProvider(s.activeProvider)
-    })
+    void loadSettings()
+
+    // Refresh when window regains focus — picks up changes made in prefs window
+    const handleFocus = (): void => { void loadSettings() }
+    window.addEventListener('focus', handleFocus)
 
     const allProviders: ProviderName[] = ['openai', 'anthropic', 'compatible']
     void Promise.all(
@@ -39,7 +48,9 @@ export default function SessionListPage(): React.JSX.Element {
       const verified = results.filter((r) => r.models !== null).map((r) => r.p)
       setVerifiedProviders(verified)
     })
-  }, [])
+
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [loadSettings])
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -82,13 +93,18 @@ export default function SessionListPage(): React.JSX.Element {
             hover:border-[var(--color-accent)]/50 transition-colors cursor-default"
         >
           <span className="text-[var(--color-text-muted)] text-xs">LLM:</span>
-          <span>
-            {activeProvider
-              ? PROVIDER_LABELS[activeProvider]
-              : verifiedProviders.length > 0
-                ? PROVIDER_LABELS[verifiedProviders[0]]
-                : 'Not configured'}
-          </span>
+          {(() => {
+            const p = activeProvider ?? (verifiedProviders.length > 0 ? verifiedProviders[0] : null)
+            const m = p ? selectedModels[p] : null
+            return p ? (
+              <span>
+                {PROVIDER_LABELS[p]}
+                {m && <span className="text-[var(--color-text-muted)]"> · {m}</span>}
+              </span>
+            ) : (
+              <span>Not configured</span>
+            )
+          })()}
           <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
         </button>
 
@@ -108,7 +124,12 @@ export default function SessionListPage(): React.JSX.Element {
                   className="w-full text-left px-4 py-2 text-sm text-[var(--color-text-primary)]
                     hover:bg-[var(--color-bg-surface)] transition-colors flex items-center justify-between cursor-default"
                 >
-                  {PROVIDER_LABELS[p]}
+                  <div>
+                    <div>{PROVIDER_LABELS[p]}</div>
+                    {selectedModels[p] && (
+                      <div className="text-xs text-[var(--color-text-muted)]">{selectedModels[p]}</div>
+                    )}
+                  </div>
                   {activeProvider === p && (
                     <span className="text-[var(--color-accent)] text-xs">✓</span>
                   )}

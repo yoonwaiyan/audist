@@ -261,6 +261,17 @@ export default function LLMPrefsPage(): React.JSX.Element {
     }
   }, [])
 
+  // When the compatible model list first loads, auto-save the first model so
+  // the main window can show it without the user needing to open the dropdown.
+  useEffect(() => {
+    const list = providerModels.compatible
+    if (list && list.length > 0 && !models.compatible) {
+      setModels((prev) => ({ ...prev, compatible: list[0] }))
+      void window.api.settings.setModel('compatible', list[0])
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [providerModels.compatible])
+
   const handleModelChange = (provider: ProviderName, model: string): void => {
     setModels((prev) => ({ ...prev, [provider]: model }))
     void window.api.settings.setModel(provider, model)
@@ -419,17 +430,46 @@ export default function LLMPrefsPage(): React.JSX.Element {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-[var(--color-text-primary)]">Model name</label>
-            <input
-              type="text"
-              value={models.compatible ?? ''}
-              onChange={(e) => handleModelChange('compatible', e.target.value)}
-              placeholder="llama3"
-              className="w-full px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]
-                text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]
-                focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)] transition-colors"
-            />
+            <label className="text-sm font-medium text-[var(--color-text-primary)]">Model</label>
+            {providerModels.compatible && providerModels.compatible.length > 0 ? (
+              <select
+                value={models.compatible ?? providerModels.compatible[0]}
+                onChange={(e) => handleModelChange('compatible', e.target.value)}
+                className="w-full px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                  text-sm text-[var(--color-text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]
+                  cursor-default transition-colors"
+              >
+                {providerModels.compatible.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            ) : (
+              <>
+                <input
+                  type="text"
+                  value={models.compatible ?? ''}
+                  onChange={(e) => handleModelChange('compatible', e.target.value)}
+                  placeholder="e.g. llama3"
+                  className="w-full px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                    text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]
+                    focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)] transition-colors"
+                />
+                {compatibleBaseUrl.trim() && (
+                  <p className="text-xs text-[var(--color-text-muted)]">
+                    Run "Test Connection" to load available models from the endpoint.
+                  </p>
+                )}
+              </>
+            )}
           </div>
+          <ApiKeyField
+            label="API Key (optional)"
+            credKey="compatible.apiKey"
+            isSet={!!credentialStatus['compatible.apiKey']}
+            onSave={handleSaveCredential}
+            onClear={handleClearCredential}
+            onEdit={() => resetTestState('compatible')}
+          />
           <TestConnectionButton
             provider="compatible"
             isConfigured={isProviderConfigured('compatible')}

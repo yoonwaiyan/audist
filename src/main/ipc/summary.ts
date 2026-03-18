@@ -109,10 +109,15 @@ export async function summariseSession(sessionDir: string, win: BrowserWindow): 
   const userPrompt = buildPrompt(DEFAULT_USER_TEMPLATE, transcript, date)
 
   const activeProvider = (settings.activeProvider ?? provider.name) as ProviderName
-  const model =
-    settings.models?.[activeProvider] ??
-    provider.availableModels[0] ??
-    'gpt-4o-mini'
+  const model = settings.models?.[activeProvider] ?? provider.availableModels[0] ?? ''
+  if (!model) {
+    const message = 'No model selected. Choose a model in Settings → Language Model.'
+    updateSessionStatus(sessionDir, 'error', message, 'NO_MODEL')
+    if (!win.isDestroyed()) {
+      win.webContents.send('audist:summary:error', { sessionId, code: 'NO_MODEL', message })
+    }
+    return
+  }
 
   updateSessionStatus(sessionDir, 'summarising')
   if (!win.isDestroyed()) {
