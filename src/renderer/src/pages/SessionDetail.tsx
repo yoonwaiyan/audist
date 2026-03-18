@@ -218,6 +218,7 @@ export default function SessionDetail(): React.JSX.Element {
             <h2
               role="button"
               tabIndex={0}
+              data-testid="session-title"
               onClick={handleTitleClick}
               onKeyDown={(e) => e.key === 'Enter' && handleTitleClick()}
               title="Click to rename"

@@ -10,6 +10,7 @@ export interface SessionSeed {
   error?: string
   summaryMd?: string
   transcriptTxt?: string
+  title?: string
 }
 
 /**
@@ -22,7 +23,12 @@ export function seedSessions(saveDir: string, sessions: SessionSeed[]): void {
     fs.mkdirSync(sessionDir, { recursive: true })
     fs.writeFileSync(
       path.join(sessionDir, 'session.json'),
-      JSON.stringify({ duration: s.duration, status: s.status, ...(s.error ? { error: s.error } : {}) })
+      JSON.stringify({
+        duration: s.duration,
+        status: s.status,
+        ...(s.error ? { error: s.error } : {}),
+        ...(s.title ? { title: s.title } : {})
+      })
     )
     if (s.summaryMd !== undefined) {
       fs.writeFileSync(path.join(sessionDir, 'summary.md'), s.summaryMd, 'utf-8')
