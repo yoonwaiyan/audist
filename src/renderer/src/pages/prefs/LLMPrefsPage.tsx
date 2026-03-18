@@ -462,6 +462,14 @@ export default function LLMPrefsPage(): React.JSX.Element {
               </>
             )}
           </div>
+          <ApiKeyField
+            label="API Key (optional)"
+            credKey="compatible.apiKey"
+            isSet={!!credentialStatus['compatible.apiKey']}
+            onSave={handleSaveCredential}
+            onClear={handleClearCredential}
+            onEdit={() => resetTestState('compatible')}
+          />
           <TestConnectionButton
             provider="compatible"
             isConfigured={isProviderConfigured('compatible')}
