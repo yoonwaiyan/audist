@@ -9,7 +9,7 @@ import ModelDropdown from '../../components/ui/ModelDropdown'
 const PROVIDERS: { id: ProviderName; label: string; subtitle: string }[] = [
   { id: 'openai', label: 'OpenAI', subtitle: 'GPT-4o, GPT-4o mini' },
   { id: 'anthropic', label: 'Anthropic', subtitle: 'Claude Sonnet, Haiku' },
-  { id: 'compatible', label: 'Compatible', subtitle: 'Ollama, LM Studio' }
+  { id: 'compatible', label: 'OpenAI-compatible', subtitle: 'Ollama, LM Studio' }
 ]
 
 const ERROR_LABELS: Record<string, string> = {
@@ -329,6 +329,7 @@ export default function LLMPrefsPage(): React.JSX.Element {
           <button
             key={id}
             type="button"
+            aria-label={label}
             onClick={() => setTab(id)}
             className={`p-4 rounded-lg border-2 transition-all cursor-default text-center
               ${tab === id

@@ -38,7 +38,7 @@ export default function ModelDropdown({
   }, [open])
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div ref={containerRef} data-testid="model-dropdown" className="relative w-full">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
@@ -57,7 +57,7 @@ export default function ModelDropdown({
       </button>
 
       {open && (
-        <div className="absolute top-full mt-1 w-full bg-surface-raised border border-border rounded-lg shadow-lg py-1 z-50 max-h-64 overflow-y-auto">
+        <div data-testid="model-dropdown-panel" className="absolute top-full mt-1 w-full bg-surface-raised border border-border rounded-lg shadow-lg py-1 z-50 max-h-64 overflow-y-auto">
           {models.map((model) => (
             <button
               key={model.id}

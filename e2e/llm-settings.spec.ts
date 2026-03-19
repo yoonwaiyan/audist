@@ -95,11 +95,8 @@ test.describe('LLM settings — layout', () => {
       await prefsPage.getByRole('button', { name: 'Test Connection' }).first().click()
       await expect(prefsPage.getByText(/Connected/)).toBeVisible({ timeout: 3000 })
 
-      // Model select should now have options populated from the test result
-      const modelSelect = prefsPage.locator('select').first()
-      await expect(modelSelect).toBeVisible()
-      const optionCount = await modelSelect.locator('option').count()
-      expect(optionCount).toBeGreaterThan(0)
+      // Model dropdown should now appear after successful connection
+      await expect(prefsPage.getByTestId('model-dropdown')).toBeVisible()
     } finally {
       await app.close()
       cleanup()
@@ -321,10 +318,12 @@ test.describe('LLM settings — Anthropic tab', () => {
       await prefsPage.getByRole('button', { name: 'Test Connection' }).click()
       await expect(prefsPage.getByText(/Connected · \d+ ms/)).toBeVisible({ timeout: 3000 })
 
-      const modelSelect = prefsPage.locator('select')
-      await expect(modelSelect).toBeVisible()
-      await expect(modelSelect.locator('option', { hasText: 'claude-sonnet-4-5' })).toHaveCount(1)
-      await expect(modelSelect.locator('option', { hasText: 'claude-haiku-4-5' })).toHaveCount(1)
+      const modelDropdown = prefsPage.getByTestId('model-dropdown')
+      await expect(modelDropdown).toBeVisible()
+      await modelDropdown.getByRole('button').first().click()
+      const panel = prefsPage.getByTestId('model-dropdown-panel')
+      await expect(panel.getByRole('button', { name: 'claude-sonnet-4-5' })).toBeVisible()
+      await expect(panel.getByRole('button', { name: 'claude-haiku-4-5' })).toBeVisible()
     } finally {
       await app.close()
       cleanup()
@@ -388,9 +387,11 @@ test.describe('LLM settings — OpenAI-compatible tab', () => {
       await prefsPage.getByRole('button', { name: 'Test Connection' }).click()
       await expect(prefsPage.getByText(/Connected · \d+ ms/)).toBeVisible({ timeout: 3000 })
 
-      const modelSelect = prefsPage.locator('select')
-      await expect(modelSelect).toBeVisible()
-      await expect(modelSelect.locator('option', { hasText: 'ollama-llama3' })).toHaveCount(1)
+      const modelDropdown = prefsPage.getByTestId('model-dropdown')
+      await expect(modelDropdown).toBeVisible()
+      await modelDropdown.getByRole('button').first().click()
+      const panel = prefsPage.getByTestId('model-dropdown-panel')
+      await expect(panel.getByRole('button', { name: 'ollama-llama3' })).toBeVisible()
     } finally {
       await app.close()
       cleanup()
@@ -407,13 +408,13 @@ test.describe('LLM settings — field ordering', () => {
   test('model dropdown is hidden before test, appears after success on OpenAI tab', async () => {
     const { app, prefsPage, cleanup, saveDir } = await launchWithLLMPrefs('success')
     try {
-      await expect(prefsPage.locator('select')).not.toBeVisible()
+      await expect(prefsPage.getByTestId('model-dropdown')).not.toBeVisible()
       await expect(prefsPage.getByText('API Key', { exact: true })).toBeVisible()
       await expect(prefsPage.getByRole('button', { name: 'Test Connection' })).toBeVisible()
 
       await prefsPage.getByRole('button', { name: 'Test Connection' }).first().click()
       await expect(prefsPage.getByText(/Connected/)).toBeVisible({ timeout: 3000 })
-      await expect(prefsPage.locator('select')).toBeVisible()
+      await expect(prefsPage.getByTestId('model-dropdown')).toBeVisible()
     } finally {
       await app.close()
       cleanup()
@@ -425,12 +426,12 @@ test.describe('LLM settings — field ordering', () => {
     const { app, prefsPage, cleanup, saveDir } = await launchWithLLMPrefs('success')
     try {
       await prefsPage.getByRole('button', { name: 'Anthropic', exact: true }).click()
-      await expect(prefsPage.locator('select')).not.toBeVisible()
+      await expect(prefsPage.getByTestId('model-dropdown')).not.toBeVisible()
       await expect(prefsPage.getByText('API Key', { exact: true })).toBeVisible()
 
       await prefsPage.getByRole('button', { name: 'Test Connection' }).click()
       await expect(prefsPage.getByText(/Connected/)).toBeVisible({ timeout: 3000 })
-      await expect(prefsPage.locator('select')).toBeVisible()
+      await expect(prefsPage.getByTestId('model-dropdown')).toBeVisible()
     } finally {
       await app.close()
       cleanup()
