@@ -51,7 +51,7 @@ export default function Step2SaveLocation({ onNext, onBack }: Step2SaveLocationP
   const sessionFolder = savePath ? `${savePath}/2026-03-19_meeting` : null
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-md">
+    <div className="flex flex-col gap-6 w-full max-w-xl">
       <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-lg p-8 flex flex-col gap-6">
         <div className="flex flex-col gap-2">
           <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">

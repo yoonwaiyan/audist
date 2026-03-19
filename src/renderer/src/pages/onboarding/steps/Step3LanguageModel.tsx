@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { ProviderName, TestConnectionResult } from '../../../../../preload/index.d'
-import ProviderCard from '../../../components/ui/ProviderCard'
+import ModelDropdown from '../../../components/ui/ModelDropdown'
 import TextInput from '../../../components/ui/TextInput'
 import Button from '../../../components/ui/Button'
 
@@ -9,29 +9,29 @@ interface Step3LanguageModelProps {
   onBack: () => void
 }
 
-const PROVIDERS: { id: ProviderName; name: string; description: string }[] = [
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    description: 'Use GPT-4o and other OpenAI models to generate summaries'
-  },
-  {
-    id: 'anthropic',
-    name: 'Anthropic',
-    description: 'Use Claude to generate intelligent, accurate summaries'
-  },
-  {
-    id: 'compatible',
-    name: 'Local / Compatible',
-    description: 'Use any OpenAI-compatible server (Ollama, LM Studio, etc.)'
-  }
+// ─────────────────────────────────────────────────────────────────────────────
+// Provider grid data
+// ─────────────────────────────────────────────────────────────────────────────
+
+const PROVIDERS: { id: ProviderName; name: string; subtitle: string }[] = [
+  { id: 'openai', name: 'OpenAI', subtitle: 'GPT-4o, GPT-4o mini' },
+  { id: 'anthropic', name: 'Anthropic', subtitle: 'Claude Sonnet, Haiku' },
+  { id: 'compatible', name: 'Local', subtitle: 'Ollama, LM Studio' }
 ]
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TestState
+// ─────────────────────────────────────────────────────────────────────────────
 
 type TestState =
   | { status: 'idle' }
   | { status: 'testing' }
-  | { status: 'success'; model: string }
+  | { status: 'success'; models: string[] }
   | { status: 'error'; message: string }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function Step3LanguageModel({ onNext, onBack }: Step3LanguageModelProps): React.JSX.Element {
   const [provider, setProvider] = useState<ProviderName>('openai')
@@ -39,6 +39,7 @@ export default function Step3LanguageModel({ onNext, onBack }: Step3LanguageMode
   const [baseUrl, setBaseUrl] = useState('')
   const [compatApiKey, setCompatApiKey] = useState('')
   const [testState, setTestState] = useState<TestState>({ status: 'idle' })
+  const [selectedModel, setSelectedModel] = useState('')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -46,13 +47,16 @@ export default function Step3LanguageModel({ onNext, onBack }: Step3LanguageMode
     setBaseUrl('')
     setCompatApiKey('')
     setTestState({ status: 'idle' })
+    setSelectedModel('')
   }, [provider])
 
   useEffect(() => {
     const unsub = window.api.settings.onTestResult(
       ({ provider: _p, result }: { provider: string; result: TestConnectionResult }) => {
         if (result.success) {
-          setTestState({ status: 'success', model: result.model })
+          const models = result.models ?? (result.model ? [result.model] : [])
+          setTestState({ status: 'success', models })
+          if (models.length > 0) setSelectedModel(models[0])
         } else {
           setTestState({ status: 'error', message: result.message })
         }
@@ -82,14 +86,19 @@ export default function Step3LanguageModel({ onNext, onBack }: Step3LanguageMode
     try {
       await window.api.settings.setProvider(provider)
       await saveCredentials()
+      if (selectedModel) await window.api.settings.setModel(provider, selectedModel)
       onNext()
     } finally {
       setSaving(false)
     }
   }
 
+  const isTesting = testState.status === 'testing'
+  const canTest = provider === 'compatible' ? !!baseUrl : !!apiKey
+  const availableModels = testState.status === 'success' ? testState.models : []
+
   return (
-    <div className="flex flex-col gap-6 w-full max-w-md">
+    <div className="flex flex-col gap-6 w-full max-w-xl">
       <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-lg p-8 flex flex-col gap-6">
         <div className="flex flex-col gap-2">
           <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
@@ -101,16 +110,22 @@ export default function Step3LanguageModel({ onNext, onBack }: Step3LanguageMode
           </p>
         </div>
 
-        {/* Provider selection */}
-        <div className="flex flex-col gap-2">
+        {/* Provider grid */}
+        <div className="grid grid-cols-3 gap-4">
           {PROVIDERS.map((p) => (
-            <ProviderCard
+            <button
               key={p.id}
-              name={p.name}
-              description={p.description}
-              selected={provider === p.id}
+              type="button"
               onClick={() => setProvider(p.id)}
-            />
+              className={`p-4 rounded-lg border-2 transition-all cursor-default text-center
+                ${provider === p.id
+                  ? 'border-accent bg-accent/10'
+                  : 'border-border bg-surface-raised hover:border-accent/50'
+                }`}
+            >
+              <p className="font-semibold text-sm text-text-primary">{p.name}</p>
+              <p className="text-xs text-text-secondary mt-0.5">{p.subtitle}</p>
+            </button>
           ))}
         </div>
 
@@ -158,18 +173,15 @@ export default function Step3LanguageModel({ onNext, onBack }: Step3LanguageMode
           <Button
             variant="ghost"
             onClick={handleTestConnection}
-            disabled={
-              testState.status === 'testing' ||
-              (provider === 'compatible' ? !baseUrl : !apiKey)
-            }
-            loading={testState.status === 'testing'}
+            disabled={isTesting || !canTest}
+            loading={isTesting}
           >
             Test Connection
           </Button>
 
           {testState.status === 'success' && (
             <p className="text-xs text-[var(--color-success)] text-center">
-              Connected — model: {testState.model}
+              ✓ Connected to {provider === 'openai' ? 'OpenAI' : provider === 'anthropic' ? 'Anthropic' : 'server'}
             </p>
           )}
           {testState.status === 'error' && (
@@ -178,6 +190,19 @@ export default function Step3LanguageModel({ onNext, onBack }: Step3LanguageMode
             </p>
           )}
         </div>
+
+        {/* Model dropdown — only after successful connection */}
+        {testState.status === 'success' && availableModels.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">Model</label>
+            <ModelDropdown
+              models={availableModels.map((id) => ({ id, name: id }))}
+              value={selectedModel}
+              onChange={setSelectedModel}
+              placeholder="Select a model…"
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between">
@@ -185,10 +210,21 @@ export default function Step3LanguageModel({ onNext, onBack }: Step3LanguageMode
           Back
         </Button>
         <div className="flex items-center gap-3">
-          <Button variant="text" onClick={onNext}>
+          <Button
+            variant="text"
+            onClick={async () => {
+              await window.api.settings.clearLLMConfig()
+              onNext()
+            }}
+          >
             Skip for now
           </Button>
-          <Button variant="primary" onClick={handleFinish} loading={saving}>
+          <Button
+            variant="primary"
+            onClick={handleFinish}
+            loading={saving}
+            disabled={saving || !selectedModel}
+          >
             Finish Setup
           </Button>
         </div>

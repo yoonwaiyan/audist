@@ -5,7 +5,6 @@ import Button from '../../../components/ui/Button'
 
 interface Step1PermissionsProps {
   onNext: () => void
-  onBack: () => void
 }
 
 function isGranted(s: string): boolean {
@@ -18,7 +17,7 @@ function toRowStatus(s: string): 'granted' | 'denied' | 'not-yet-granted' {
   return 'not-yet-granted'
 }
 
-export default function Step1Permissions({ onNext, onBack }: Step1PermissionsProps): React.JSX.Element {
+export default function Step1Permissions({ onNext }: Step1PermissionsProps): React.JSX.Element {
   const [perms, setPerms] = useState<PermissionsState | null>(null)
   const [requesting, setRequesting] = useState(false)
 
@@ -59,7 +58,7 @@ export default function Step1Permissions({ onNext, onBack }: Step1PermissionsPro
     : false
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-md">
+    <div className="flex flex-col gap-6 w-full max-w-xl">
       <div className="bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-lg p-8 flex flex-col gap-6">
         <div className="flex flex-col gap-2">
           <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
@@ -102,10 +101,7 @@ export default function Step1Permissions({ onNext, onBack }: Step1PermissionsPro
         )}
       </div>
 
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={onBack} disabled>
-          Back
-        </Button>
+      <div className="flex items-center justify-end">
         <Button variant="primary" onClick={onNext} disabled={!bothGranted || requesting}>
           Continue
         </Button>

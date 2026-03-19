@@ -37,12 +37,12 @@ export default function Onboarding(): React.JSX.Element {
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="flex flex-col items-center gap-8 w-full px-8 pt-8 pb-8">
+        <div className="flex flex-col items-center gap-8 w-full max-w-xl mx-auto px-8 pt-8 pb-8">
           <AppLogo size="md" showWordmark />
           <WizardStepper steps={STEPS} currentStep={currentStep} />
 
           {currentStep === 0 && (
-            <Step1Permissions onNext={handleNext} onBack={handleBack} />
+            <Step1Permissions onNext={handleNext} />
           )}
           {currentStep === 1 && (
             <Step2SaveLocation onNext={handleNext} onBack={handleBack} />

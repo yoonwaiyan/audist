@@ -76,7 +76,9 @@ const api = {
     getSummarisationEnabled: (): Promise<boolean> =>
       ipcRenderer.invoke('audist:settings:getSummarisationEnabled'),
     setSummarisationEnabled: (enabled: boolean): Promise<void> =>
-      ipcRenderer.invoke('audist:settings:setSummarisationEnabled', { enabled })
+      ipcRenderer.invoke('audist:settings:setSummarisationEnabled', { enabled }),
+    clearLLMConfig: (): Promise<void> =>
+      ipcRenderer.invoke('audist:settings:clearLLMConfig')
   },
   summary: {
     read: (sessionDir: string): Promise<string | null> =>

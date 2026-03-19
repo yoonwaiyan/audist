@@ -8,7 +8,8 @@ import {
   getCachedModels,
   setCachedModels,
   getSummarisationEnabled,
-  setSummarisationEnabled
+  setSummarisationEnabled,
+  clearLLMConfig
 } from '../store'
 import { llmRegistry } from '../llm/registry'
 import type { ProviderName } from '../llm/types'
@@ -94,6 +95,14 @@ export function registerSettingsHandlers(): void {
       return getCachedModels(provider as ProviderName)
     }
   )
+
+  // Clear active provider, model, and credentials — used when user skips LLM setup
+  ipcMain.handle('audist:settings:clearLLMConfig', (): void => {
+    clearLLMConfig()
+    clearCredential('openai.apiKey')
+    clearCredential('anthropic.apiKey')
+    clearCredential('compatible.apiKey')
+  })
 
   // Trigger a test connection and push the result back via push event
   ipcMain.handle(

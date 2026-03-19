@@ -79,6 +79,7 @@ interface SettingsAPI {
   onTestResult: (cb: (data: { provider: string; result: TestConnectionResult }) => void) => IpcUnsub
   getSummarisationEnabled: () => Promise<boolean>
   setSummarisationEnabled: (enabled: boolean) => Promise<void>
+  clearLLMConfig: () => Promise<void>
 }
 
 interface SummaryAPI {
