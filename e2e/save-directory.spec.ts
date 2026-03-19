@@ -19,12 +19,13 @@ async function openGeneralPrefsPage(
 }
 
 test.describe('First launch (no save directory configured)', () => {
-  test('lands on setup page with Choose Folder button', async () => {
+  test('lands on onboarding wizard at permissions step', async () => {
     const { app, page, cleanup } = await launchApp()
 
-    // Should be on /setup — setup heading and action button visible
-    await expect(page.getByRole('heading', { name: 'Choose a Save Folder' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Choose Folder' })).toBeVisible()
+    // Should be on /onboarding — step 1 (permissions) heading visible
+    await expect(
+      page.getByRole('heading', { name: 'Audist needs two permissions to work' })
+    ).toBeVisible()
 
     // Main recording UI must NOT be shown (gear button is only in the main window header)
     await expect(page.locator('button[title*="Preferences"]')).not.toBeVisible()
@@ -33,12 +34,14 @@ test.describe('First launch (no save directory configured)', () => {
     cleanup()
   })
 
-  test('setup page has no skip or cancel option', async () => {
+  test('onboarding wizard has no skip or cancel option on step 1', async () => {
     const { app, page, cleanup } = await launchApp()
 
-    await expect(page.getByRole('heading', { name: 'Choose a Save Folder' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Audist needs two permissions to work' })
+    ).toBeVisible()
 
-    // No way to dismiss the setup without choosing a folder
+    // No way to skip past step 1 (Back is disabled, no skip/cancel)
     await expect(page.getByRole('button', { name: /skip/i })).not.toBeVisible()
     await expect(page.getByRole('button', { name: /cancel/i })).not.toBeVisible()
     await expect(page.getByRole('link', { name: /skip/i })).not.toBeVisible()
@@ -56,21 +59,24 @@ test.describe('Subsequent launch (save directory configured)', () => {
     await expect(page.getByRole('complementary').getByText('audist')).toBeVisible()
     await expect(page.locator('button[title*="Preferences"]')).toBeVisible()
 
-    // Setup page must NOT appear
-    await expect(page.getByRole('heading', { name: 'Choose a Save Folder' })).not.toBeVisible()
+    // Onboarding must NOT appear
+    await expect(
+      page.getByRole('heading', { name: 'Audist needs two permissions to work' })
+    ).not.toBeVisible()
 
     await app.close()
     cleanup()
   })
 
-  test('inaccessible directory: redirects back to setup page', async () => {
+  test('inaccessible directory: redirects to onboarding wizard', async () => {
     // Point to a path that does not exist — verify() will return false
     const missingDir = path.join(os.tmpdir(), 'audist-nonexistent-dir-' + Date.now())
     const { app, page, cleanup } = await launchApp({ saveDirectory: missingDir })
 
-    // Should be redirected to setup
-    await expect(page.getByRole('heading', { name: 'Choose a Save Folder' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Choose Folder' })).toBeVisible()
+    // Should be redirected to onboarding step 1
+    await expect(
+      page.getByRole('heading', { name: 'Audist needs two permissions to work' })
+    ).toBeVisible()
 
     await app.close()
     cleanup()

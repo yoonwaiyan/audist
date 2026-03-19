@@ -3,7 +3,7 @@ import AppShell from './components/layout/AppShell'
 import PrefsLayout from './layouts/PrefsLayout'
 import SessionListPage from './pages/SessionListPage'
 import SessionDetail from './pages/SessionDetail'
-import SetupPage from './pages/SetupPage'
+import Onboarding from './pages/onboarding/Onboarding'
 import PermissionsPage from './pages/PermissionsPage'
 import WhisperSetupPage from './pages/WhisperSetupPage'
 import GeneralPrefsPage from './pages/prefs/GeneralPrefsPage'
@@ -13,7 +13,7 @@ import PromptPrefsPage from './pages/prefs/PromptPrefsPage'
 async function requireSetup(): Promise<Response | null> {
   // 1. Save directory must be configured and accessible
   const dirOk = await window.api.directory.verify()
-  if (!dirOk) return redirect('/setup')
+  if (!dirOk) return redirect('/onboarding')
 
   // 2. Both permissions must be granted
   const perms = await window.api.permissions.check()
@@ -39,8 +39,8 @@ const router = createHashRouter([
     ]
   },
   {
-    path: '/setup',
-    element: <SetupPage />
+    path: '/onboarding',
+    element: <Onboarding />
   },
   {
     path: '/permissions',
