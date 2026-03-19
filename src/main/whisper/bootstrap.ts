@@ -6,6 +6,13 @@ import { join } from 'path'
 export const WHISPER_VERSION = '1.5.5'
 export const WHISPER_MODEL = 'base.en' as const
 
+// Set by the mock install handler in e2e tests so that isWhisperReady()
+// returns true after the simulated download completes (preventing redirect loops).
+let _testInstallComplete = false
+export function markTestInstallComplete(): void {
+  _testInstallComplete = true
+}
+
 export function getWhisperDir(): string {
   return join(app.getPath('userData'), 'whisper.cpp')
 }
@@ -24,7 +31,7 @@ export function isWhisperReady(): boolean {
   // E2E test override: AUDIST_TEST_WHISPER=ready skips the filesystem check
   const testOverride = process.env['AUDIST_TEST_WHISPER']
   if (testOverride === 'ready') return true
-  if (testOverride === 'not-ready') return false
+  if (testOverride === 'not-ready') return _testInstallComplete
 
   const dir = getWhisperDir()
   return existsSync(whisperBinaryPath(dir)) && existsSync(whisperModelPath(dir))
