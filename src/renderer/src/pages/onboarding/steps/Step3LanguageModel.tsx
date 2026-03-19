@@ -37,12 +37,14 @@ export default function Step3LanguageModel({ onNext, onBack }: Step3LanguageMode
   const [provider, setProvider] = useState<ProviderName>('openai')
   const [apiKey, setApiKey] = useState('')
   const [baseUrl, setBaseUrl] = useState('')
+  const [compatApiKey, setCompatApiKey] = useState('')
   const [testState, setTestState] = useState<TestState>({ status: 'idle' })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     setApiKey('')
     setBaseUrl('')
+    setCompatApiKey('')
     setTestState({ status: 'idle' })
   }, [provider])
 
@@ -59,8 +61,19 @@ export default function Step3LanguageModel({ onNext, onBack }: Step3LanguageMode
     return unsub
   }, [])
 
+  const saveCredentials = async (): Promise<void> => {
+    if (provider === 'compatible') {
+      if (baseUrl) await window.api.settings.setCompatibleBaseUrl(baseUrl)
+      if (compatApiKey) await window.api.settings.setCredential('compatible.apiKey', compatApiKey)
+    } else {
+      const credKey = provider === 'openai' ? 'openai.apiKey' : 'anthropic.apiKey'
+      if (apiKey) await window.api.settings.setCredential(credKey, apiKey)
+    }
+  }
+
   const handleTestConnection = async (): Promise<void> => {
     setTestState({ status: 'testing' })
+    await saveCredentials()
     await window.api.settings.testConnection(provider)
   }
 
@@ -68,23 +81,12 @@ export default function Step3LanguageModel({ onNext, onBack }: Step3LanguageMode
     setSaving(true)
     try {
       await window.api.settings.setProvider(provider)
-      if (provider === 'compatible') {
-        if (baseUrl) {
-          await window.api.settings.setCompatibleBaseUrl(baseUrl)
-        }
-      } else {
-        if (apiKey) {
-          const credKey = provider === 'openai' ? 'openai-api-key' : 'anthropic-api-key'
-          await window.api.settings.setCredential(credKey, apiKey)
-        }
-      }
+      await saveCredentials()
       onNext()
     } finally {
       setSaving(false)
     }
   }
-
-  const credentialLabel = provider === 'compatible' ? 'Base URL' : 'API Key'
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-md">
@@ -112,20 +114,35 @@ export default function Step3LanguageModel({ onNext, onBack }: Step3LanguageMode
           ))}
         </div>
 
-        {/* Credential input */}
-        <div className="flex flex-col gap-2">
-          <label className="text-xs font-medium text-[var(--color-text-secondary)]">
-            {credentialLabel}
-          </label>
-          {provider === 'compatible' ? (
-            <TextInput
-              type="text"
-              value={baseUrl}
-              onChange={setBaseUrl}
-              placeholder="http://localhost:11434/v1"
-              mono
-            />
-          ) : (
+        {/* Credential inputs */}
+        {provider === 'compatible' ? (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-[var(--color-text-secondary)]">Base URL</label>
+              <TextInput
+                type="text"
+                value={baseUrl}
+                onChange={setBaseUrl}
+                placeholder="http://localhost:11434/v1"
+                mono
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-[var(--color-text-secondary)]">
+                API Key <span className="text-[var(--color-text-muted)]">(optional)</span>
+              </label>
+              <TextInput
+                type="password"
+                value={compatApiKey}
+                onChange={setCompatApiKey}
+                placeholder="sk-…"
+                mono
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-[var(--color-text-secondary)]">API Key</label>
             <TextInput
               type="password"
               value={apiKey}
@@ -133,8 +150,8 @@ export default function Step3LanguageModel({ onNext, onBack }: Step3LanguageMode
               placeholder={provider === 'openai' ? 'sk-…' : 'sk-ant-…'}
               mono
             />
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Test connection */}
         <div className="flex flex-col gap-2">
@@ -143,7 +160,7 @@ export default function Step3LanguageModel({ onNext, onBack }: Step3LanguageMode
             onClick={handleTestConnection}
             disabled={
               testState.status === 'testing' ||
-              (provider !== 'compatible' ? !apiKey : !baseUrl)
+              (provider === 'compatible' ? !baseUrl : !apiKey)
             }
             loading={testState.status === 'testing'}
           >

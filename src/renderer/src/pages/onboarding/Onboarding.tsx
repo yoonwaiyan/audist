@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import SetupShell from '../../components/layout/SetupShell'
 import AppLogo from '../../components/ui/AppLogo'
 import WizardStepper from '../../components/ui/WizardStepper'
 import Step1Permissions from './steps/Step1Permissions'
@@ -32,25 +31,27 @@ export default function Onboarding(): React.JSX.Element {
   }
 
   return (
-    <SetupShell>
-      <div className="flex flex-col items-center gap-8 w-full py-8">
-        {/* Logo */}
-        <AppLogo size="md" showWordmark />
+    <div className="h-screen w-screen bg-bg-base text-text-primary flex flex-col overflow-hidden">
+      {/* macOS drag region */}
+      <div className="absolute top-0 left-0 right-0 h-10 [-webkit-app-region:drag]" />
 
-        {/* Stepper */}
-        <WizardStepper steps={STEPS} currentStep={currentStep} />
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="flex flex-col items-center gap-8 w-full px-8 pt-8 pb-8">
+          <AppLogo size="md" showWordmark />
+          <WizardStepper steps={STEPS} currentStep={currentStep} />
 
-        {/* Step content */}
-        {currentStep === 0 && (
-          <Step1Permissions onNext={handleNext} onBack={handleBack} />
-        )}
-        {currentStep === 1 && (
-          <Step2SaveLocation onNext={handleNext} onBack={handleBack} />
-        )}
-        {currentStep === 2 && (
-          <Step3LanguageModel onNext={handleFinish} onBack={handleBack} />
-        )}
+          {currentStep === 0 && (
+            <Step1Permissions onNext={handleNext} onBack={handleBack} />
+          )}
+          {currentStep === 1 && (
+            <Step2SaveLocation onNext={handleNext} onBack={handleBack} />
+          )}
+          {currentStep === 2 && (
+            <Step3LanguageModel onNext={handleFinish} onBack={handleBack} />
+          )}
+        </div>
       </div>
-    </SetupShell>
+    </div>
   )
 }
