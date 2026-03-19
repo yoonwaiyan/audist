@@ -59,7 +59,7 @@ test.describe('Whisper bootstrap gate', () => {
     })
 
     await expect(
-      page.getByRole('heading', { name: 'Setting up transcription engine…' })
+      page.getByRole('heading', { name: 'Setting up Audist' })
     ).toBeVisible()
 
     await app.close()
@@ -76,7 +76,7 @@ test.describe('Whisper bootstrap gate', () => {
     })
 
     await expect(
-      page.getByRole('heading', { name: 'Setting up transcription engine…' })
+      page.getByRole('heading', { name: 'Setting up Audist' })
     ).toBeVisible()
     await expect(page.getByRole('button', { name: /skip/i })).not.toBeVisible()
     await expect(page.getByRole('button', { name: /cancel/i })).not.toBeVisible()
@@ -96,7 +96,7 @@ test.describe('Whisper bootstrap gate', () => {
     })
 
     await expect(
-      page.getByRole('heading', { name: 'Setting up transcription engine…' })
+      page.getByRole('heading', { name: 'Setting up Audist' })
     ).toBeVisible()
     // Progress bar container is present
     await expect(page.locator('.rounded-full').first()).toBeVisible()

@@ -12,7 +12,7 @@ import { registerTranscriptionHandlers } from './ipc/transcription'
 import { registerSettingsHandlers } from './ipc/settings'
 import { registerSummaryHandlers, summariseSession } from './ipc/summary'
 import { mixAudio } from './ipc/mix'
-import { bootstrapWhisper } from './whisper/bootstrap'
+import { bootstrapWhisper, markTestInstallComplete } from './whisper/bootstrap'
 import { llmRegistry } from './llm/registry'
 import { OpenAIProvider } from './llm/providers/openai'
 import { AnthropicProvider } from './llm/providers/anthropic'
@@ -80,11 +80,34 @@ app.whenReady().then(() => {
   // Bootstrap IPC — renderer calls this from the whisper setup screen
   ipcMain.handle('audist:whisper:install', async (event): Promise<void> => {
     const win = BrowserWindow.fromWebContents(event.sender)
-    await bootstrapWhisper((stage, percent) => {
+    const send = (stage: string, percent: number): void => {
       if (win && !win.isDestroyed()) {
         win.webContents.send('audist:whisper:bootstrap', { stage, percent })
       }
-    })
+    }
+
+    // In e2e tests (AUDIST_TEST_WHISPER=not-ready) simulate a fast download
+    // sequence instead of running the real bootstrap.
+    if (process.env['AUDIST_TEST_WHISPER'] === 'not-ready') {
+      const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
+      send('installing', 0)
+      await delay(150)
+      send('installing', 50)
+      await delay(150)
+      send('installing', 100)
+      await delay(150)
+      send('downloading', 0)
+      await delay(150)
+      send('downloading', 50)
+      await delay(150)
+      send('downloading', 100)
+      await delay(100)
+      markTestInstallComplete()
+      if (win && !win.isDestroyed()) win.webContents.send('audist:whisper:ready', {})
+      return
+    }
+
+    await bootstrapWhisper(send)
     if (win && !win.isDestroyed()) {
       win.webContents.send('audist:whisper:ready', {})
     }

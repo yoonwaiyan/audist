@@ -1,132 +1,216 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Check, Download, AlertCircle } from 'lucide-react'
+import AppLogo from '../components/ui/AppLogo'
 
-type BootstrapStage = 'idle' | 'installing' | 'downloading' | 'done' | 'error'
+type RowStatus = 'pending' | 'downloading' | 'complete' | 'error'
 
-const STAGE_LABEL: Record<BootstrapStage, string> = {
-  idle: 'Preparing…',
-  installing: 'Installing whisper.cpp…',
-  downloading: 'Downloading base model (~140 MB)…',
-  done: 'Ready!',
-  error: 'Setup failed'
+interface DownloadRow {
+  status: RowStatus
+  percent: number
+  transferredMb: number
+  totalMb: number
+}
+
+const ENGINE_TOTAL_MB = 24.5
+const MODEL_TOTAL_MB = 142.3
+
+function StepRow({
+  title,
+  row,
+  isPending
+}: {
+  title: string
+  row: DownloadRow
+  isPending: boolean
+}) {
+  const isComplete = row.status === 'complete'
+  const isError = row.status === 'error'
+  const isDownloading = row.status === 'downloading'
+
+  const iconBg = isComplete
+    ? 'bg-success/20 text-success'
+    : isError
+      ? 'bg-error/20 text-error'
+      : 'bg-surface-raised border border-border text-text-secondary'
+
+  const statusText = isComplete
+    ? `Complete — ${row.totalMb} MB`
+    : isDownloading && row.totalMb > 0
+      ? `${row.transferredMb.toFixed(1)} MB of ${row.totalMb} MB`
+      : 'Waiting…'
+
+  return (
+    <div className={`space-y-3 ${isPending ? 'opacity-50' : ''}`}>
+      <div className="flex items-center gap-3">
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}>
+          {isComplete ? (
+            <Check className="w-4 h-4" />
+          ) : isError ? (
+            <AlertCircle className="w-4 h-4" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-text-primary text-sm">{title}</h3>
+          <p className="text-xs text-text-secondary mt-0.5">{statusText}</p>
+        </div>
+      </div>
+
+      {isDownloading && (
+        <div className="ml-11 space-y-1">
+          <div className="h-1.5 bg-surface-raised rounded-full overflow-hidden">
+            <div
+              className="h-full bg-accent rounded-full transition-all duration-300"
+              style={{ width: `${row.percent}%` }}
+            />
+          </div>
+          <p className="text-xs text-text-tertiary">{Math.round(row.percent)}%</p>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function WhisperSetupPage(): React.JSX.Element {
   const navigate = useNavigate()
-  const [stage, setStage] = useState<BootstrapStage>('idle')
-  const [percent, setPercent] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
-  const runInstall = useCallback(
-    (unsubBootstrap: () => void, unsubReady: () => void) => {
-      setStage('idle')
-      setError(null)
-      setPercent(0)
-      window.api.whisper.install().catch((err: unknown) => {
-        setStage('error')
-        const raw = err instanceof Error ? err.message : String(err)
-        const friendly = raw.includes('git clone')
-          ? 'Failed to download whisper.cpp source. Check your internet connection and try again.'
-          : raw.includes('make')
-            ? 'Failed to compile whisper.cpp. Ensure Xcode Command Line Tools are installed:\n  xcode-select --install'
-            : raw
-        setError(friendly)
-        // Re-register listeners for the next attempt
-        unsubBootstrap()
-        unsubReady()
-      })
-    },
-    []
-  )
+  const [engine, setEngine] = useState<DownloadRow>({
+    status: 'pending',
+    percent: 0,
+    transferredMb: 0,
+    totalMb: ENGINE_TOTAL_MB
+  })
 
-  useEffect(() => {
-    const unsubBootstrap = window.api.whisper.onBootstrap(({ stage: s, percent: p }) => {
-      setStage(s as BootstrapStage)
-      setPercent(p)
+  const [model, setModel] = useState<DownloadRow>({
+    status: 'pending',
+    percent: 0,
+    transferredMb: 0,
+    totalMb: MODEL_TOTAL_MB
+  })
+
+  const startInstall = useCallback(() => {
+    setError(null)
+    setEngine({ status: 'pending', percent: 0, transferredMb: 0, totalMb: ENGINE_TOTAL_MB })
+    setModel({ status: 'pending', percent: 0, transferredMb: 0, totalMb: MODEL_TOTAL_MB })
+
+    const unsubBootstrap = window.api.whisper.onBootstrap(({ stage, percent }) => {
+      if (stage === 'installing') {
+        setEngine((prev) => ({
+          ...prev,
+          status: 'downloading',
+          percent,
+          transferredMb: parseFloat(((percent / 100) * ENGINE_TOTAL_MB).toFixed(1))
+        }))
+      } else if (stage === 'downloading') {
+        // First downloading event — mark engine complete (handles packaged mode where installing is skipped)
+        setEngine((prev) =>
+          prev.status !== 'complete'
+            ? { ...prev, status: 'complete', percent: 100, transferredMb: ENGINE_TOTAL_MB }
+            : prev
+        )
+        setModel((prev) => ({
+          ...prev,
+          status: 'downloading',
+          percent,
+          transferredMb: parseFloat(((percent / 100) * MODEL_TOTAL_MB).toFixed(1))
+        }))
+      }
     })
 
     const unsubReady = window.api.whisper.onReady(() => {
-      setStage('done')
-      setPercent(100)
-      setTimeout(() => navigate('/'), 600)
+      setEngine({ status: 'complete', percent: 100, transferredMb: ENGINE_TOTAL_MB, totalMb: ENGINE_TOTAL_MB })
+      setModel({ status: 'complete', percent: 100, transferredMb: MODEL_TOTAL_MB, totalMb: MODEL_TOTAL_MB })
+      setTimeout(() => navigate('/'), 500)
     })
 
-    runInstall(unsubBootstrap, unsubReady)
+    window.api.whisper.install().catch((err: unknown) => {
+      const raw = err instanceof Error ? err.message : String(err)
+      const friendly = raw.includes('git clone')
+        ? 'Failed to download whisper.cpp source. Check your internet connection and try again.'
+        : raw.includes('make')
+          ? 'Failed to compile whisper.cpp. Ensure Xcode Command Line Tools are installed:\n  xcode-select --install'
+          : raw
+      setError(friendly)
+      setEngine((prev) => ({ ...prev, status: prev.status === 'downloading' ? 'error' : prev.status }))
+      setModel((prev) => ({ ...prev, status: prev.status === 'downloading' ? 'error' : prev.status }))
+      unsubBootstrap()
+      unsubReady()
+    })
 
     return () => {
       unsubBootstrap()
       unsubReady()
     }
-  }, [navigate, runInstall])
+  }, [navigate])
+
+  useEffect(() => {
+    const cleanup = startInstall()
+    return cleanup
+  }, [startInstall])
+
+  const allComplete = engine.status === 'complete' && model.status === 'complete'
+  const hasError = engine.status === 'error' || model.status === 'error'
 
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-[var(--color-bg-base)] px-8">
-      {/* Reserve space for macOS traffic lights */}
+    <div className="h-screen w-screen bg-bg-base text-text-primary flex flex-col overflow-hidden">
+      {/* macOS traffic lights drag region */}
       <div className="absolute top-0 left-0 right-0 h-10 [-webkit-app-region:drag]" />
 
-      <div className="flex flex-col items-center gap-6 max-w-sm w-full text-center">
-        {/* Icon */}
-        <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--color-accent)]/10">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="32"
-            height="32"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-[var(--color-accent)]"
-            aria-hidden="true"
-          >
-            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-            <line x1="12" x2="12" y1="19" y2="22" />
-          </svg>
-        </div>
+      <div className="flex-1 flex items-center justify-center px-8">
+        <div className="w-full max-w-xl">
+          {/* Logo */}
+          <div className="flex justify-center mb-8">
+            <AppLogo size="lg" />
+          </div>
 
-        <div className="flex flex-col gap-2">
-          <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">
-            Setting up transcription engine…
-          </h1>
-          <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-            This only happens once. Audist is downloading the speech recognition model — it won't
-            need internet access after this.
-          </p>
-        </div>
-
-        {/* Progress bar */}
-        {stage !== 'error' && (
-          <div className="w-full flex flex-col gap-2">
-            <div className="w-full h-2 bg-[var(--color-bg-surface)] rounded-full overflow-hidden">
-              <div
-                className="h-full bg-[var(--color-accent)] rounded-full transition-all duration-300"
-                style={{ width: `${percent}%` }}
-              />
-            </div>
-            <p className="text-xs text-[var(--color-text-muted)]">
-              {STAGE_LABEL[stage]}
-              {stage === 'downloading' && percent > 0 && ` (${percent}%)`}
+          {/* Heading */}
+          <div className="text-center mb-10">
+            <h1 className="text-2xl font-bold text-text-primary mb-2">
+              {allComplete ? 'Setup Complete' : 'Setting up Audist'}
+            </h1>
+            <p className="text-sm text-text-secondary">
+              {allComplete
+                ? 'Whisper is ready to transcribe your recordings'
+                : 'Downloading required components for transcription'}
             </p>
           </div>
-        )}
 
-        {error && (
-          <div className="flex flex-col items-center gap-3">
-            <p className="text-xs text-[var(--color-error)] max-w-xs text-center whitespace-pre-line">{error}</p>
-            <button
-              onClick={() => runInstall(
-                window.api.whisper.onBootstrap(({ stage: s, percent: p }) => { setStage(s as BootstrapStage); setPercent(p) }),
-                window.api.whisper.onReady(() => { setStage('done'); setPercent(100); setTimeout(() => navigate('/'), 600) })
-              )}
-              className="px-4 py-2 rounded-lg bg-[var(--color-accent)] text-white text-sm font-medium
-                hover:bg-[var(--color-accent-hover)] transition-colors cursor-default"
-            >
-              Try Again
-            </button>
+          {/* Progress card */}
+          <div className="bg-surface border border-border rounded-lg p-8 space-y-6">
+            <StepRow
+              title="Downloading Whisper engine"
+              row={engine}
+              isPending={false}
+            />
+            <StepRow
+              title="Downloading speech model (base.en)"
+              row={model}
+              isPending={model.status === 'pending'}
+            />
+
+            {error && (
+              <div className="p-3 bg-error/10 border border-error/20 rounded text-sm text-error whitespace-pre-line">
+                {error}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Actions */}
+          {hasError && (
+            <div className="mt-8 flex justify-center">
+              <button
+                onClick={startInstall}
+                className="px-5 py-2 rounded-lg bg-accent text-white text-sm font-medium
+                  hover:bg-accent-hover transition-colors cursor-default"
+              >
+                Retry Download
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
