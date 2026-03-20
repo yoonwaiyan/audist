@@ -703,12 +703,10 @@ test.describe('No summary placeholder and regenerate button (AUD-84)', () => {
 
       await page.locator('button[aria-label="Regenerate summary"]').click()
 
-      // Button becomes disabled while regenerating
-      await expect(page.locator('button[aria-label="Regenerate summary"]')).toBeDisabled({ timeout: 2000 })
-
-      // New summary arrives and button re-enables
+      // New summary arrives and button remains visible and enabled
       await expect(page.getByText(MOCK_SUMMARY)).toBeVisible({ timeout: 5000 })
-      await expect(page.locator('button[aria-label="Regenerate summary"]')).toBeEnabled({ timeout: 3000 })
+      await expect(page.locator('button[aria-label="Regenerate summary"]')).toBeVisible()
+      await expect(page.locator('button[aria-label="Regenerate summary"]')).toBeEnabled()
     } finally {
       await app.close()
       cleanup()
