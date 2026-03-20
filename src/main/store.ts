@@ -62,6 +62,14 @@ export function setSummarisationEnabled(enabled: boolean): void {
   setLLMSettings({ summarisationEnabled: enabled })
 }
 
+export function clearLLMConfig(): void {
+  const current = read()
+  write({
+    ...current,
+    llm: { cachedModels: current.llm?.cachedModels }
+  })
+}
+
 /** Returns the cached model list, or null if this provider has never been successfully tested. */
 export function getCachedModels(provider: ProviderName): string[] | null {
   const cached = getLLMSettings().cachedModels

@@ -5,6 +5,7 @@ interface TextInputProps {
   mono?: boolean
   disabled?: boolean
   className?: string
+  type?: 'text' | 'password'
 }
 
 export default function TextInput({
@@ -13,11 +14,12 @@ export default function TextInput({
   placeholder,
   mono = false,
   disabled = false,
-  className = ''
+  className = '',
+  type = 'text'
 }: TextInputProps): React.JSX.Element {
   return (
     <input
-      type="text"
+      type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}

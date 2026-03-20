@@ -17,7 +17,7 @@ test.describe('Permissions — first launch (not-determined)', () => {
       permissions: 'not-determined'
     })
 
-    await expect(page.getByRole('heading', { name: 'Permissions Required' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Audist needs your permission' })).toBeVisible()
 
     // Both permission rows visible
     await expect(page.getByText('Microphone', { exact: true })).toBeVisible()
@@ -28,32 +28,17 @@ test.describe('Permissions — first launch (not-determined)', () => {
     fs.rmSync(saveDir, { recursive: true, force: true })
   })
 
-  test('shows Grant Access button for microphone when not-determined', async () => {
+  test('shows Open System Settings button for not-determined state', async () => {
     const saveDir = makeSaveDir()
     const { app, page, cleanup } = await launchApp({
       saveDirectory: saveDir,
       permissions: 'not-determined'
     })
 
-    await expect(page.getByRole('heading', { name: 'Permissions Required' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Grant Access' })).toBeVisible()
-
-    await app.close()
-    cleanup()
-    fs.rmSync(saveDir, { recursive: true, force: true })
-  })
-
-  test('shows Open System Settings button for screen recording when not-determined', async () => {
-    const saveDir = makeSaveDir()
-    const { app, page, cleanup } = await launchApp({
-      saveDirectory: saveDir,
-      permissions: 'not-determined'
-    })
-
-    await expect(page.getByRole('heading', { name: 'Permissions Required' })).toBeVisible()
-    // Screen recording always requires manual System Settings — no programmatic prompt
+    await expect(page.getByRole('heading', { name: 'Audist needs your permission' })).toBeVisible()
+    // Single big CTA button for opening system settings
     await expect(
-      page.getByRole('button', { name: 'Open System Settings' }).first()
+      page.getByRole('button', { name: 'Open System Settings →' })
     ).toBeVisible()
 
     await app.close()
@@ -61,15 +46,15 @@ test.describe('Permissions — first launch (not-determined)', () => {
     fs.rmSync(saveDir, { recursive: true, force: true })
   })
 
-  test('shows Re-check Permissions button', async () => {
+  test('shows Check again button', async () => {
     const saveDir = makeSaveDir()
     const { app, page, cleanup } = await launchApp({
       saveDirectory: saveDir,
       permissions: 'not-determined'
     })
 
-    await expect(page.getByRole('heading', { name: 'Permissions Required' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Re-check Permissions' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Audist needs your permission' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Check again' })).toBeVisible()
 
     await app.close()
     cleanup()
@@ -77,7 +62,7 @@ test.describe('Permissions — first launch (not-determined)', () => {
   })
 })
 
-test.describe('Permissions — denied state (AUD-15 blocked view)', () => {
+test.describe('Permissions — denied state (AUD-71 blocked view)', () => {
   test('shows blocked state when both permissions denied', async () => {
     const saveDir = makeSaveDir()
     const { app, page, cleanup } = await launchApp({
@@ -85,11 +70,12 @@ test.describe('Permissions — denied state (AUD-15 blocked view)', () => {
       permissions: 'denied'
     })
 
-    await expect(page.getByRole('heading', { name: 'Permissions Required' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Audist needs your permission' })).toBeVisible()
 
-    // Both rows should show "Open System Settings" (no "Grant Access" for denied mic)
-    const settingsButtons = page.getByRole('button', { name: 'Open System Settings' })
-    await expect(settingsButtons.first()).toBeVisible()
+    // Single "Open System Settings →" CTA button
+    await expect(
+      page.getByRole('button', { name: 'Open System Settings →' })
+    ).toBeVisible()
 
     await app.close()
     cleanup()
@@ -103,7 +89,7 @@ test.describe('Permissions — denied state (AUD-15 blocked view)', () => {
       permissions: 'denied'
     })
 
-    await expect(page.getByRole('heading', { name: 'Permissions Required' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Audist needs your permission' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Continue →' })).not.toBeVisible()
 
     await app.close()
@@ -118,7 +104,7 @@ test.describe('Permissions — granted state', () => {
 
     // Main window should be shown directly — no permissions gate
     await expect(page.getByRole('complementary').getByText('audist')).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Permissions Required' })).not.toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Audist needs your permission' })).not.toBeVisible()
 
     await app.close()
     cleanup()

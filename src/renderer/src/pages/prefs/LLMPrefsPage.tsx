@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ProviderName, TestConnectionResult } from '../../../../preload/index.d'
+import ModelDropdown from '../../components/ui/ModelDropdown'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PROVIDERS: { id: ProviderName; label: string }[] = [
-  { id: 'openai', label: 'OpenAI' },
-  { id: 'anthropic', label: 'Anthropic' },
-  { id: 'compatible', label: 'OpenAI-compatible' }
+const PROVIDERS: { id: ProviderName; label: string; subtitle: string }[] = [
+  { id: 'openai', label: 'OpenAI', subtitle: 'GPT-4o, GPT-4o mini' },
+  { id: 'anthropic', label: 'Anthropic', subtitle: 'Claude Sonnet, Haiku' },
+  { id: 'compatible', label: 'OpenAI-compatible', subtitle: 'Ollama, LM Studio' }
 ]
 
 const ERROR_LABELS: Record<string, string> = {
@@ -322,19 +323,22 @@ export default function LLMPrefsPage(): React.JSX.Element {
         Configure your AI provider. API keys are encrypted and never leave your device.
       </p>
 
-      {/* Provider tab bar */}
-      <div className="flex gap-4 border-b border-[var(--color-border)] mb-6">
-        {PROVIDERS.map(({ id, label }) => (
+      {/* Provider grid */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        {PROVIDERS.map(({ id, label, subtitle }) => (
           <button
             key={id}
+            type="button"
+            aria-label={label}
             onClick={() => setTab(id)}
-            className={`py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors cursor-default
+            className={`p-4 rounded-lg border-2 transition-all cursor-default text-center
               ${tab === id
-                ? 'border-[var(--color-accent)] text-[var(--color-text-primary)]'
-                : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+                ? 'border-accent bg-accent/10'
+                : 'border-border bg-surface-raised hover:border-accent/50'
               }`}
           >
-            {label}
+            <p className="font-semibold text-sm text-text-primary">{label}</p>
+            <p className="text-xs text-text-secondary mt-0.5">{subtitle}</p>
           </button>
         ))}
       </div>
@@ -360,17 +364,11 @@ export default function LLMPrefsPage(): React.JSX.Element {
           {providerModels.openai && providerModels.openai.length > 0 && (
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-[var(--color-text-primary)]">Model</label>
-              <select
+              <ModelDropdown
+                models={providerModels.openai.map((id) => ({ id, name: id }))}
                 value={models.openai ?? providerModels.openai[0]}
-                onChange={(e) => handleModelChange('openai', e.target.value)}
-                className="w-full px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]
-                  text-sm text-[var(--color-text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]
-                  cursor-default transition-colors"
-              >
-                {providerModels.openai.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
+                onChange={(m) => handleModelChange('openai', m)}
+              />
             </div>
           )}
         </div>
@@ -397,17 +395,11 @@ export default function LLMPrefsPage(): React.JSX.Element {
           {providerModels.anthropic && providerModels.anthropic.length > 0 && (
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-[var(--color-text-primary)]">Model</label>
-              <select
+              <ModelDropdown
+                models={providerModels.anthropic.map((id) => ({ id, name: id }))}
                 value={models.anthropic ?? providerModels.anthropic[0]}
-                onChange={(e) => handleModelChange('anthropic', e.target.value)}
-                className="w-full px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]
-                  text-sm text-[var(--color-text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]
-                  cursor-default transition-colors"
-              >
-                {providerModels.anthropic.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
+                onChange={(m) => handleModelChange('anthropic', m)}
+              />
             </div>
           )}
         </div>
@@ -454,17 +446,11 @@ export default function LLMPrefsPage(): React.JSX.Element {
           {providerModels.compatible && providerModels.compatible.length > 0 ? (
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-[var(--color-text-primary)]">Model</label>
-              <select
+              <ModelDropdown
+                models={providerModels.compatible.map((id) => ({ id, name: id }))}
                 value={models.compatible ?? providerModels.compatible[0]}
-                onChange={(e) => handleModelChange('compatible', e.target.value)}
-                className="w-full px-3 py-2 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]
-                  text-sm text-[var(--color-text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]
-                  cursor-default transition-colors"
-              >
-                {providerModels.compatible.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
+                onChange={(m) => handleModelChange('compatible', m)}
+              />
             </div>
           ) : compatibleBaseUrl.trim() ? (
             <p className="text-xs text-[var(--color-text-muted)]">
