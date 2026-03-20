@@ -437,7 +437,7 @@ test.describe('Summary display in session list (AUD-37)', () => {
     try {
       await page.locator('[data-testid="session-item"]').first().click()
       await page.waitForTimeout(500) // allow summary load attempt
-      await expect(page.getByText('No summary available.')).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'No AI Summary Available' })).toBeVisible()
     } finally {
       await app.close()
       cleanup()
@@ -498,7 +498,7 @@ test.describe('Summary display in session list (AUD-37)', () => {
     }
   })
 
-  test('summary written live via IPC appears in session detail', async () => {
+  test('summary written live via IPC appears in session detail replacing placeholder', async () => {
     const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
     // Seed session with transcript but no summary yet
     seedSessions(saveDir, [{
@@ -522,13 +522,193 @@ test.describe('Summary display in session list (AUD-37)', () => {
       // Navigate to session detail — no summary yet
       await page.locator('[data-testid="session-item"]').first().click()
       await page.waitForTimeout(500)
-      await expect(page.getByText('No summary available.')).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'No AI Summary Available' })).toBeVisible()
 
       // Trigger summarisation
       await invokeSummarise(page, sessionDir)
 
       // Summary should appear in the detail view after the complete event
       await expect(page.getByText(MOCK_SUMMARY)).toBeVisible({ timeout: 5000 })
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// No summary placeholder + regenerate button (AUD-84)
+// ─────────────────────────────────────────────────────────────────────────────
+
+test.describe('No summary placeholder and regenerate button (AUD-84)', () => {
+  test('placeholder shows heading, description, button, and caption when no summary', async () => {
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    seedSessions(saveDir, [{ id: '2026-01-01_10-00-00', duration: 60, status: 'complete' }])
+
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready'
+    })
+
+    try {
+      await page.locator('[data-testid="session-item"]').first().click()
+      await page.waitForTimeout(500)
+
+      await expect(page.getByRole('heading', { name: 'No AI Summary Available' })).toBeVisible()
+      await expect(page.getByText("This session doesn't have an AI-generated summary yet.")).toBeVisible()
+      await expect(page.getByRole('button', { name: 'Generate Summary' })).toBeVisible()
+      await expect(page.getByText('Summary will be generated using your configured LLM provider')).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('Generate Summary button shows loading state then displays summary', async () => {
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    seedSessions(saveDir, [{
+      id: '2026-01-01_10-00-00',
+      duration: 60,
+      status: 'complete',
+      transcriptTxt: SAMPLE_TRANSCRIPT
+    }])
+
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready',
+      testMode: true,
+      llm: 'success'
+    })
+
+    try {
+      await page.locator('[data-testid="session-item"]').first().click()
+      await expect(page.getByRole('button', { name: 'Generate Summary' })).toBeVisible({ timeout: 3000 })
+
+      await page.getByRole('button', { name: 'Generate Summary' }).click()
+
+      // Button becomes disabled with loading copy
+      await expect(page.getByRole('button', { name: /Generating Summary/ })).toBeDisabled({ timeout: 2000 })
+
+      // Placeholder disappears and summary content appears
+      await expect(page.getByText(MOCK_SUMMARY)).toBeVisible({ timeout: 5000 })
+      await expect(page.getByRole('heading', { name: 'No AI Summary Available' })).not.toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('regenerate button is visible when summary exists and session is idle', async () => {
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    seedSessions(saveDir, [{
+      id: '2026-01-01_10-00-00',
+      duration: 60,
+      status: 'complete',
+      summaryMd: '# Meeting Notes\n\nSome content.'
+    }])
+
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready'
+    })
+
+    try {
+      await page.locator('[data-testid="session-item"]').first().click()
+      await expect(page.getByText('Meeting Notes')).toBeVisible({ timeout: 5000 })
+      await expect(page.locator('button[aria-label="Regenerate summary"]')).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('Generated by pill badge shows provider and model when LLM is configured', async () => {
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    seedSessions(saveDir, [{
+      id: '2026-01-01_10-00-00',
+      duration: 60,
+      status: 'complete',
+      summaryMd: '# Meeting Notes\n\nSome content.'
+    }])
+
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready',
+      llmSettings: { activeProvider: 'openai', models: { openai: 'gpt-4o' } }
+    })
+
+    try {
+      await page.locator('[data-testid="session-item"]').first().click()
+      await expect(page.getByText('Meeting Notes')).toBeVisible({ timeout: 5000 })
+      await expect(page.getByText(/Generated by:/)).toBeVisible()
+      await expect(page.getByText(/OpenAI · gpt-4o/)).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('regenerate button not visible when no summary (placeholder shown instead)', async () => {
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    seedSessions(saveDir, [{ id: '2026-01-01_10-00-00', duration: 60, status: 'complete' }])
+
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready'
+    })
+
+    try {
+      await page.locator('[data-testid="session-item"]').first().click()
+      await page.waitForTimeout(500)
+      await expect(page.getByRole('heading', { name: 'No AI Summary Available' })).toBeVisible()
+      await expect(page.locator('button[aria-label="Regenerate summary"]')).not.toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('regenerate button triggers retry and shows spinner', async () => {
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    seedSessions(saveDir, [{
+      id: '2026-01-01_10-00-00',
+      duration: 60,
+      status: 'complete',
+      summaryMd: '# Existing Summary\n\nContent.',
+      transcriptTxt: SAMPLE_TRANSCRIPT
+    }])
+
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready',
+      testMode: true,
+      llm: 'success'
+    })
+
+    try {
+      await page.locator('[data-testid="session-item"]').first().click()
+      await expect(page.getByText('Existing Summary')).toBeVisible({ timeout: 5000 })
+
+      await page.locator('button[aria-label="Regenerate summary"]').click()
+
+      // Button becomes disabled while regenerating
+      await expect(page.locator('button[aria-label="Regenerate summary"]')).toBeDisabled({ timeout: 2000 })
+
+      // New summary arrives and button re-enables
+      await expect(page.getByText(MOCK_SUMMARY)).toBeVisible({ timeout: 5000 })
+      await expect(page.locator('button[aria-label="Regenerate summary"]')).toBeEnabled({ timeout: 3000 })
     } finally {
       await app.close()
       cleanup()
