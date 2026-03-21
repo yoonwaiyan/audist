@@ -9,7 +9,8 @@ import {
   setCachedModels,
   getSummarisationEnabled,
   setSummarisationEnabled,
-  clearLLMConfig
+  clearLLMConfig,
+  clearProviderConfig
 } from '../store'
 import { llmRegistry } from '../llm/registry'
 import type { ProviderName } from '../llm/types'
@@ -103,6 +104,14 @@ export function registerSettingsHandlers(): void {
     clearCredential('anthropic.apiKey')
     clearCredential('compatible.apiKey')
   })
+
+  // Clear saved model, cached models, and active provider for a single provider
+  ipcMain.handle(
+    'audist:settings:clearProviderConfig',
+    (_, { provider }: { provider: ProviderName }): void => {
+      clearProviderConfig(provider)
+    }
+  )
 
   // Trigger a test connection and push the result back via push event
   ipcMain.handle(

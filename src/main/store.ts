@@ -70,6 +70,17 @@ export function clearLLMConfig(): void {
   })
 }
 
+export function clearProviderConfig(provider: ProviderName): void {
+  const current = getLLMSettings()
+  const models: Partial<Record<ProviderName, string>> = { ...current.models }
+  delete models[provider]
+  const cachedModels: Partial<Record<ProviderName, string[]>> = { ...current.cachedModels }
+  delete cachedModels[provider]
+  const updated: LLMSettings = { ...current, models, cachedModels }
+  if (updated.activeProvider === provider) delete updated.activeProvider
+  write({ ...read(), llm: updated })
+}
+
 /** Returns the cached model list, or null if this provider has never been successfully tested. */
 export function getCachedModels(provider: ProviderName): string[] | null {
   const cached = getLLMSettings().cachedModels
