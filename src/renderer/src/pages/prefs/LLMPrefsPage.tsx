@@ -6,10 +6,10 @@ import ModelDropdown from '../../components/ui/ModelDropdown'
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PROVIDERS: { id: ProviderName; label: string; subtitle: string }[] = [
-  { id: 'openai', label: 'OpenAI', subtitle: 'GPT-4o, GPT-4o mini' },
-  { id: 'anthropic', label: 'Anthropic', subtitle: 'Claude Sonnet, Haiku' },
-  { id: 'compatible', label: 'OpenAI-compatible', subtitle: 'Ollama, LM Studio' }
+const PROVIDERS: { id: ProviderName; label: string }[] = [
+  { id: 'openai', label: 'OpenAI' },
+  { id: 'anthropic', label: 'Anthropic' },
+  { id: 'compatible', label: 'OpenAI-compatible' }
 ]
 
 const ERROR_LABELS: Record<string, string> = {
@@ -193,10 +193,7 @@ function ApiKeyField({
 
 export default function LLMPrefsPage(): React.JSX.Element {
   const [tab, setTab] = useState<ProviderName>('openai')
-  const [models, setModels] = useState<Partial<Record<ProviderName, string>>>({
-    openai: 'gpt-4o-mini',
-    anthropic: 'claude-haiku-4-5'
-  })
+  const [models, setModels] = useState<Partial<Record<ProviderName, string>>>({})
   const [credentialStatus, setCredentialStatus] = useState<Record<string, boolean>>({})
   const [compatibleBaseUrl, setCompatibleBaseUrl] = useState('')
   const [providerModels, setProviderModels] = useState<
@@ -216,16 +213,27 @@ export default function LLMPrefsPage(): React.JSX.Element {
   const successTimers = useRef<Partial<Record<ProviderName, ReturnType<typeof setTimeout>>>>({})
 
   useEffect(() => {
-    void window.api.settings.getLLMSettings().then((s) => {
-      if (s.models) setModels(s.models)
-      if (s.compatibleBaseUrl) setCompatibleBaseUrl(s.compatibleBaseUrl)
-    })
-
     const allProviders: ProviderName[] = ['openai', 'anthropic', 'compatible']
-    void Promise.all(
-      allProviders.map(async (p) => ({ p, models: await window.api.settings.getProviderModels(p) }))
-    ).then((results) => {
-      setProviderModels(Object.fromEntries(results.map((r) => [r.p, r.models])))
+
+    // Load settings and cached model lists together to avoid race conditions in
+    // the auto-select logic (we need both to decide if a model should be pre-saved).
+    void Promise.all([
+      window.api.settings.getLLMSettings(),
+      Promise.all(allProviders.map(async (p) => ({ p, models: await window.api.settings.getProviderModels(p) })))
+    ]).then(([s, providerResults]) => {
+      if (s.compatibleBaseUrl) setCompatibleBaseUrl(s.compatibleBaseUrl)
+      setProviderModels(Object.fromEntries(providerResults.map((r) => [r.p, r.models])))
+
+      // Start with whatever the user has already saved, then auto-select the first
+      // available model for any provider that has a model list but no saved selection.
+      const merged: Partial<Record<ProviderName, string>> = { ...(s.models ?? {}) }
+      for (const { p, models: list } of providerResults) {
+        if (!merged[p] && list && list.length > 0) {
+          merged[p] = list[0]
+          void window.api.settings.setModel(p, list[0])
+        }
+      }
+      setModels(merged)
     })
 
     const credKeys = ['openai.apiKey', 'anthropic.apiKey', 'compatible.apiKey']
@@ -244,7 +252,16 @@ export default function LLMPrefsPage(): React.JSX.Element {
       setTestResult((prev) => ({ ...prev, [p]: result as TestConnectionResult }))
       setTestState((prev) => ({ ...prev, [p]: result.success ? 'success' : 'error' }))
       if (result.success) {
-        setProviderModels((prev) => ({ ...prev, [p]: result.models ?? [] }))
+        const list = result.models ?? []
+        setProviderModels((prev) => ({ ...prev, [p]: list }))
+        // Auto-select the first model if the user has no saved selection for this provider.
+        if (list.length > 0) {
+          setModels((prev) => {
+            if (prev[p]) return prev
+            void window.api.settings.setModel(p, list[0])
+            return { ...prev, [p]: list[0] }
+          })
+        }
       }
       if (result.success) {
         if (successTimers.current[p]) clearTimeout(successTimers.current[p])
@@ -262,20 +279,6 @@ export default function LLMPrefsPage(): React.JSX.Element {
     }
   }, [])
 
-  // When a provider's model list first loads, auto-save the first model if none
-  // is yet selected so the main window can display it immediately.
-  const allProviders: ProviderName[] = ['openai', 'anthropic', 'compatible']
-  useEffect(() => {
-    for (const p of allProviders) {
-      const list = providerModels[p]
-      if (list && list.length > 0 && !models[p]) {
-        setModels((prev) => ({ ...prev, [p]: list[0] }))
-        void window.api.settings.setModel(p, list[0])
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [providerModels.openai, providerModels.anthropic, providerModels.compatible])
-
   const handleModelChange = (provider: ProviderName, model: string): void => {
     setModels((prev) => ({ ...prev, [provider]: model }))
     void window.api.settings.setModel(provider, model)
@@ -288,8 +291,15 @@ export default function LLMPrefsPage(): React.JSX.Element {
   }
 
   const handleClearCredential = (key: string): void => {
-    void window.api.settings.clearCredential(key)
     const provider = key.split('.')[0] as ProviderName
+    void window.api.settings.clearCredential(key)
+    void window.api.settings.clearProviderConfig(provider)
+    setModels((prev) => {
+      const next = { ...prev }
+      delete next[provider]
+      return next
+    })
+    setProviderModels((prev) => ({ ...prev, [provider]: null }))
     resetTestState(provider)
   }
 
@@ -323,22 +333,21 @@ export default function LLMPrefsPage(): React.JSX.Element {
         Configure your AI provider. API keys are encrypted and never leave your device.
       </p>
 
-      {/* Provider grid */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        {PROVIDERS.map(({ id, label, subtitle }) => (
+      {/* Provider tabs */}
+      <div className="flex border-b border-border mb-6">
+        {PROVIDERS.map(({ id, label }) => (
           <button
             key={id}
             type="button"
             aria-label={label}
             onClick={() => setTab(id)}
-            className={`p-4 rounded-lg border-2 transition-all cursor-default text-center
+            className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors cursor-default
               ${tab === id
-                ? 'border-accent bg-accent/10'
-                : 'border-border bg-surface-raised hover:border-accent/50'
+                ? 'border-accent text-text-primary'
+                : 'border-transparent text-text-secondary hover:text-text-primary'
               }`}
           >
-            <p className="font-semibold text-sm text-text-primary">{label}</p>
-            <p className="text-xs text-text-secondary mt-0.5">{subtitle}</p>
+            {label}
           </button>
         ))}
       </div>

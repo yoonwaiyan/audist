@@ -80,6 +80,7 @@ interface SettingsAPI {
   getSummarisationEnabled: () => Promise<boolean>
   setSummarisationEnabled: (enabled: boolean) => Promise<void>
   clearLLMConfig: () => Promise<void>
+  clearProviderConfig: (provider: ProviderName) => Promise<void>
 }
 
 interface SummaryAPI {

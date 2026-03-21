@@ -123,7 +123,7 @@ export default function WhisperSetupPage(): React.JSX.Element {
     const unsubReady = window.api.whisper.onReady(() => {
       setEngine({ status: 'complete', percent: 100, transferredMb: ENGINE_TOTAL_MB, totalMb: ENGINE_TOTAL_MB })
       setModel({ status: 'complete', percent: 100, transferredMb: MODEL_TOTAL_MB, totalMb: MODEL_TOTAL_MB })
-      setTimeout(() => navigate('/'), 500)
+      setTimeout(() => navigate('/'), 1500)
     })
 
     window.api.whisper.install().catch((err: unknown) => {
