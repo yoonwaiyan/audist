@@ -31,6 +31,13 @@ mac:
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+  # Code signing: controlled by CSC_LINK / CSC_KEY_PASSWORD secrets in CI.
+  # Without those secrets the workflow passes --config.mac.identity=null for
+  # unsigned internal-testing builds.
+  #
+  # Notarization: disabled (internal testing only).
+  # Enable for public distribution: set notarize: true and add APPLE_ID,
+  # APPLE_APP_SPECIFIC_PASSWORD, and APPLE_TEAM_ID as repository secrets.
   notarize: false
 dmg:
   artifactName: ${name}-${version}.${ext}
