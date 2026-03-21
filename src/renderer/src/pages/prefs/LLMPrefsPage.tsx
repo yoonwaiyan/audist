@@ -6,10 +6,10 @@ import ModelDropdown from '../../components/ui/ModelDropdown'
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PROVIDERS: { id: ProviderName; label: string; subtitle: string }[] = [
-  { id: 'openai', label: 'OpenAI', subtitle: 'GPT-4o, GPT-4o mini' },
-  { id: 'anthropic', label: 'Anthropic', subtitle: 'Claude Sonnet, Haiku' },
-  { id: 'compatible', label: 'OpenAI-compatible', subtitle: 'Ollama, LM Studio' }
+const PROVIDERS: { id: ProviderName; label: string }[] = [
+  { id: 'openai', label: 'OpenAI' },
+  { id: 'anthropic', label: 'Anthropic' },
+  { id: 'compatible', label: 'OpenAI-compatible' }
 ]
 
 const ERROR_LABELS: Record<string, string> = {
@@ -333,22 +333,21 @@ export default function LLMPrefsPage(): React.JSX.Element {
         Configure your AI provider. API keys are encrypted and never leave your device.
       </p>
 
-      {/* Provider grid */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        {PROVIDERS.map(({ id, label, subtitle }) => (
+      {/* Provider tabs */}
+      <div className="flex border-b border-border mb-6">
+        {PROVIDERS.map(({ id, label }) => (
           <button
             key={id}
             type="button"
             aria-label={label}
             onClick={() => setTab(id)}
-            className={`p-4 rounded-lg border-2 transition-all cursor-default text-center
+            className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors cursor-default
               ${tab === id
-                ? 'border-accent bg-accent/10'
-                : 'border-border bg-surface-raised hover:border-accent/50'
+                ? 'border-accent text-text-primary'
+                : 'border-transparent text-text-secondary hover:text-text-primary'
               }`}
           >
-            <p className="font-semibold text-sm text-text-primary">{label}</p>
-            <p className="text-xs text-text-secondary mt-0.5">{subtitle}</p>
+            {label}
           </button>
         ))}
       </div>
