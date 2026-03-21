@@ -1,4 +1,4 @@
-appId: com.electron.app
+appId: com.audist.app
 productName: audist
 directories:
   buildResources: build
@@ -47,5 +47,3 @@ npmRebuild: false
 publish:
   provider: generic
   url: https://example.com/auto-updates
-electronDownload:
-  mirror: https://npmmirror.com/mirrors/electron/
