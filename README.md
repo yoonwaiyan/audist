@@ -1,4 +1,6 @@
-# Audist
+<p align="center">
+  <img src="assets/logo.svg" alt="Audist"/>
+</p>
 
 > **This project is under early development. APIs, features, and file formats may change without notice.**
 
@@ -7,10 +9,11 @@ Audist is a macOS desktop app that records meetings and transcribes them locally
 ## Features
 
 - Records microphone and system audio simultaneously
-- Mixes both sources into a single audio file via ffmpeg
 - Transcribes recordings locally using whisper.cpp (base.en model)
-- Stores sessions with timestamped transcripts
-- Preferences window for configuration
+- Summarises transcripts via OpenAI, Anthropic, or any OpenAI-compatible provider (e.g. Ollama)
+- Rename, browse, and keyboard-navigate past sessions
+- Onboarding wizard guides first-time setup
+- Preferences window for save directory, LLM provider, and model selection
 
 ## Tech stack
 
@@ -33,7 +36,7 @@ npm install
 npm run dev
 ```
 
-On first launch, Audist will download the whisper.cpp base model (~140 MB). This only happens once.
+On first launch, Audist will guide you through a setup wizard to configure microphone/screen permissions and download the whisper.cpp base model (~140 MB). This only happens once.
 
 ## Building for release
 
@@ -51,11 +54,3 @@ npm run build:mac
 # Run e2e tests (Playwright + Electron)
 npm run test:e2e
 ```
-
-## Status
-
-Early development — core recording and transcription pipeline is functional on macOS. The following is still in progress:
-
-- Audio mixing improvements
-- LLM-powered summarisation
-- Cross-platform support (Windows, Linux)

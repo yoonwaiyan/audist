@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 278 120" width="278" height="120">
+  <!-- Waveform icon — mirrors AppLogo.tsx (24×24 viewBox, scaled 2.5×) -->
+  <g transform="translate(26, 30) scale(2.5)">
+    <rect x="3"  y="10" width="2" height="4"  rx="1" fill="#7c5cfc"/>
+    <rect x="7"  y="6"  width="2" height="12" rx="1" fill="#7c5cfc"/>
+    <rect x="11" y="4"  width="2" height="16" rx="1" fill="#7c5cfc"/>
+    <rect x="15" y="8"  width="2" height="8"  rx="1" fill="#7c5cfc"/>
+    <rect x="19" y="11" width="2" height="2"  rx="1" fill="#7c5cfc"/>
+  </g>
+
+  <!-- Wordmark "audist" -->
+  <text
+    x="84" y="76"
+    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
+    font-size="54"
+    font-weight="700"
+    fill="#0d0e14"
+    letter-spacing="-1"
+    textLength="168"
+    lengthAdjust="spacingAndGlyphs"
+  >audist</text>
+</svg>
