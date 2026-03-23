@@ -17,7 +17,7 @@ The CLA grants the project owner the right to include your contribution in both 
 
 CLA signing is handled automatically when you open a pull request. A bot will comment on your PR with a link to sign. You only need to sign once.
 
-If you have questions about the CLA, open an issue or email [hello@audist.app](mailto:hello@audist.app).
+If you have questions about the CLA, [open an issue](https://github.com/yoonwaiyan/audist/issues).
 
 ## Getting started
 

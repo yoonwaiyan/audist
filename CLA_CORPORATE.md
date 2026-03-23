@@ -70,7 +70,7 @@ This Agreement is governed by the laws of Malaysia, without regard to its confli
 
 ## How to sign
 
-To sign this Corporate CLA, please email [hello@audist.app](mailto:hello@audist.app) with the subject line **"Corporate CLA — [Your Organisation Name]"** and include the following details:
+To sign this Corporate CLA, please email [waiyan@audist.app](mailto:waiyan@audist.app) with the subject line **"Corporate CLA — [Your Organisation Name]"** and include the following details:
 
 - Organisation name and registered address
 - Name and title of the authorised signatory
