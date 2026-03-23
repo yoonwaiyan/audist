@@ -63,3 +63,9 @@ jobs:
           name: audist-mac-${{ github.ref_name }}
           path: dist/*.dmg
           retention-days: 30
+
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.dmg
+          fail_on_unmatched_files: true
