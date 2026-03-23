@@ -23,6 +23,12 @@ Audist is a macOS desktop app that records meetings and transcribes them locally
 - [whisper.cpp](https://github.com/ggerganov/whisper.cpp) via [@remotion/install-whisper-cpp](https://www.remotion.dev/docs/install-whisper-cpp)
 - [ffmpeg-static](https://github.com/eugeneware/ffmpeg-static) for audio mixing
 
+## Platform support
+
+Audist currently runs on **macOS**. Windows and Linux support is on the roadmap — contributors are needed to help make it happen. If you're interested, check out [CONTRIBUTING.md](./CONTRIBUTING.md) to get started.
+
+**Testers on all platforms are welcome.** If you run into any issues, please [file a GitHub issue](https://github.com/yoonwaiyan/audist/issues) with your platform details and steps to reproduce.
+
 ## Requirements
 
 - macOS (primary platform — Windows/Linux support is planned)
