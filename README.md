@@ -54,3 +54,7 @@ npm run build:mac
 # Run e2e tests (Playwright + Electron)
 npm run test:e2e
 ```
+
+## License
+
+Audist is open source software licensed under the [GNU General Public License v3](./LICENSE). See [LICENSE.md](./LICENSE.md) for details.
