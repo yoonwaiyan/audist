@@ -383,8 +383,8 @@ test.describe('Summarisation error handling (AUD-39)', () => {
     })
     try {
       await page.locator('[data-testid="session-item"]').first().click()
-      await expect(page.getByRole('paragraph').filter({ hasText: 'No LLM provider configured' })).toBeVisible({ timeout: 3000 })
-      await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible()
+      await expect(page.getByText('Error summarizing')).toBeVisible({ timeout: 3000 })
+      await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible()
       await expect(page.getByRole('button', { name: 'Open Settings' })).toBeVisible()
     } finally {
       await app.close()

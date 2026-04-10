@@ -75,7 +75,9 @@ export default function SessionDetail(): React.JSX.Element {
   const [transcript, setTranscript] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [summaryError, setSummaryError] = useState<{ code: string; message: string } | null>(null)
+  const [transcriptionError, setTranscriptionError] = useState<{ code: string; message: string } | null>(null)
   const [retrying, setRetrying] = useState(false)
+  const [copiedErrorLog, setCopiedErrorLog] = useState(false)
   const [llmSettings, setLlmSettings] = useState<LLMSettings | null>(null)
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleValue, setTitleValue] = useState('')
@@ -94,14 +96,19 @@ export default function SessionDetail(): React.JSX.Element {
     setSummary(null)
     setTranscript(null)
     setSummaryError(null)
+    setTranscriptionError(null)
     setRetrying(false)
 
     const fromState = (location.state as { session?: SessionMeta } | null)?.session
     const seed = (s: SessionMeta): void => {
       setSession(s)
-      // Restore persisted summary error across restarts
-      if (s.status === 'error' && s.error && s.summaryErrorCode) {
-        setSummaryError({ code: s.summaryErrorCode, message: s.error })
+      // Restore persisted errors across restarts
+      if (s.status === 'error' && s.error) {
+        if (s.summaryErrorCode) {
+          setSummaryError({ code: s.summaryErrorCode, message: s.error })
+        } else {
+          setTranscriptionError({ code: 'TRANSCRIPTION_FAILED', message: s.error })
+        }
       }
     }
     if (fromState?.id === id) {
@@ -149,9 +156,17 @@ export default function SessionDetail(): React.JSX.Element {
     const unsubTC = window.api.transcription.onComplete(({ sessionId }) => {
       if (sessionId === session.id) {
         window.api.transcription.read(session.dir).then(setTranscript)
+        setTranscriptionError(null)
       }
     })
-    return () => { unsubSC(); unsubSE(); unsubSP(); unsubTC() }
+    const unsubTE = window.api.transcription.onError(({ sessionId, code, message }) => {
+      if (sessionId === session.id) {
+        setTranscriptionError({ code, message })
+        setSession((prev) => prev ? { ...prev, status: 'error' } : prev)
+        setRetrying(false)
+      }
+    })
+    return () => { unsubSC(); unsubSE(); unsubSP(); unsubTC(); unsubTE() }
   }, [session])
 
   if (!session) {
@@ -191,6 +206,20 @@ export default function SessionDetail(): React.JSX.Element {
     if (!session) return
     setRetrying(true)
     void window.api.summary.retry(session.dir)
+  }
+
+  const handleRetryTranscription = (): void => {
+    if (!session) return
+    setRetrying(true)
+    setTranscriptionError(null)
+    void window.api.transcription.retry(session.dir)
+  }
+
+  const handleCopyErrorLog = (message: string): void => {
+    void navigator.clipboard.writeText(message).then(() => {
+      setCopiedErrorLog(true)
+      setTimeout(() => setCopiedErrorLog(false), 1500)
+    })
   }
 
   const handleOpenSettings = (): void => {
@@ -337,9 +366,7 @@ export default function SessionDetail(): React.JSX.Element {
           )}
 
           {session.status === 'error' && (
-            <span className="text-[11px] text-[var(--color-error)]">
-              {session.error ?? 'Error'}
-            </span>
+            <span className="text-[11px] text-[var(--color-error)]">Error</span>
           )}
         </div>
       </div>
@@ -368,9 +395,7 @@ export default function SessionDetail(): React.JSX.Element {
             <div className="flex flex-col gap-3">
               <div className="flex items-start gap-2.5 p-3 rounded-lg bg-[var(--color-error)]/8 border border-[var(--color-error)]/20">
                 <AlertTriangle className="w-4 h-4 text-[var(--color-error)] shrink-0 mt-0.5" />
-                <p className="text-sm text-[var(--color-error)] leading-relaxed select-text">
-                  {summaryError.message}
-                </p>
+                <p className="text-sm text-[var(--color-error)]">Error summarizing</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -382,7 +407,20 @@ export default function SessionDetail(): React.JSX.Element {
                     disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-default"
                 >
                   <RefreshCw className={`w-3 h-3 ${retrying ? 'animate-spin' : ''}`} />
-                  {retrying ? 'Retrying…' : 'Retry'}
+                  {retrying ? 'Retrying…' : 'Try again'}
+                </button>
+                <button
+                  onClick={() => handleCopyErrorLog(summaryError.message)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium
+                    bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                    text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]
+                    transition-colors cursor-default"
+                >
+                  {copiedErrorLog
+                    ? <Check className="w-3 h-3 text-[var(--color-success)]" />
+                    : <Copy className="w-3 h-3" />
+                  }
+                  {copiedErrorLog ? 'Copied!' : 'Copy error log'}
                 </button>
                 {(summaryError.code === 'AUTH_ERROR' || summaryError.code === 'NO_PROVIDER') && (
                   <button
@@ -396,6 +434,39 @@ export default function SessionDetail(): React.JSX.Element {
                     Open Settings
                   </button>
                 )}
+              </div>
+            </div>
+          ) : transcriptionError ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-start gap-2.5 p-3 rounded-lg bg-[var(--color-error)]/8 border border-[var(--color-error)]/20">
+                <AlertTriangle className="w-4 h-4 text-[var(--color-error)] shrink-0 mt-0.5" />
+                <p className="text-sm text-[var(--color-error)]">Error transcribing</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRetryTranscription}
+                  disabled={retrying}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium
+                    bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                    text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]
+                    disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-default"
+                >
+                  <RefreshCw className={`w-3 h-3 ${retrying ? 'animate-spin' : ''}`} />
+                  {retrying ? 'Retrying…' : 'Try again'}
+                </button>
+                <button
+                  onClick={() => handleCopyErrorLog(transcriptionError.message)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium
+                    bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                    text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]
+                    transition-colors cursor-default"
+                >
+                  {copiedErrorLog
+                    ? <Check className="w-3 h-3 text-[var(--color-success)]" />
+                    : <Copy className="w-3 h-3" />
+                  }
+                  {copiedErrorLog ? 'Copied!' : 'Copy error log'}
+                </button>
               </div>
             </div>
           ) : summary ? (
@@ -440,7 +511,40 @@ export default function SessionDetail(): React.JSX.Element {
         )}
 
         {activeTab === 'Transcript' && (
-          transcript ? (
+          transcriptionError ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-start gap-2.5 p-3 rounded-lg bg-[var(--color-error)]/8 border border-[var(--color-error)]/20">
+                <AlertTriangle className="w-4 h-4 text-[var(--color-error)] shrink-0 mt-0.5" />
+                <p className="text-sm text-[var(--color-error)]">Error transcribing</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRetryTranscription}
+                  disabled={retrying}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium
+                    bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                    text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]
+                    disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-default"
+                >
+                  <RefreshCw className={`w-3 h-3 ${retrying ? 'animate-spin' : ''}`} />
+                  {retrying ? 'Retrying…' : 'Try again'}
+                </button>
+                <button
+                  onClick={() => handleCopyErrorLog(transcriptionError.message)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium
+                    bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                    text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]
+                    transition-colors cursor-default"
+                >
+                  {copiedErrorLog
+                    ? <Check className="w-3 h-3 text-[var(--color-success)]" />
+                    : <Copy className="w-3 h-3" />
+                  }
+                  {copiedErrorLog ? 'Copied!' : 'Copy error log'}
+                </button>
+              </div>
+            </div>
+          ) : transcript ? (
             <div className="font-mono text-sm leading-relaxed space-y-3">
               {transcript.split('\n\n').filter(Boolean).map((para, i) => (
                 <TranscriptParagraph key={i} text={para} />
