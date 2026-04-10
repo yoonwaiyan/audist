@@ -97,6 +97,9 @@ export function useRecorder(): UseRecorderResult {
       const system = await createPcmCapture(systemStream, systemSampleRate, (chunk) => {
         window.api.recording.sendSystemAudioChunk(chunk)
       })
+
+      // Also tap system audio into the same analyser so the waveform reflects screen audio too
+      mic.audioContext.createMediaStreamSource(systemStream).connect(analyser)
       cleanupSystemRef.current = system.cleanup
 
       // 5. Open WAV files in main process
