@@ -2,6 +2,7 @@ import { installWhisperCpp, downloadWhisperModel } from '@remotion/install-whisp
 import { app } from 'electron'
 import { existsSync, rmSync, mkdirSync, copyFileSync, chmodSync } from 'fs'
 import { join } from 'path'
+import { execFileSync } from 'child_process'
 
 export const WHISPER_VERSION = '1.5.5'
 export const WHISPER_MODEL = 'base.en' as const
@@ -37,11 +38,23 @@ export function isWhisperReady(): boolean {
   return existsSync(whisperBinaryPath(dir)) && existsSync(whisperModelPath(dir))
 }
 
+// Prevent iCloud "Optimize Mac Storage" from evicting whisper files after inactivity.
+// The com.apple.icloud.donotpresent xattr tells iCloud Drive to keep the directory local.
+function markDirectoryAsLocalOnly(dir: string): void {
+  if (process.platform !== 'darwin') return
+  try {
+    execFileSync('xattr', ['-w', 'com.apple.icloud.donotpresent', '', dir])
+  } catch {
+    // xattr may not be available in all environments; non-fatal
+  }
+}
+
 export async function bootstrapWhisper(
   onProgress: (stage: 'installing' | 'downloading', percent: number) => void
 ): Promise<void> {
   const dir = getWhisperDir()
   mkdirSync(dir, { recursive: true })
+  markDirectoryAsLocalOnly(dir)
 
   if (!existsSync(whisperBinaryPath(dir))) {
     if (app.isPackaged) {
