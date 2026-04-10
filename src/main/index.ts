@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, ipcMain, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import dockIcon from '../../build/icon.icns?asset'
 import { setApplicationMenu } from './menu'
 import { focusOrOpenPrefsWindow, PrefsSection } from './windows/prefs'
 import { registerDirectoryHandlers } from './ipc/directory'
@@ -53,12 +54,10 @@ function createWindow(): void {
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.audist.app')
 
-  if (process.platform === 'darwin' && is.dev) {
-    // In dev the app runs as Electron.app so it has no bundle icon.
-    // Use the .icns directly — macOS selects the correct size for the dock
-    // automatically, avoiding the sizing issues that come with a raw PNG.
-    const icnsPath = join(__dirname, '../../build/icon.icns')
-    app.dock?.setIcon(nativeImage.createFromPath(icnsPath))
+  if (process.platform === 'darwin') {
+    // Use the .icns so macOS picks the correct size for the current dock slot.
+    // Imported via ?asset so electron-vite resolves the path in both dev and prod.
+    app.dock?.setIcon(nativeImage.createFromPath(dockIcon))
   }
 
   app.on('browser-window-created', (_, window) => {
