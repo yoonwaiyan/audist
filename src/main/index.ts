@@ -1,6 +1,5 @@
 import { app, shell, BrowserWindow, ipcMain, nativeImage } from 'electron'
 import { join } from 'path'
-import { readFileSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { setApplicationMenu } from './menu'
@@ -54,12 +53,12 @@ function createWindow(): void {
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.audist.app')
 
-  if (process.platform === 'darwin') {
-    // createFromPath ignores PNG DPI metadata and treats the image as @1x,
-    // making a 1024x1024 PNG appear twice as large as other dock icons on Retina.
-    // createFromBuffer with scaleFactor:2 correctly marks it as @2x (512pt effective).
-    const dockIcon = nativeImage.createFromBuffer(readFileSync(icon), { scaleFactor: 2 })
-    app.dock?.setIcon(dockIcon)
+  if (process.platform === 'darwin' && is.dev) {
+    // In dev the app runs as Electron.app so it has no bundle icon.
+    // Use the .icns directly — macOS selects the correct size for the dock
+    // automatically, avoiding the sizing issues that come with a raw PNG.
+    const icnsPath = join(__dirname, '../../build/icon.icns')
+    app.dock?.setIcon(nativeImage.createFromPath(icnsPath))
   }
 
   app.on('browser-window-created', (_, window) => {
