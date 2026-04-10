@@ -48,12 +48,18 @@ function AppShellInner(): React.JSX.Element {
 
   const isRecording = recorderState === 'recording' || recorderState === 'stopping'
 
-  // Re-check permissions on window focus
+  // Re-check permissions and whisper readiness on window focus.
+  // Whisper files can disappear (e.g. iCloud storage optimisation) while the app is running.
   useEffect(() => {
     const handleFocus = async (): Promise<void> => {
-      const perms = await window.api.permissions.check()
+      const [perms, whisperReady] = await Promise.all([
+        window.api.permissions.check(),
+        window.api.whisper.isReady()
+      ])
       if (perms.microphone !== 'granted' || perms.screen !== 'granted') {
         navigate('/permissions')
+      } else if (!whisperReady) {
+        navigate('/whisper-setup')
       }
     }
     window.addEventListener('focus', handleFocus)
