@@ -436,6 +436,39 @@ export default function SessionDetail(): React.JSX.Element {
                 )}
               </div>
             </div>
+          ) : transcriptionError ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-start gap-2.5 p-3 rounded-lg bg-[var(--color-error)]/8 border border-[var(--color-error)]/20">
+                <AlertTriangle className="w-4 h-4 text-[var(--color-error)] shrink-0 mt-0.5" />
+                <p className="text-sm text-[var(--color-error)]">Error transcribing</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRetryTranscription}
+                  disabled={retrying}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium
+                    bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                    text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]
+                    disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-default"
+                >
+                  <RefreshCw className={`w-3 h-3 ${retrying ? 'animate-spin' : ''}`} />
+                  {retrying ? 'Retrying…' : 'Try again'}
+                </button>
+                <button
+                  onClick={() => handleCopyErrorLog(transcriptionError.message)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium
+                    bg-[var(--color-bg-surface)] border border-[var(--color-border)]
+                    text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]
+                    transition-colors cursor-default"
+                >
+                  {copiedErrorLog
+                    ? <Check className="w-3 h-3 text-[var(--color-success)]" />
+                    : <Copy className="w-3 h-3" />
+                  }
+                  {copiedErrorLog ? 'Copied!' : 'Copy error log'}
+                </button>
+              </div>
+            </div>
           ) : summary ? (
             <div className="prose prose-sm max-w-none text-[var(--color-text-primary)] [&_h1]:text-base [&_h1]:font-bold [&_h1]:text-[var(--color-text-primary)] [&_h1]:mb-3 [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-[var(--color-text-primary)] [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:text-[var(--color-text-secondary)] [&_h3]:mt-3 [&_h3]:mb-1 [&_p]:text-sm [&_p]:text-[var(--color-text-secondary)] [&_p]:mb-1 [&_li]:text-sm [&_li]:text-[var(--color-text-secondary)] [&_strong]:text-[var(--color-text-primary)] [&_a]:text-[var(--color-accent)] [&_hr]:border-[var(--color-border)]">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{summary}</ReactMarkdown>
