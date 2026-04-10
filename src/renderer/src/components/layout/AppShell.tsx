@@ -48,6 +48,15 @@ function AppShellInner(): React.JSX.Element {
 
   const isRecording = recorderState === 'recording' || recorderState === 'stopping'
 
+  // Belt-and-suspenders mount check — the requireSetup() route loader guards the
+  // normal path but can be bypassed if an IPC call throws during startup. Running
+  // the same check here ensures the shell never stays visible with whisper missing.
+  useEffect(() => {
+    window.api.whisper.isReady().then((ready) => {
+      if (!ready) navigate('/whisper-setup')
+    })
+  }, [navigate])
+
   // Re-check permissions and whisper readiness on window focus.
   // Whisper files can disappear (e.g. iCloud storage optimisation) while the app is running.
   useEffect(() => {
