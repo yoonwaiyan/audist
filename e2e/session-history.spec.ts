@@ -116,7 +116,7 @@ test.describe('Session history list', () => {
     ])
 
     await page.locator('[data-testid="session-item"]').first().click()
-    await expect(page.getByText('Transcription process crashed')).toBeVisible()
+    await expect(page.getByText('Error transcribing')).toBeVisible()
 
     await app.close()
     cleanup()
