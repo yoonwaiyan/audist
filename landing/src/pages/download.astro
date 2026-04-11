@@ -2,13 +2,10 @@
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Header from '../components/Header.astro'
 import Footer from '../components/Footer.astro'
-import { getReleasesSafe, formatAssetSize, formatReleaseDate, summarizeReleaseBody } from '../lib/github'
-import { siteConfig } from '../data/site'
+import { getReleasesSafe, formatReleaseDate } from '../lib/github'
 
 const releases = await getReleasesSafe()
 const latest = releases[0]
-const releaseAssets = latest?.assets ?? []
-const summaryLines = summarizeReleaseBody(latest?.body ?? null)
 ---
 
 <BaseLayout
@@ -46,45 +43,6 @@ const summaryLines = summarizeReleaseBody(latest?.body ?? null)
             <p class="release-date">Audist releases will appear here once a tagged build is published.</p>
           </aside>
         )}
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="container download-grid">
-        <article class="panel">
-          <p class="eyebrow">Assets</p>
-          <h2>Release files</h2>
-          {releaseAssets.length > 0 ? (
-            <div class="asset-list">
-              {releaseAssets.map((asset) => (
-                <a class="asset-card" href={asset.browser_download_url}>
-                  <div>
-                    <h3>{asset.name}</h3>
-                    <p>{asset.content_type}</p>
-                  </div>
-                  <div class="asset-meta">
-                    <span>{formatAssetSize(asset.size)}</span>
-                    <span>{asset.download_count} downloads</span>
-                  </div>
-                </a>
-              ))}
-            </div>
-          ) : (
-            <p class="muted-copy">
-              No packaged assets are attached to the latest release yet. Check the{' '}
-              <a href={siteConfig.releaseUrl} target="_blank" rel="noreferrer">GitHub releases page</a>{' '}
-              for source archives and future binaries.
-            </p>
-          )}
-        </article>
-
-        <article class="panel">
-          <p class="eyebrow">Included notes</p>
-          <h2>What changed</h2>
-          <ul class="summary-list">
-            {summaryLines.map((line) => <li>{line}</li>)}
-          </ul>
-        </article>
       </div>
     </section>
   </main>

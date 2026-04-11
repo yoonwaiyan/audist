@@ -19,7 +19,8 @@ import { withBase } from '../lib/paths'
           <h1>Capture meetings, transcribe locally, and ship cleaner notes.</h1>
           <p class="lede">
             Audist is a desktop recorder for macOS that keeps audio on device, transcribes with
-            whisper.cpp, and lets you choose the summary model that fits your workflow.
+            whisper.cpp, and lets you choose the summary model that fits your workflow. Windows and
+            Linux support are in active progress.
           </p>
 
           <div class="hero-actions">
@@ -32,7 +33,7 @@ import { withBase } from '../lib/paths'
           <ul class="hero-points">
             <li>Local audio capture and local transcription</li>
             <li>OpenAI, Anthropic, and compatible summary providers</li>
-            <li>Desktop-native flow for repeated daily meetings</li>
+            <li>Desktop-native flow for repeated daily meetings, with Windows and Linux on the roadmap</li>
           </ul>
         </div>
 
@@ -54,11 +55,41 @@ import { withBase } from '../lib/paths'
         <div class="feature-grid">
           {featureCards.map((feature) => (
             <article class="feature-card">
+              <div class="feature-icon" aria-hidden="true">
+                {feature.icon === 'wave' && (
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="10" width="2" height="4" rx="1"></rect>
+                    <rect x="7" y="6" width="2" height="12" rx="1"></rect>
+                    <rect x="11" y="4" width="2" height="16" rx="1"></rect>
+                    <rect x="15" y="8" width="2" height="8" rx="1"></rect>
+                    <rect x="19" y="11" width="2" height="2" rx="1"></rect>
+                  </svg>
+                )}
+                {feature.icon === 'spark' && (
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3 13.9 8.1 19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z"></path>
+                    <path d="M18.5 3.5 19.2 5.3 21 6l-1.8.7-.7 1.8-.7-1.8L16 6l1.8-.7.7-1.8Z"></path>
+                  </svg>
+                )}
+                {feature.icon === 'grid' && (
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <rect x="4" y="4" width="6" height="6" rx="1.5"></rect>
+                    <rect x="14" y="4" width="6" height="6" rx="1.5"></rect>
+                    <rect x="4" y="14" width="6" height="6" rx="1.5"></rect>
+                    <rect x="14" y="14" width="6" height="6" rx="1.5"></rect>
+                  </svg>
+                )}
+              </div>
               <h3>{feature.title}</h3>
               <p>{feature.body}</p>
             </article>
           ))}
         </div>
+
+        <p class="platform-note">
+          Audist is currently optimized for macOS. Native Windows and Linux releases are planned
+          next so the same local-first workflow can ship across desktop platforms.
+        </p>
       </div>
     </section>
 
@@ -74,9 +105,9 @@ import { withBase } from '../lib/paths'
         </div>
 
         <div class="shot-grid">
+          <ShotCard {...screenshotCards[2]} variant="prefs" />
           <ShotCard {...screenshotCards[0]} variant="record" />
           <ShotCard {...screenshotCards[1]} variant="review" />
-          <ShotCard {...screenshotCards[2]} variant="prefs" />
         </div>
       </div>
     </section>
@@ -93,15 +124,20 @@ import { withBase } from '../lib/paths'
           </p>
         </article>
 
-        <article class="info-panel accent-panel">
-          <p class="eyebrow">Stack</p>
-          <h2>Electron, React, TypeScript, whisper.cpp.</h2>
-          <p>
-            The app is open source and designed for iteration. The website itself is precompiled as
-            a static Astro site and deployed through a dedicated GitHub Pages workflow inside this
-            same repository.
-          </p>
-        </article>
+        <div class="privacy-visual" aria-hidden="true">
+          <div class="privacy-orbit privacy-orbit-large"></div>
+          <div class="privacy-orbit privacy-orbit-small"></div>
+          <div class="privacy-core">
+            <div class="privacy-core-ring"></div>
+            <div class="privacy-lock">
+              <div class="privacy-lock-shackle"></div>
+              <div class="privacy-lock-body"></div>
+            </div>
+          </div>
+          <div class="privacy-chip privacy-chip-a">On-device audio</div>
+          <div class="privacy-chip privacy-chip-b">Local transcription</div>
+          <div class="privacy-chip privacy-chip-c">Explicit model choice</div>
+        </div>
       </div>
     </section>
 
@@ -109,7 +145,7 @@ import { withBase } from '../lib/paths'
       <div class="container cta-panel">
         <div>
           <p class="eyebrow">Ready to try it</p>
-          <h2>Download the latest release or inspect the changelog first.</h2>
+          <h2>Try the current macOS release and follow along as Windows and Linux land next.</h2>
         </div>
         <div class="cta-actions">
           <a class="button button-primary" href={withBase('/download/')}>Latest downloads</a>

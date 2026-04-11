@@ -10,14 +10,17 @@ export const siteConfig = {
 
 export const featureCards = [
   {
+    icon: 'wave',
     title: 'Local transcription',
     body: 'Record meetings and transcribe them on device with whisper.cpp. Your audio stays on your machine.'
   },
   {
-    title: 'Provider-flexible summaries',
-    body: 'Generate polished notes with OpenAI, Anthropic, or any OpenAI-compatible endpoint without changing your workflow.'
+    icon: 'spark',
+    title: 'Flexible AI summaries',
+    body: 'Generate polished AI meeting summaries with OpenAI, Anthropic, or any OpenAI-compatible endpoint without changing your workflow.'
   },
   {
+    icon: 'grid',
     title: 'Built for desktop flow',
     body: 'Fast setup, keyboard-friendly session browsing, and a focused recording surface designed for repeat daily use.'
   }
