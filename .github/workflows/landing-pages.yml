@@ -48,6 +48,7 @@ jobs:
         working-directory: landing
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SITE_URL: https://audist.app
         run: npm run build
 
       - name: Upload Pages artifact
