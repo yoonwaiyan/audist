@@ -25,11 +25,18 @@ const root = join(__dirname, '..')
 // Scaled to 1024×1024 with bars centered at (512, 512):
 //   scale factor ≈ 34.1 px/unit  →  bar width 68 px, center-to-center 136 px
 //   heights (4,12,16,8,2 units)  →  137, 409, 546, 273, 68 px
-// Full-bleed (no squircle) — macOS applies the squircle mask from the .icns.
+//
+// Squircle with transparent corners (rx ≈ 22.4% of 1024 = 229 px, matching
+// the macOS app icon mask). This ensures:
+//   - Dev  (app.dock.setIcon): transparent corners make the icon appear the
+//     same visual size as squircle-masked bundle icons (~20% smaller apparent
+//     area than a full-bleed rectangle).
+//   - Prod (.icns bundle): macOS applies its own mask on top; transparent
+//     corners are already clipped, result is identical.
 // ---------------------------------------------------------------------------
 const ICON_SVG = `\
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <rect width="1024" height="1024" fill="#0d0e14"/>
+  <rect width="1024" height="1024" rx="229" fill="#0d0e14"/>
   <rect x="205" y="444" width="68" height="137" rx="34" fill="#7c5cfc"/>
   <rect x="342" y="308" width="68" height="409" rx="34" fill="#7c5cfc"/>
   <rect x="478" y="239" width="68" height="546" rx="34" fill="#7c5cfc"/>
