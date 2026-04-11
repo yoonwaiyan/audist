@@ -58,6 +58,15 @@ Each bullet should be concise, user-facing prose (not commit message jargon). In
 
 Insert the new section into CHANGELOG.md immediately after the `# Changelog` header line (before the previous most-recent release). Do not remove or reorder any existing content.
 
-### 4. Confirm
+### 4. Bump version in package.json
 
-After editing, print the new section you added so the user can review it. Then remind them to bump the version in `package.json` and push a `v<new-version>` tag to trigger the release build.
+Update the `"version"` field in `package.json` to match the new changelog version. The release workflow (`release-mac.yml`) uses `electron-builder`, which reads the version from `package.json` — so the DMG artifact's internal version must match. Without this step, the app ships with the wrong version even if the git tag is correct.
+
+### 5. Confirm
+
+After editing both files, print the new changelog section and the updated `package.json` version so the user can review them. Then remind them to push a `v<new-version>` tag to trigger the release build:
+
+```
+git tag v<new-version>
+git push origin v<new-version>
+```
