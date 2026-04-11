@@ -29,6 +29,22 @@ Audist currently runs on **macOS**. Windows and Linux support is on the roadmap 
 
 **Testers on all platforms are welcome.** If you run into any issues, please [file a GitHub issue](https://github.com/yoonwaiyan/audist/issues) with your platform details and steps to reproduce.
 
+## Downloading on macOS
+
+> **Note:** Releases are currently unsigned and unnotarized — this is a temporary measure during the early phase of the project. Once the app gains enough traction, we plan to invest in proper Apple code signing so this step goes away entirely.
+
+macOS may show **"audist is damaged and can't be opened"** when you first open the downloaded DMG. This is a Gatekeeper restriction on apps that aren't notarized with Apple, not an actual problem with the file.
+
+**To open it:**
+
+1. Open **Terminal** and run:
+   ```bash
+   xattr -d com.apple.quarantine ~/Downloads/audist-*.dmg
+   ```
+2. Open the DMG normally and drag Audist to your Applications folder.
+
+Alternatively, after the blocked attempt, go to **System Settings → Privacy & Security** and click **Open Anyway**.
+
 ## Requirements
 
 - macOS (primary platform — Windows/Linux support is planned)

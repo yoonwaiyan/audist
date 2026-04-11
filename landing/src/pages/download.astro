@@ -45,6 +45,31 @@ const latest = releases[0]
         )}
       </div>
     </section>
+
+    <section class="section section-notice">
+      <div class="container">
+        <div class="gatekeeper-notice">
+          <div class="gatekeeper-notice-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="gatekeeper-notice-body">
+            <p class="gatekeeper-notice-title">macOS may block the app on first launch</p>
+            <p class="gatekeeper-notice-desc">
+              Releases are currently unsigned — a temporary measure during the early phase of this project.
+              macOS Gatekeeper may show <strong>"audist is damaged and can't be opened"</strong>. This is not
+              a problem with the file. To open it, run this command in Terminal after downloading:
+            </p>
+            <pre class="gatekeeper-code"><code>xattr -d com.apple.quarantine ~/Downloads/audist-*.dmg</code></pre>
+            <p class="gatekeeper-notice-alt">
+              Alternatively, go to <strong>System Settings → Privacy &amp; Security</strong> and click <strong>Open Anyway</strong> after the blocked attempt.
+              Once Audist gains enough traction, we plan to invest in proper Apple code signing so this step goes away entirely.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <Footer />
