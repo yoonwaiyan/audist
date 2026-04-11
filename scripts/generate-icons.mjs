@@ -3,8 +3,10 @@
  * scripts/generate-icons.mjs
  *
  * Generates the macOS icon set from the Audist waveform SVG:
- *   - build/icon.icns  (all sizes; macOS applies squircle from .app bundle)
- *   - resources/icon.png  (1024×1024; used by electron-builder for Windows/Linux)
+ *   - build/icon.icns          (all sizes; macOS applies squircle from .app bundle)
+ *   - resources/icon.png       (1024×1024; used by electron-builder for Windows/Linux)
+ *   - resources/icon-dock.png  (128×128 @1x; used by app.dock.setIcon in dev)
+ *   - resources/icon-dock@2x.png (256×256 @2x; Electron auto-picks on Retina)
  *
  * Usage: node scripts/generate-icons.mjs
  * Requires: ImageMagick 7+ (magick), iconutil (macOS)
@@ -57,6 +59,8 @@ const tmpSvg = '/tmp/audist-icon-master.svg'
 const tmpIconset = '/tmp/audist-icon.iconset'
 const outIcns = join(root, 'build/icon.icns')
 const outPng = join(root, 'resources/icon.png')
+const outDock1x = join(root, 'resources/icon-dock.png')
+const outDock2x = join(root, 'resources/icon-dock@2x.png')
 
 writeFileSync(tmpSvg, ICON_SVG)
 console.log('Wrote master SVG')
@@ -75,3 +79,9 @@ console.log(`Generated ${outIcns}`)
 
 copyFileSync(join(tmpIconset, 'icon_512x512@2x.png'), outPng)
 console.log(`Updated ${outPng}`)
+
+// Dock icon pair — Electron auto-picks @2x on Retina displays.
+// 128pt logical size matches the standard macOS dock slot.
+copyFileSync(join(tmpIconset, 'icon_128x128.png'), outDock1x)
+copyFileSync(join(tmpIconset, 'icon_128x128@2x.png'), outDock2x)
+console.log(`Updated ${outDock1x} + @2x`)

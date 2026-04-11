@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import dockIcon from '../../resources/icon-dock.png?asset'
 import { setApplicationMenu } from './menu'
 import { focusOrOpenPrefsWindow, PrefsSection } from './windows/prefs'
 import { registerDirectoryHandlers } from './ipc/directory'
@@ -54,7 +55,10 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.audist.app')
 
   if (process.platform === 'darwin') {
-    app.dock?.setIcon(icon)
+    // icon-dock.png (128×128 @1x) + icon-dock@2x.png (256×256 @2x) in the same
+    // directory — Electron auto-picks the @2x version on Retina. 128pt logical
+    // size matches the standard macOS dock slot.
+    app.dock?.setIcon(dockIcon)
   }
 
   app.on('browser-window-created', (_, window) => {
