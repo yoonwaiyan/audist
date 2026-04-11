@@ -29,6 +29,9 @@ jobs:
       - name: Prepare Whisper binary
         run: node scripts/prepare-whisper.mjs
 
+      - name: Generate icon set
+        run: node scripts/generate-icons.mjs
+
       - name: Build Electron app (macOS)
         # Code signing is enabled automatically when CSC_LINK and CSC_KEY_PASSWORD
         # repository secrets are present. Without them the build is unsigned

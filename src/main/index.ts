@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -51,7 +51,14 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.electron')
+  electronApp.setAppUserModelId('com.audist.app')
+
+  if (process.platform === 'darwin') {
+    const dockIcon = nativeImage.createFromPath(join(__dirname, '../../resources/icon.png'))
+    if (!dockIcon.isEmpty()) {
+      app.dock?.setIcon(dockIcon)
+    }
+  }
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
