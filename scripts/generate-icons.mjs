@@ -75,7 +75,7 @@ mkdirSync(tmpIconset)
 
 for (const [, px, filename] of ICONSET_ENTRIES) {
   const out = join(tmpIconset, filename)
-  execSync(`magick ${tmpSvg} -resize ${px}x${px} ${out}`)
+  execSync(`magick -background none ${tmpSvg} -resize ${px}x${px} ${out}`)
   console.log(`  ${filename}  (${px}×${px}px)`)
 }
 
