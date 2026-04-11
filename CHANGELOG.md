@@ -7,6 +7,7 @@ All notable changes to Audist are documented here.
 ### Added
 
 - **Unsigned macOS packaging path** — Added a dedicated `build:mac:unsigned` script for generating a macOS `.dmg` without Apple Developer signing credentials, along with release notes covering Gatekeeper bypass steps for direct-download users.
+- **Release tag simulation support** — macOS release workflow tag matching now accepts standard semver tags and prerelease-style tags such as `v1.1.6-pre.0`, making it possible to test release builds without cutting a final version tag.
 
 ## [1.1.5] - 2026-04-11
 

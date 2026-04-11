@@ -3,7 +3,7 @@ name: Release macOS
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]*'
+      - 'v*.*.*'
 
 # Opt into Node.js 24 for GitHub Actions runners ahead of the June 2026 deadline
 env:
