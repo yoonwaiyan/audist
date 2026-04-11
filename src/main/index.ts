@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, nativeImage } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -54,9 +54,7 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.audist.app')
 
   if (process.platform === 'darwin') {
-    // Dock slot = 128pt. Resize to 256px then mark as @2x so it's sharp on Retina.
-    const buf = nativeImage.createFromPath(icon).resize({ width: 256, height: 256 }).toPNG()
-    app.dock?.setIcon(nativeImage.createFromBuffer(buf, { scaleFactor: 2 }))
+    app.dock?.setIcon(icon)
   }
 
   app.on('browser-window-created', (_, window) => {
