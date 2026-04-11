@@ -54,6 +54,23 @@ npm run prepare:whisper
 npm run build:mac
 ```
 
+### Unsigned macOS distribution
+
+If you do not have an Apple Developer account, you can still ship Audist as an unsigned `.dmg` for testing or direct-download distribution:
+
+```bash
+npm run build:mac:unsigned
+```
+
+This does not require App Store submission, Developer ID signing, or notarization. The tradeoff is that macOS will show a Gatekeeper warning on first launch.
+
+Tell users to open the app with one of these flows:
+
+1. In Finder, right-click `Audist.app`, then choose `Open`.
+2. If macOS blocks the app, go to `System Settings > Privacy & Security` and click `Open Anyway`.
+
+Use this flow for internal testing, early access, or technical users. For smoother public distribution without manual bypass steps, you still need Apple Developer signing and notarization.
+
 ## Testing
 
 ```bash

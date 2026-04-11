@@ -2,6 +2,12 @@
 
 All notable changes to Audist are documented here.
 
+## [1.1.6] - 2026-04-11
+
+### Added
+
+- **Unsigned macOS packaging path** — Added a dedicated `build:mac:unsigned` script for generating a macOS `.dmg` without Apple Developer signing credentials, along with release notes covering Gatekeeper bypass steps for direct-download users.
+
 ## [1.1.5] - 2026-04-11
 
 ### Fixed

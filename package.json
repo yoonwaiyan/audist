@@ -20,6 +20,7 @@
     "build:win": "npm run build && electron-builder --win",
     "prepare:whisper": "node scripts/prepare-whisper.mjs",
     "build:mac": "node scripts/prepare-whisper.mjs && electron-vite build && electron-builder --mac",
+    "build:mac:unsigned": "node scripts/prepare-whisper.mjs && electron-vite build && electron-builder --mac --config.mac.identity=null",
     "build:linux": "node scripts/prepare-whisper.mjs && electron-vite build && electron-builder --linux",
     "pretest:e2e": "electron-vite build",
     "test:e2e": "playwright test"
