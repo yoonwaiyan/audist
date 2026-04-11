@@ -3,8 +3,8 @@ import sitemap from '@astrojs/sitemap'
 
 const owner = 'yoonwaiyan'
 const repo = 'audist'
-const site = `https://${owner}.github.io`
-const base = process.env.GITHUB_ACTIONS ? `/${repo}` : '/'
+const site = process.env.SITE_URL || `https://${owner}.github.io/${repo}`
+const base = '/'
 
 export default defineConfig({
   site,
