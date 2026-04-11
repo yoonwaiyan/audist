@@ -2,7 +2,6 @@ import { app, shell, BrowserWindow, ipcMain, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import dockIcon from '../../build/icon.icns?asset'
 import { setApplicationMenu } from './menu'
 import { focusOrOpenPrefsWindow, PrefsSection } from './windows/prefs'
 import { registerDirectoryHandlers } from './ipc/directory'
@@ -55,9 +54,9 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.audist.app')
 
   if (process.platform === 'darwin') {
-    // Use the .icns so macOS picks the correct size for the current dock slot.
-    // Imported via ?asset so electron-vite resolves the path in both dev and prod.
-    app.dock?.setIcon(nativeImage.createFromPath(dockIcon))
+    // Dock slot = 128pt. Resize to 256px then mark as @2x so it's sharp on Retina.
+    const buf = nativeImage.createFromPath(icon).resize({ width: 256, height: 256 }).toPNG()
+    app.dock?.setIcon(nativeImage.createFromBuffer(buf, { scaleFactor: 2 }))
   }
 
   app.on('browser-window-created', (_, window) => {
