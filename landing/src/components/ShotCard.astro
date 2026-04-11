@@ -1,0 +1,62 @@
+---
+interface Props {
+  eyebrow: string
+  title: string
+  body: string
+  variant: 'record' | 'review' | 'prefs'
+}
+
+const { eyebrow, title, body, variant } = Astro.props
+---
+
+<article class="shot-card">
+  <div class={`shot-frame ${variant}`}>
+    <div class="window-topbar">
+      <span></span><span></span><span></span>
+    </div>
+
+    {variant === 'record' && (
+      <div class="shot-recording">
+        <div class="shot-dot"></div>
+        <div class="shot-time">00:08:42</div>
+        <div class="shot-wave"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="shot-stop"></div>
+      </div>
+    )}
+
+    {variant === 'review' && (
+      <div class="shot-review">
+        <div class="shot-list">
+          <div class="shot-list-item active"></div>
+          <div class="shot-list-item"></div>
+          <div class="shot-list-item"></div>
+        </div>
+        <div class="shot-document">
+          <div class="line wide"></div>
+          <div class="line"></div>
+          <div class="line"></div>
+          <div class="line narrow"></div>
+        </div>
+      </div>
+    )}
+
+    {variant === 'prefs' && (
+      <div class="shot-prefs">
+        <div class="prefs-nav">
+          <div class="prefs-pill active"></div>
+          <div class="prefs-pill"></div>
+          <div class="prefs-pill"></div>
+        </div>
+        <div class="prefs-panel">
+          <div class="prefs-row"></div>
+          <div class="prefs-row"></div>
+          <div class="prefs-row"></div>
+        </div>
+      </div>
+    )}
+  </div>
+
+  <p class="eyebrow">{eyebrow}</p>
+  <h3>{title}</h3>
+  <p>{body}</p>
+</article>

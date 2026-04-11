@@ -1,0 +1,123 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Header from '../components/Header.astro'
+import Footer from '../components/Footer.astro'
+import HeroVisual from '../components/HeroVisual.astro'
+import ShotCard from '../components/ShotCard.astro'
+import { featureCards, screenshotCards, siteConfig } from '../data/site'
+import { withBase } from '../lib/paths'
+---
+
+<BaseLayout title="Audist | Local-first meeting recorder for macOS" path="/">
+  <Header />
+
+  <main>
+    <section class="hero-section">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Private by default</p>
+          <h1>Capture meetings, transcribe locally, and ship cleaner notes.</h1>
+          <p class="lede">
+            Audist is a desktop recorder for macOS that keeps audio on device, transcribes with
+            whisper.cpp, and lets you choose the summary model that fits your workflow.
+          </p>
+
+          <div class="hero-actions">
+            <a class="button button-primary" href={withBase('/download/')}>Download Audist</a>
+            <a class="button button-secondary" href={siteConfig.repoUrl} target="_blank" rel="noreferrer">
+              View source
+            </a>
+          </div>
+
+          <ul class="hero-points">
+            <li>Local audio capture and local transcription</li>
+            <li>OpenAI, Anthropic, and compatible summary providers</li>
+            <li>Desktop-native flow for repeated daily meetings</li>
+          </ul>
+        </div>
+
+        <HeroVisual />
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow">Core workflow</p>
+          <h2>Built around a recording loop that stays fast under pressure.</h2>
+          <p>
+            The product language is intentionally spare: dark surfaces, a sharp accent, and strong
+            hierarchy so the app reads clearly when you are already multitasking in a live meeting.
+          </p>
+        </div>
+
+        <div class="feature-grid">
+          {featureCards.map((feature) => (
+            <article class="feature-card">
+              <h3>{feature.title}</h3>
+              <p>{feature.body}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-shots">
+      <div class="container">
+        <div class="section-heading">
+          <p class="eyebrow">Product surfaces</p>
+          <h2>Three views, one visual system.</h2>
+          <p>
+            The landing page mirrors the app’s existing brand: void backgrounds, iris accents,
+            dense panels, and just enough glow to make live state feel active.
+          </p>
+        </div>
+
+        <div class="shot-grid">
+          <ShotCard {...screenshotCards[0]} variant="record" />
+          <ShotCard {...screenshotCards[1]} variant="review" />
+          <ShotCard {...screenshotCards[2]} variant="prefs" />
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container narrative-grid">
+        <article class="info-panel">
+          <p class="eyebrow">Privacy</p>
+          <h2>Your recordings do not need to leave your machine.</h2>
+          <p>
+            Audist uses whisper.cpp locally for transcription, so raw meeting audio never has to be
+            uploaded just to get a transcript. If you use a remote model for summaries, that choice
+            stays explicit and configurable.
+          </p>
+        </article>
+
+        <article class="info-panel accent-panel">
+          <p class="eyebrow">Stack</p>
+          <h2>Electron, React, TypeScript, whisper.cpp.</h2>
+          <p>
+            The app is open source and designed for iteration. The website itself is precompiled as
+            a static Astro site and deployed through a dedicated GitHub Pages workflow inside this
+            same repository.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container cta-panel">
+        <div>
+          <p class="eyebrow">Ready to try it</p>
+          <h2>Download the latest release or inspect the changelog first.</h2>
+        </div>
+        <div class="cta-actions">
+          <a class="button button-primary" href={withBase('/download/')}>Latest downloads</a>
+          <a class="button button-secondary" href={withBase('/changelog/')}>Release history</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</BaseLayout>

@@ -1,0 +1,24 @@
+---
+import LogoMark from './LogoMark.astro'
+import { withBase } from '../lib/paths'
+
+const homeHref = withBase()
+const downloadHref = withBase('/download/')
+const changelogHref = withBase('/changelog/')
+---
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a href={homeHref} class="brand" aria-label="Audist home">
+      <LogoMark />
+      <span>audist</span>
+    </a>
+
+    <nav class="site-nav" aria-label="Primary">
+      <a href={homeHref}>Overview</a>
+      <a href={downloadHref}>Download</a>
+      <a href={changelogHref}>Changelog</a>
+      <a href="https://github.com/yoonwaiyan/audist" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+  </div>
+</header>
