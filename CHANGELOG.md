@@ -2,6 +2,12 @@
 
 All notable changes to Audist are documented here.
 
+## [1.1.5] - 2026-04-11
+
+### Fixed
+
+- **macOS release pipeline** — ImageMagick is now installed in the release workflow before icon generation, fixing `magick: command not found` failures on the GitHub Actions macOS runner. (#33)
+
 ## [1.1.4] - 2026-04-11
 
 ### Fixed
