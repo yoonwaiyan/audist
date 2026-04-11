@@ -1,6 +1,5 @@
 import { app, shell, BrowserWindow, ipcMain, nativeImage } from 'electron'
 import { join } from 'path'
-import { readFileSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { setApplicationMenu } from './menu'
@@ -55,31 +54,10 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.audist.app')
 
   if (process.platform === 'darwin') {
-    // Build a multi-representation NativeImage (same as .icns) so macOS can
-    // pick the right size for the current dock zoom level.
-    const iconsetPath = join(__dirname, '../../resources/iconset')
-    const entries: Array<{ scaleFactor: number; width: number; height: number; file: string }> = [
-      { scaleFactor: 1, width: 16, height: 16, file: 'icon_16x16.png' },
-      { scaleFactor: 2, width: 16, height: 16, file: 'icon_16x16@2x.png' },
-      { scaleFactor: 1, width: 32, height: 32, file: 'icon_32x32.png' },
-      { scaleFactor: 2, width: 32, height: 32, file: 'icon_32x32@2x.png' },
-      { scaleFactor: 1, width: 128, height: 128, file: 'icon_128x128.png' },
-      { scaleFactor: 2, width: 128, height: 128, file: 'icon_128x128@2x.png' },
-      { scaleFactor: 1, width: 256, height: 256, file: 'icon_256x256.png' },
-      { scaleFactor: 2, width: 256, height: 256, file: 'icon_256x256@2x.png' },
-      { scaleFactor: 1, width: 512, height: 512, file: 'icon_512x512.png' },
-      { scaleFactor: 2, width: 512, height: 512, file: 'icon_512x512@2x.png' },
-    ]
-    const dockImage = nativeImage.createEmpty()
-    for (const { scaleFactor, width, height, file } of entries) {
-      dockImage.addRepresentation({
-        scaleFactor,
-        width,
-        height,
-        buffer: readFileSync(join(iconsetPath, file)),
-      })
+    const dockIcon = nativeImage.createFromPath(join(__dirname, '../../resources/icon.png'))
+    if (!dockIcon.isEmpty()) {
+      app.dock?.setIcon(dockIcon)
     }
-    app.dock?.setIcon(dockImage)
   }
 
   app.on('browser-window-created', (_, window) => {
