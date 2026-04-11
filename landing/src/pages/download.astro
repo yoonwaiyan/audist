@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Header from '../components/Header.astro'
+import Footer from '../components/Footer.astro'
+import { getReleasesSafe, formatReleaseDate } from '../lib/github'
+
+const releases = await getReleasesSafe()
+const latest = releases[0]
+---
+
+<BaseLayout
+  title="Download Audist"
+  description="Get the latest Audist release builds and browse packaged assets."
+  path="/download/"
+>
+  <Header />
+
+  <main class="page-main">
+    <section class="page-hero">
+      <div class="container page-hero-inner">
+        <div>
+          <p class="eyebrow">Latest release</p>
+          <h1>Download the newest Audist build.</h1>
+          <p class="lede">
+            Release metadata is fetched from the GitHub Releases API at build time so this page is
+            fully static when served from GitHub Pages.
+          </p>
+        </div>
+
+        {latest ? (
+          <aside class="release-highlight">
+            <p class="release-label">Current version</p>
+            <h2>{latest.name ?? latest.tag_name}</h2>
+            <p class="release-date">Published {formatReleaseDate(latest.published_at)}</p>
+            <a class="button button-primary full-width" href={latest.html_url} target="_blank" rel="noreferrer">
+              Open release on GitHub
+            </a>
+          </aside>
+        ) : (
+          <aside class="release-highlight">
+            <p class="release-label">Current version</p>
+            <h2>No published release yet</h2>
+            <p class="release-date">Audist releases will appear here once a tagged build is published.</p>
+          </aside>
+        )}
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</BaseLayout>

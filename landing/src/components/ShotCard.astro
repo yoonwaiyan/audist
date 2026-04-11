@@ -1,0 +1,116 @@
+---
+interface Props {
+  eyebrow: string
+  title: string
+  body: string
+  variant: 'record' | 'review' | 'prefs'
+}
+
+const { eyebrow, title, body, variant } = Astro.props
+---
+
+<article class="shot-card">
+  <div class={`shot-frame ${variant}`}>
+    <div class="window-topbar">
+      <span></span><span></span><span></span>
+    </div>
+
+    {variant === 'record' && (
+      <div class="shot-recording">
+        <div class="shot-record-timer">
+          <div class="shot-dot-wrap">
+            <div class="shot-dot-ring"></div>
+            <div class="shot-dot"></div>
+          </div>
+          <div class="shot-time">00:08:42</div>
+        </div>
+        <div class="shot-stop">
+          <div class="shot-stop-inner"></div>
+        </div>
+        <div class="shot-record-labels">
+          <div class="shot-record-label">
+            <span>Template:</span>
+            <strong>General Meeting</strong>
+          </div>
+          <div class="shot-record-separator"></div>
+          <div class="shot-record-label">
+            <span>LLM:</span>
+            <strong>OpenAI</strong>
+          </div>
+        </div>
+        <div class="shot-wave shot-wave-panel"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    )}
+
+    {variant === 'review' && (
+      <div class="shot-review">
+        <div class="shot-list">
+          <div class="shot-list-item active">
+            <div class="shot-list-line wide"></div>
+            <div class="shot-list-line"></div>
+          </div>
+          <div class="shot-list-item">
+            <div class="shot-list-line wide"></div>
+            <div class="shot-list-line"></div>
+          </div>
+          <div class="shot-list-item">
+            <div class="shot-list-line wide"></div>
+            <div class="shot-list-line"></div>
+          </div>
+        </div>
+        <div class="shot-document">
+          <div class="shot-document-head">
+            <div class="shot-document-title"></div>
+            <div class="shot-document-chip"></div>
+          </div>
+          <div class="line wide"></div>
+          <div class="line"></div>
+          <div class="line"></div>
+          <div class="line narrow"></div>
+          <div class="shot-document-footer">
+            <div class="shot-document-badge"></div>
+            <div class="shot-document-badge short"></div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {variant === 'prefs' && (
+      <div class="shot-prefs">
+        <div class="prefs-nav">
+          <div class="prefs-pill active">General</div>
+          <div class="prefs-pill">LLM</div>
+          <div class="prefs-pill">Prompt</div>
+        </div>
+        <div class="prefs-panel">
+          <div class="prefs-group">
+            <div class="prefs-label"></div>
+            <div class="prefs-field wide"></div>
+          </div>
+          <div class="prefs-group split">
+            <div class="prefs-tile active">
+              <div class="prefs-tile-title"></div>
+              <div class="prefs-tile-copy"></div>
+            </div>
+            <div class="prefs-tile">
+              <div class="prefs-tile-title"></div>
+              <div class="prefs-tile-copy"></div>
+            </div>
+          </div>
+          <div class="prefs-group footer">
+            <div class="prefs-toggle">
+              <div class="prefs-toggle-track"><span></span></div>
+              <div class="prefs-toggle-copy"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+
+  <div class="shot-copy">
+    <p class="eyebrow">{eyebrow}</p>
+    <h3>{title}</h3>
+    <p>{body}</p>
+  </div>
+</article>

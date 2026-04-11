@@ -1,0 +1,23 @@
+---
+import { siteConfig } from '../data/site'
+import { withBase } from '../lib/paths'
+---
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div>
+      <p class="footer-title">Audist</p>
+      <p class="footer-copy">
+        Local-first meeting capture, transcription, and summaries for people who want control over
+        their recordings.
+      </p>
+    </div>
+
+    <div class="footer-links">
+      <a href={withBase('/download/')}>Download</a>
+      <a href={withBase('/changelog/')}>Changelog</a>
+      <a href={siteConfig.repoUrl} target="_blank" rel="noreferrer">Source</a>
+      <a href={siteConfig.issuesUrl} target="_blank" rel="noreferrer">Issues</a>
+    </div>
+  </div>
+</footer>
