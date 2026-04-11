@@ -29,6 +29,9 @@ jobs:
       - name: Prepare Whisper binary
         run: node scripts/prepare-whisper.mjs
 
+      - name: Install ImageMagick
+        run: brew install imagemagick
+
       - name: Generate icon set
         run: node scripts/generate-icons.mjs
 
