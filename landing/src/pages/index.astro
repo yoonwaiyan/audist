@@ -8,33 +8,30 @@ import { featureCards, screenshotCards, siteConfig } from '../data/site'
 import { withBase } from '../lib/paths'
 ---
 
-<BaseLayout title="Audist | Local-first meeting recorder for macOS" path="/">
+<BaseLayout title="Audist | Local-first meeting recorder" path="/">
   <Header />
 
   <main>
     <section class="hero-section">
-      <div class="container hero-grid">
+      <div class="container hero-container hero-grid">
         <div class="hero-copy">
           <p class="eyebrow">Private by default</p>
-          <h1>Capture meetings, transcribe locally, and ship cleaner notes.</h1>
+          <h1>
+            Capture meetings.
+            <br />
+            Transcribe locally.
+            <br />
+            Get clear notes.
+          </h1>
           <p class="lede">
-            Audist is a desktop recorder for macOS that keeps audio on device, transcribes with
-            whisper.cpp, and lets you choose the summary model that fits your workflow. Windows and
-            Linux support are in active progress.
+            Audist is a desktop recorder that keeps audio on device, transcribes with whisper.cpp,
+            and lets you choose the summary model that fits your workflow.
+            <span class="hero-lede-underline">Windows and Linux support are in active progress.</span>
           </p>
 
           <div class="hero-actions">
             <a class="button button-primary" href={withBase('/download/')}>Download Audist</a>
-            <a class="button button-secondary" href={siteConfig.repoUrl} target="_blank" rel="noreferrer">
-              View source
-            </a>
           </div>
-
-          <ul class="hero-points">
-            <li>Local audio capture and local transcription</li>
-            <li>OpenAI, Anthropic, and compatible summary providers</li>
-            <li>Desktop-native flow for repeated daily meetings, with Windows and Linux on the roadmap</li>
-          </ul>
         </div>
 
         <HeroVisual />
@@ -45,10 +42,12 @@ import { withBase } from '../lib/paths'
       <div class="container">
         <div class="section-heading">
           <p class="eyebrow">Core workflow</p>
-          <h2>Built around a recording loop that stays fast under pressure.</h2>
+          <h2>A local-first workflow for meeting capture and notes.</h2>
           <p>
-            The product language is intentionally spare: dark surfaces, a sharp accent, and strong
-            hierarchy so the app reads clearly when you are already multitasking in a live meeting.
+            Audist is built for local audio capture, local transcription with whisper.cpp, and AI
+            meeting summaries generated through OpenAI, Anthropic, or compatible providers. The
+            interface stays spare and desktop-native so repeated daily meetings still feel fast and
+            readable under pressure.
           </p>
         </div>
 
@@ -115,8 +114,127 @@ import { withBase } from '../lib/paths'
     <section class="section">
       <div class="container narrative-grid">
         <article class="info-panel">
+          <p class="eyebrow">Output</p>
+          <h2>Summaries in Markdown.</h2>
+          <p>
+            Audist generates summaries in Markdown, which makes the output easy to reuse across
+            common note-taking workflows instead of locking it into a custom format.
+          </p>
+          <div class="note-tags">
+            <span>Markdown summaries</span>
+            <span>Portable format</span>
+          </div>
+        </article>
+
+        <aside class="panel markdown-panel" aria-label="Markdown output preview">
+          <div class="markdown-sheet" aria-hidden="true">
+            <div class="markdown-row">
+              <div class="markdown-glyph hash"></div>
+              <div class="markdown-line heading"></div>
+            </div>
+            <div class="markdown-gap"></div>
+            <div class="markdown-row">
+              <div class="markdown-glyph dash"></div>
+              <div class="markdown-line bullet wide"></div>
+            </div>
+            <div class="markdown-row">
+              <div class="markdown-glyph dash"></div>
+              <div class="markdown-line bullet medium"></div>
+            </div>
+            <div class="markdown-row">
+              <div class="markdown-glyph dash"></div>
+              <div class="markdown-line bullet short"></div>
+            </div>
+            <div class="markdown-gap"></div>
+            <div class="markdown-row">
+              <div class="markdown-glyph hash small"></div>
+              <div class="markdown-line subheading"></div>
+            </div>
+            <div class="markdown-row">
+              <div class="markdown-glyph checkbox"></div>
+              <div class="markdown-line medium"></div>
+            </div>
+            <div class="markdown-row">
+              <div class="markdown-glyph checkbox"></div>
+              <div class="markdown-line wide"></div>
+            </div>
+            <div class="markdown-gap"></div>
+            <div class="markdown-row">
+              <div class="markdown-glyph code"></div>
+              <div class="markdown-line code"></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container narrative-grid">
+        <article class="info-panel">
+          <p class="eyebrow">Storage</p>
+          <h2>Choose where notes land.</h2>
+          <p>
+            You can choose the save directory, so session notes can drop straight into an Obsidian
+            vault or any folder-based knowledge system without an extra export step.
+          </p>
+          <div class="note-tags">
+            <span>Custom save directory</span>
+            <span>Obsidian-friendly</span>
+          </div>
+        </article>
+
+        <aside class="panel markdown-panel" aria-label="Storage destination preview">
+          <div class="picker-sheet" aria-hidden="true">
+            <div class="picker-bar">
+              <div class="picker-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <div class="picker-search"></div>
+            </div>
+            <div class="picker-body">
+              <div class="picker-sidebar">
+                <div class="picker-nav-line short"></div>
+                <div class="picker-nav-line wide active"></div>
+                <div class="picker-nav-line medium"></div>
+                <div class="picker-nav-line short"></div>
+              </div>
+              <div class="picker-main">
+                <div class="picker-grid">
+                  <div class="picker-card">
+                    <div class="picker-folder accent"></div>
+                    <div class="picker-card-line medium"></div>
+                  </div>
+                  <div class="picker-card">
+                    <div class="picker-folder"></div>
+                    <div class="picker-card-line short"></div>
+                  </div>
+                  <div class="picker-card selected">
+                    <div class="picker-folder accent"></div>
+                    <div class="picker-card-line wide"></div>
+                  </div>
+                  <div class="picker-card">
+                    <div class="picker-folder"></div>
+                    <div class="picker-card-line medium"></div>
+                  </div>
+                </div>
+                <div class="picker-footer">
+                  <div class="picker-selection"></div>
+                  <div class="picker-button"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container narrative-grid">
+        <article class="info-panel">
           <p class="eyebrow">Privacy</p>
-          <h2>Your recordings do not need to leave your machine.</h2>
+          <h2>Your recordings stay on your machine.</h2>
           <p>
             Audist uses whisper.cpp locally for transcription, so raw meeting audio never has to be
             uploaded just to get a transcript. If you use a remote model for summaries, that choice
@@ -149,7 +267,7 @@ import { withBase } from '../lib/paths'
         </div>
         <div class="cta-actions">
           <a class="button button-primary" href={withBase('/download/')}>Latest downloads</a>
-          <a class="button button-secondary" href={withBase('/changelog/')}>Release history</a>
+          <a class="button button-secondary" href={withBase('/release-notes/')}>Release notes</a>
         </div>
       </div>
     </section>
