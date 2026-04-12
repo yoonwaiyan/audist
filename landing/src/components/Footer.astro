@@ -1,12 +1,16 @@
 ---
+import LogoMark from './LogoMark.astro'
 import { siteConfig } from '../data/site'
 import { withBase } from '../lib/paths'
 ---
 
 <footer class="site-footer">
   <div class="container footer-inner">
-    <div>
-      <p class="footer-title">Audist</p>
+    <div class="footer-brand-block">
+      <a href={withBase()} class="brand footer-brand" aria-label="Audist home">
+        <LogoMark />
+        <span>audist</span>
+      </a>
       <p class="footer-copy">
         Local-first meeting capture, transcription, and summaries for people who want control over
         their recordings.

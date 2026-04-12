@@ -1479,20 +1479,38 @@ img {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.footer-title {
-  font-size: 1.1rem;
-  font-weight: 800;
-  margin: 0 0 0.65rem;
+.footer-brand-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.footer-brand {
+  width: fit-content;
+  gap: 0.65rem;
+  font-size: 1.05rem;
+  line-height: 1.1;
+  opacity: 0.9;
+}
+
+.footer-brand .logo-mark {
+  width: 1.35rem;
+  height: 1.35rem;
 }
 
 .footer-copy {
   margin: 0;
   max-width: 38rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
 
 .footer-links {
-  justify-content: flex-end;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 0.65rem;
+  text-align: right;
 }
 
 .page-hero {
@@ -1584,6 +1602,11 @@ img {
   .site-nav,
   .footer-links {
     justify-content: flex-start;
+  }
+
+  .footer-links {
+    align-items: flex-start;
+    text-align: left;
   }
 
   .header-inner {
