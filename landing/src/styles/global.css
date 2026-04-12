@@ -1604,6 +1604,11 @@ img {
     justify-content: flex-start;
   }
 
+  .site-nav,
+  .site-nav-download {
+    display: none;
+  }
+
   .footer-links {
     align-items: flex-start;
     text-align: left;
@@ -1611,11 +1616,16 @@ img {
 
   .header-inner {
     grid-template-columns: 1fr auto;
-    grid-template-areas:
-      'brand github'
-      'nav nav'
-      'download download';
+    grid-template-areas: 'brand github';
     align-items: center;
+  }
+
+  .feature-grid .feature-card:first-child {
+    padding-left: 1.6rem;
+  }
+
+  .feature-grid .feature-card:last-child {
+    padding-right: 1.6rem;
   }
 
   .brand {
@@ -1753,6 +1763,14 @@ img {
     padding: 1.25rem;
   }
 
+  .feature-grid .feature-card:first-child {
+    padding-left: 1.25rem;
+  }
+
+  .feature-grid .feature-card:last-child {
+    padding-right: 1.25rem;
+  }
+
   .shot-frame {
     min-height: 15rem;
     padding: 1rem;
@@ -1776,37 +1794,56 @@ img {
   }
 
   .privacy-visual {
-    min-height: auto;
-    display: grid;
-    gap: 0.9rem;
-    padding-top: 0.4rem;
-  }
-
-  .privacy-orbit,
-  .privacy-core,
-  .privacy-chip {
-    position: static;
-  }
-
-  .privacy-orbit {
-    display: none;
+    min-height: 18rem;
+    padding-top: 0;
   }
 
   .privacy-core {
-    width: 8.5rem;
-    height: 8.5rem;
-    transform: none;
-    margin: 0 auto 0.4rem;
+    width: 7.2rem;
+    height: 7.2rem;
   }
 
-  .privacy-chip,
-  .privacy-chip-c {
-    transform: none;
+  .privacy-lock {
+    width: 2.9rem;
+    height: 3.4rem;
+  }
+
+  .privacy-lock-shackle {
+    width: 1.7rem;
+    height: 1.6rem;
+    border-width: 0.3rem;
+  }
+
+  .privacy-lock-body {
+    height: 2.15rem;
+    border-radius: 0.8rem;
+  }
+
+  .privacy-orbit-large {
+    inset: 2rem;
+  }
+
+  .privacy-orbit-small {
+    inset: 4.4rem;
   }
 
   .privacy-chip {
-    justify-self: start;
-    max-width: 100%;
+    padding: 0.42rem 0.72rem;
+    font-size: 0.72rem;
+  }
+
+  .privacy-chip-a {
+    top: 3.2rem;
+    left: 2rem;
+  }
+
+  .privacy-chip-b {
+    top: 5.3rem;
+    right: 1.8rem;
+  }
+
+  .privacy-chip-c {
+    bottom: 3.4rem;
   }
 
   .picker-grid {
