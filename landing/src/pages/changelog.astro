@@ -1,62 +1,28 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro'
-import Header from '../components/Header.astro'
-import Footer from '../components/Footer.astro'
-import { formatReleaseDate, getReleasesSafe, summarizeReleaseBody } from '../lib/github'
+import { withBase } from '../lib/paths'
 
-const releases = await getReleasesSafe()
+const releaseNotesHref = withBase('/release-notes/')
 ---
 
 <BaseLayout
-  title="Audist changelog"
-  description="Release history for Audist, rendered statically from GitHub Releases data."
+  title="Audist release notes"
+  description="Release notes for Audist, rendered statically from GitHub Releases data."
   path="/changelog/"
 >
-  <Header />
-
   <main class="page-main">
     <section class="page-hero">
-      <div class="container page-hero-inner changelog-hero">
-        <div>
-          <p class="eyebrow">Release history</p>
-          <h1>Changelog</h1>
+      <div class="container page-hero-inner">
+        <article class="release-card">
+          <p class="eyebrow">Page moved</p>
+          <h1>Release notes</h1>
           <p class="lede">
-            Every entry on this page is pre-rendered from the GitHub Releases API during the build,
-            so readers get crawlable static HTML without waiting on client-side requests.
+            The changelog has been renamed to Release notes. This page stays here to preserve older
+            links.
           </p>
-        </div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="container changelog-list">
-        {releases.length > 0 ? (
-          releases.map((release) => (
-            <article class="release-card">
-              <div class="release-head">
-                <div>
-                  <p class="release-tag">{release.tag_name}</p>
-                  <h2>{release.name ?? release.tag_name}</h2>
-                </div>
-                <p class="release-date">{formatReleaseDate(release.published_at)}</p>
-              </div>
-
-              <ul class="summary-list">
-                {summarizeReleaseBody(release.body).map((line) => <li>{line}</li>)}
-              </ul>
-
-              <a class="text-link" href={release.html_url} target="_blank" rel="noreferrer">Open release details</a>
-            </article>
-          ))
-        ) : (
-          <article class="release-card">
-            <h2>No published releases yet</h2>
-            <p class="muted-copy">Publish a GitHub release and the next Pages build will include it here.</p>
-          </article>
-        )}
+          <a class="button button-primary" href={releaseNotesHref}>Open release notes</a>
+        </article>
       </div>
     </section>
   </main>
-
-  <Footer />
 </BaseLayout>

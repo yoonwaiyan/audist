@@ -4,7 +4,7 @@ import { withBase } from '../lib/paths'
 
 const homeHref = withBase()
 const downloadHref = withBase('/download/')
-const changelogHref = withBase('/changelog/')
+const releaseNotesHref = withBase('/release-notes/')
 ---
 
 <header class="site-header">
@@ -15,8 +15,7 @@ const changelogHref = withBase('/changelog/')
     </a>
 
     <nav class="site-nav" aria-label="Primary">
-      <a href={homeHref}>Overview</a>
-      <a href={changelogHref}>Changelog</a>
+      <a href={releaseNotesHref}>Release notes</a>
     </nav>
 
     <a href={downloadHref} class="button button-primary site-nav-download">Download</a>

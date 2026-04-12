@@ -25,7 +25,7 @@ ASTRO_TELEMETRY_DISABLED=1 npm run build
 Deployment is handled by `.github/workflows/landing-pages.yml`.
 
 - Pushes to `main` that touch `landing/**` rebuild the site
-- Published GitHub releases rebuild the site so download links and changelog entries stay current
+- Published GitHub releases rebuild the site so download links and release notes stay current
 - The workflow uses the GitHub Pages artifact deployment flow, which is GitHub's current recommended setup for static sites
 
 Repository setting required:
