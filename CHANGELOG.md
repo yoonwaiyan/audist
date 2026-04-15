@@ -2,6 +2,14 @@
 
 All notable changes to Audist are documented here.
 
+## [1.1.6] - 2026-04-15
+
+### Fixed
+
+- **Transcription in packaged app** — Whisper was silently producing a full transcript but failing to save it because `@remotion/install-whisper-cpp` writes its temporary JSON output to `path.join(process.cwd(), 'tmp.json')`, and in a packaged Electron app `process.cwd()` returns `/`, making the target `/tmp.json` (root filesystem, not writable). The working directory is now temporarily switched to `userData` before invoking whisper and restored afterwards. (#40)
+- **Stuck "Generating summary…" after app quit** — If the app was quit or crashed while transcribing or summarising, `session.json` retained the in-progress status. On next launch the session showed a permanent spinner with all retry buttons disabled (`isProcessing = true`). A startup cleanup pass now resets any stale `transcribing` / `summarising` status to `error` so the session is retryable. (#40)
+- **CPU overload on transcription retry** — Each retry spawned a new whisper process without cancelling the previous one. On a long recording this stacked multiple CPU-intensive whisper instances. Retrying a session now aborts the previous whisper process via `AbortController` before starting a fresh one. (#40)
+
 ## [1.1.5] - 2026-04-11
 
 ### Fixed
