@@ -2,6 +2,12 @@
 
 All notable changes to Audist are documented here.
 
+## [1.2.0] - 2026-04-15
+
+### Added
+
+- **About Audist** — Added an About menu item that displays the installed app version from Electron, along with runtime version details. (#AUD-92)
+
 ## [1.1.6] - 2026-04-15
 
 ### Fixed

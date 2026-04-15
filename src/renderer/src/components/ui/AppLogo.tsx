@@ -30,7 +30,7 @@ export default function AppLogo({ size = 'md', showWordmark = true }: AppLogoPro
 
       {showWordmark && (
         <span className={`font-bold text-[var(--color-text-primary)] tracking-tight leading-none ${wordmark}`}>
-          audist
+          Audist
         </span>
       )}
     </div>
