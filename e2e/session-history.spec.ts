@@ -73,13 +73,17 @@ test.describe('Session history list', () => {
     fs.rmSync(saveDir, { recursive: true, force: true })
   })
 
-  test('session row with transcribing status shows progress indicator', async () => {
+  test('session interrupted mid-transcription shows as error, not stuck progress bar', async () => {
+    // A session seeded with status:'transcribing' represents an interrupted run (e.g. app
+    // was quit while whisper was running). resetInterruptedSessions() resets it to 'error'
+    // at startup so the UI shows a retry path rather than a stuck progress bar.
     const saveDir = makeSaveDir()
     const { app, page, cleanup } = await launchWithSessions(saveDir, [
       { id: '2026-03-13_11-00-00', duration: 45, status: 'transcribing' }
     ])
 
-    await expect(page.locator('[data-testid="session-item"] .animate-pulse').first()).toBeVisible()
+    await expect(page.locator('[data-testid="session-item"]').first()).toBeVisible()
+    await expect(page.locator('[data-testid="session-item"] .animate-pulse').first()).not.toBeVisible()
 
     await app.close()
     cleanup()
