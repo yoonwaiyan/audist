@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { ipcMain, BrowserWindow, app } from 'electron'
 import { transcribe } from '@remotion/install-whisper-cpp'
 import { writeFile, unlink, writeFileSync, readFileSync, existsSync } from 'fs'
 import { join, basename } from 'path'
@@ -60,6 +60,17 @@ export async function transcribeSession(sessionDir: string, win: BrowserWindow):
   updateSessionStatus(sessionDir, 'transcribing')
   win.webContents.send('audist:transcription:progress', { sessionId, percent: 0, stage: 'transcribing' })
 
+  // @remotion/install-whisper-cpp builds the whisper output path as
+  // path.join(process.cwd(), 'tmp') + '.json'. In packaged Electron apps
+  // process.cwd() returns '/', making the target '/tmp.json' (root fs, not writable).
+  // Temporarily switch cwd to userData so the temp file lands somewhere writable.
+  const savedCwd = process.cwd()
+  try {
+    process.chdir(app.getPath('userData'))
+  } catch {
+    // Non-fatal — transcription will still be attempted; worst case it fails as before
+  }
+
   try {
     const result = await transcribe({
       inputPath,
@@ -117,6 +128,12 @@ export async function transcribeSession(sessionDir: string, win: BrowserWindow):
     updateSessionStatus(sessionDir, 'error', message)
     if (!win.isDestroyed()) {
       win.webContents.send('audist:transcription:error', { sessionId, code, message })
+    }
+  } finally {
+    try {
+      process.chdir(savedCwd)
+    } catch {
+      // Non-fatal
     }
   }
 }
