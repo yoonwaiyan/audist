@@ -7,7 +7,7 @@ import { focusOrOpenPrefsWindow, PrefsSection } from './windows/prefs'
 import { registerDirectoryHandlers } from './ipc/directory'
 import { registerPermissionHandlers } from './ipc/permissions'
 import { registerRecordingHandlers } from './ipc/recording'
-import { registerSessionHandlers } from './ipc/session'
+import { registerSessionHandlers, resetInterruptedSessions } from './ipc/session'
 import { registerTranscriptionHandlers } from './ipc/transcription'
 import { registerSettingsHandlers } from './ipc/settings'
 import { registerSummaryHandlers, summariseSession } from './ipc/summary'
@@ -74,6 +74,8 @@ app.whenReady().then(() => {
     llmRegistry.register(new AnthropicProvider())
     llmRegistry.register(new CompatibleProvider())
   }
+
+  resetInterruptedSessions()
 
   setApplicationMenu()
   registerDirectoryHandlers()

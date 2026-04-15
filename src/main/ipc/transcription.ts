@@ -34,8 +34,17 @@ function updateSessionStatus(
 // Core transcription pipeline
 // ─────────────────────────────────────────────────────────────────────────────
 
+// One AbortController per session dir — lets a retry cancel the previous whisper process
+// so multiple retries don't stack up CPU-intensive whisper instances.
+const activeControllers = new Map<string, AbortController>()
+
 export async function transcribeSession(sessionDir: string, win: BrowserWindow): Promise<void> {
   const sessionId = basename(sessionDir)
+
+  // Cancel any in-flight transcription for this session before starting a new one
+  activeControllers.get(sessionDir)?.abort()
+  const controller = new AbortController()
+  activeControllers.set(sessionDir, controller)
 
   // AUD-11 will produce audio.wav; until then use mic.wav (same format: 16kHz mono PCM)
   const inputPath = join(
@@ -44,6 +53,7 @@ export async function transcribeSession(sessionDir: string, win: BrowserWindow):
   )
 
   if (!existsSync(inputPath)) {
+    activeControllers.delete(sessionDir)
     const message = 'No audio file found in session directory'
     updateSessionStatus(sessionDir, 'error', message)
     win.webContents.send('audist:transcription:error', { sessionId, code: 'NO_AUDIO', message })
@@ -51,6 +61,7 @@ export async function transcribeSession(sessionDir: string, win: BrowserWindow):
   }
 
   if (!isWhisperReady()) {
+    activeControllers.delete(sessionDir)
     const message = 'Whisper engine is not installed. Please reinstall.'
     updateSessionStatus(sessionDir, 'error', message)
     win.webContents.send('audist:transcription:error', { sessionId, code: 'NO_BINARY', message })
@@ -80,6 +91,7 @@ export async function transcribeSession(sessionDir: string, win: BrowserWindow):
       tokenLevelTimestamps: false,
       tokensPerItem: 0, // 0 is falsy — omits --max-len so whisper segments naturally into sentences
       printOutput: false,
+      signal: controller.signal,
       onProgress: (progress) => {
         if (win.isDestroyed()) return
         win.webContents.send('audist:transcription:progress', {
@@ -120,6 +132,9 @@ export async function transcribeSession(sessionDir: string, win: BrowserWindow):
       void summariseSession(sessionDir, win)
     }
   } catch (err) {
+    // A newer retry aborted this transcription — discard silently, don't overwrite status
+    if (controller.signal.aborted) return
+
     const message = err instanceof Error ? err.message : 'Transcription failed'
     const code =
       message.toLowerCase().includes('binary') || message.toLowerCase().includes('executable')
@@ -130,6 +145,7 @@ export async function transcribeSession(sessionDir: string, win: BrowserWindow):
       win.webContents.send('audist:transcription:error', { sessionId, code, message })
     }
   } finally {
+    activeControllers.delete(sessionDir)
     try {
       process.chdir(savedCwd)
     } catch {

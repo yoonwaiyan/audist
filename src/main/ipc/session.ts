@@ -13,6 +13,39 @@ export interface SessionMeta {
   title?: string
 }
 
+// Called once at startup to fix sessions whose status was left as 'transcribing' or
+// 'summarising' when the app was quit mid-processing. Without this, those sessions
+// show "Generating summary…" forever with no way to retry (all buttons are disabled
+// while isProcessing is true).
+export function resetInterruptedSessions(): void {
+  const root = getSaveDirectory()
+  if (!root || !existsSync(root)) return
+  try {
+    readdirSync(root)
+      .filter((name) => {
+        const full = join(root, name)
+        return statSync(full).isDirectory() && existsSync(join(full, 'session.json'))
+      })
+      .forEach((name) => {
+        const metaPath = join(root, name, 'session.json')
+        try {
+          const raw = JSON.parse(readFileSync(metaPath, 'utf-8')) as Record<string, unknown>
+          if (raw.status === 'transcribing' || raw.status === 'summarising') {
+            writeFileSync(
+              metaPath,
+              JSON.stringify({ ...raw, status: 'error', error: 'Processing was interrupted. Click Retry to restart.' }),
+              'utf-8'
+            )
+          }
+        } catch {
+          // Non-critical
+        }
+      })
+  } catch {
+    // Non-critical
+  }
+}
+
 export function registerSessionHandlers(): void {
   ipcMain.handle('audist:session:list', (): SessionMeta[] => {
     const root = getSaveDirectory()
