@@ -1,4 +1,5 @@
 import { app, Menu, dialog } from 'electron'
+import { join } from 'path'
 import { platform } from 'process'
 import { focusOrOpenPrefsWindow } from './windows/prefs'
 
@@ -28,7 +29,8 @@ function buildMenu(): Electron.MenuItemConstructorOptions[] {
     app.setAboutPanelOptions({
       applicationName: app.name,
       applicationVersion: app.getVersion(),
-      version: `Electron ${process.versions.electron} · Node ${process.versions.node}`
+      version: `Electron ${process.versions.electron} · Node ${process.versions.node}`,
+      iconPath: join(__dirname, '../../resources/icon.png')
     })
 
     return [
