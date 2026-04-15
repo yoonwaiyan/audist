@@ -1,5 +1,5 @@
 appId: com.audist.app
-productName: audist
+productName: Audist
 directories:
   buildResources: build
 files:
