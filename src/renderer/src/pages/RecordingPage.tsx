@@ -51,10 +51,9 @@ export default function RecordingPage(): React.JSX.Element {
   const [paused, setPaused] = useState(false)
   const [labelEdit, setLabelEdit] = useState(false)
   const [label, setLabel] = useState('Untitled recording')
-  const [micLevel, setMicLevel] = useState(0.4)
-  const [sysLevel, setSysLevel] = useState(0.25)
+  const [micLevel, setMicLevel] = useState(0)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const levelRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const rafRef = useRef<number | null>(null)
   const isStarting = state === 'starting'
   const isStopping = state === 'stopping'
 
@@ -75,21 +74,23 @@ export default function RecordingPage(): React.JSX.Element {
     }
   }, [paused])
 
-  // Simulated input levels
+  // Real input level from analyser (single RMS value drives both meters)
   useEffect(() => {
-    levelRef.current = setInterval(() => {
-      if (!paused) {
-        setMicLevel(0.3 + Math.random() * 0.45)
-        setSysLevel(0.15 + Math.random() * 0.35)
-      } else {
-        setMicLevel(0.05)
-        setSysLevel(0.03)
-      }
-    }, 140)
-    return () => {
-      if (levelRef.current) clearInterval(levelRef.current)
+    if (paused || !analyserRef.current) {
+      setMicLevel(0)
+      return
     }
-  }, [paused])
+    const analyser = analyserRef.current
+    const data = new Uint8Array(analyser.frequencyBinCount)
+    function tick(): void {
+      analyser.getByteFrequencyData(data)
+      const rms = Math.sqrt(data.reduce((sum, v) => sum + (v / 255) ** 2, 0) / data.length)
+      setMicLevel(Math.min(1, rms * 3.5))
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    tick()
+    return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current) }
+  }, [paused, analyserRef])
 
   const handleStop = useCallback((): void => {
     if (intervalRef.current) {
@@ -149,10 +150,10 @@ export default function RecordingPage(): React.JSX.Element {
       {/* Waveform */}
       <Waveform active={!isStopping && !paused} analyserRef={analyserRef} />
 
-      {/* Input meters */}
+      {/* Input meters — single RMS level drives both (both go through the same analyser) */}
       <div className="flex items-center gap-6">
         <InputMeter label="Microphone" level={micLevel} />
-        <InputMeter label="System audio" level={sysLevel} />
+        <InputMeter label="System audio" level={micLevel * 0.7} />
       </div>
 
       {/* Controls: pause + stop + marker */}
