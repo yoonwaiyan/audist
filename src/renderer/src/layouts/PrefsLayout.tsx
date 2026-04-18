@@ -43,7 +43,11 @@ export default function PrefsLayout(): React.JSX.Element {
   return (
     <div className="flex flex-col h-full bg-[var(--color-bg-base)]">
       {/* Full-width draggable titlebar — reserves space for macOS traffic lights */}
-      <div className="h-8 w-full shrink-0 [-webkit-app-region:drag]" />
+      <div className="h-8 w-full shrink-0 [-webkit-app-region:drag] flex items-center justify-center">
+        <span className="text-[11.5px] font-medium text-[var(--color-text-muted)] select-none pointer-events-none">
+          Preferences
+        </span>
+      </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
