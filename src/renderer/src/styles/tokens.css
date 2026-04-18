@@ -1,44 +1,64 @@
 /*
  * Audist design tokens — single source of truth for all UI colours, radii, and type.
- * Extracted from Figma: "UI Migration — Design System Reference".
+ * Linear-inspired dark-first design language.
  *
  * Override these CSS custom properties to switch themes (e.g. light mode).
- * Tailwind utilities (bg-bg-base, text-accent, etc.) are mapped in main.css via @theme inline.
+ * Tailwind utilities are mapped in main.css via @theme inline.
  */
 :root {
-  /* Backgrounds */
-  --color-bg-base: #0d0e14;        /* App window background */
-  --color-bg-sidebar: #111218;     /* Left sidebar */
-  --color-bg-surface: #16171f;     /* Cards, modals, input backgrounds */
-  --color-bg-surface-hover: #1e1f2b; /* Hovered surface */
+  /* Backgrounds — cool near-black */
+  --color-bg-base: oklch(0.145 0.005 265);     /* App window background */
+  --color-bg-sidebar: oklch(0.175 0.006 265);   /* Left sidebar */
+  --color-bg-surface: oklch(0.205 0.007 265);   /* Cards, input backgrounds */
+  --color-bg-surface-hover: oklch(0.235 0.008 265); /* Hover */
 
   /* Borders & dividers */
-  --color-border: #2a2b38;
+  --color-border: oklch(0.255 0.008 265 / 0.7);
+  --color-border-strong: oklch(0.305 0.010 265 / 0.9);
 
-  /* Accent — primary purple */
-  --color-accent: #7c5cfc;
-  --color-accent-hover: #6b4ee8;
+  /* Accent — Linear-style indigo/violet */
+  --color-accent: oklch(0.700 0.180 285);
+  --color-accent-hover: oklch(0.780 0.150 285);
+  --color-accent-dim: oklch(0.500 0.120 285 / 0.22);
+  --color-accent-fg: oklch(0.985 0.010 285);
 
   /* Text */
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #8b8fa8;
-  --color-text-muted: #5a5e78;
+  --color-text-primary: oklch(0.985 0.002 265);
+  --color-text-secondary: oklch(0.820 0.005 265);
+  --color-text-muted: oklch(0.620 0.008 265);
+  --color-text-tertiary: oklch(0.470 0.010 265);
+
+  /* Recording — warm orange-red */
+  --color-recording: oklch(0.660 0.230 25);
+  --color-recording-hover: oklch(0.740 0.220 25);
+  --color-recording-dim: oklch(0.500 0.180 25 / 0.22);
 
   /* Semantic */
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-  --color-recording: #ef4444;  /* Active recording indicator */
-
-  /* Extended text */
-  --color-text-tertiary: #4a4e6a;
+  --color-success: oklch(0.720 0.160 155);
+  --color-success-dim: oklch(0.500 0.140 155 / 0.22);
+  --color-warning: oklch(0.800 0.170 85);
+  --color-warning-dim: oklch(0.500 0.140 85 / 0.22);
+  --color-error: oklch(0.680 0.200 25);
+  --color-error-dim: oklch(0.500 0.170 25 / 0.22);
 
   /* Secondary accent (blue) */
-  --color-accent-secondary: #6a8fff;
+  --color-accent-secondary: oklch(0.740 0.140 240);
+  --color-accent-secondary-dim: oklch(0.500 0.120 240 / 0.22);
+
+  /* Shadows */
+  --shadow-1: 0 1px 0 oklch(1 0 0 / 0.04) inset, 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-2: 0 1px 0 oklch(1 0 0 / 0.05) inset, 0 4px 12px rgba(0,0,0,0.5);
+  --shadow-3: 0 1px 0 oklch(1 0 0 / 0.06) inset, 0 12px 32px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.5);
 
   /* Radius */
-  --radius-sm: 6px;    /* Buttons, inputs */
-  --radius-md: 8px;    /* Cards */
-  --radius-lg: 12px;   /* Modals */
-  --radius-pill: 9999px; /* Pill buttons, badges */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 9999px;
+
+  /* Motion */
+  --dur-1: 80ms;
+  --dur-2: 160ms;
+  --dur-3: 240ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
