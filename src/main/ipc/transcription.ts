@@ -160,6 +160,7 @@ export async function transcribeSession(sessionDir: string, win: BrowserWindow):
 
 export function registerTranscriptionHandlers(): void {
   ipcMain.handle('audist:whisper:is-ready', (): boolean => isWhisperReady())
+  ipcMain.handle('audist:whisper:model-name', (): string => WHISPER_MODEL)
 
   ipcMain.handle('audist:transcription:retry', (event, sessionDir: string): void => {
     const win = BrowserWindow.fromWebContents(event.sender)

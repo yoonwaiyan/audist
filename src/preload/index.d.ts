@@ -40,6 +40,7 @@ type IpcUnsub = () => void
 
 interface WhisperAPI {
   isReady: () => Promise<boolean>
+  getModelName: () => Promise<string>
   install: () => Promise<void>
   onBootstrap: (cb: (data: { stage: string; percent: number }) => void) => IpcUnsub
   onReady: (cb: (data: Record<string, never>) => void) => IpcUnsub

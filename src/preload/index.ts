@@ -32,6 +32,7 @@ const api = {
   },
   whisper: {
     isReady: (): Promise<boolean> => ipcRenderer.invoke('audist:whisper:is-ready'),
+    getModelName: (): Promise<string> => ipcRenderer.invoke('audist:whisper:model-name'),
     install: (): Promise<void> => ipcRenderer.invoke('audist:whisper:install'),
     onBootstrap: (cb: IpcListener<{ stage: string; percent: number }>) =>
       listen('audist:whisper:bootstrap', cb),
