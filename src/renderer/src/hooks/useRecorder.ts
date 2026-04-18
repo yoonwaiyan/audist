@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback, type RefObject } from 'react'
 
-export type RecordingState = 'idle' | 'recording' | 'stopping'
+export type RecordingState = 'idle' | 'starting' | 'recording' | 'stopping'
 
 export interface UseRecorderResult {
   state: RecordingState
@@ -59,6 +59,7 @@ export function useRecorder(): UseRecorderResult {
 
   const startRecording = useCallback(async (): Promise<void> => {
     setError(null)
+    setState('starting') // show recording screen immediately; prevents double-click
     try {
       // 1. Create timestamped session directory
       const dir = await window.api.session.create()
