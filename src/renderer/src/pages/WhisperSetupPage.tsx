@@ -163,7 +163,7 @@ export default function WhisperSetupPage(): React.JSX.Element {
         <div className="w-full max-w-xl">
           {/* Logo */}
           <div className="flex justify-center mb-8">
-            <AppLogo size="lg" />
+            <AppLogo size="lg" showWordmark />
           </div>
 
           {/* Heading */}
