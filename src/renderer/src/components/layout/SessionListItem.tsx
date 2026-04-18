@@ -1,5 +1,5 @@
 import { formatDistanceToNow, isToday, isYesterday, isThisYear, format } from 'date-fns'
-import { Sparkles, FileText } from 'lucide-react'
+import { Sparkles, FileText, Loader2 } from 'lucide-react'
 import type { SessionMeta } from '../../../../preload/index.d'
 
 interface SessionListItemProps {
@@ -77,26 +77,27 @@ export default function SessionListItem({ session, active, onClick }: SessionLis
         )}
       </div>
 
-      {/* Row 2: duration + status icons */}
+      {/* Row 2: duration + status */}
       <div className="flex items-center gap-2">
         <span className="font-mono text-[10.5px] text-[var(--color-text-muted)]">
           {formatDuration(session.duration)}
         </span>
         {session.status === 'transcribing' ? (
-          <div className="flex items-center gap-1.5 flex-1">
-            <div className="flex-1 h-0.5 bg-[var(--color-bg-surface-hover)] rounded-full overflow-hidden">
-              <div className="h-full w-1/2 bg-[var(--color-accent-secondary)] rounded-full animate-pulse" />
-            </div>
-            <span className="text-[10.5px] text-[var(--color-accent-secondary)] font-medium">…</span>
-          </div>
+          <span className="flex items-center gap-1 text-[10.5px] font-medium text-[var(--color-accent-secondary)]">
+            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+            Transcribing…
+          </span>
+        ) : session.status === 'summarising' ? (
+          <span className="flex items-center gap-1 text-[10.5px] font-medium text-[var(--color-accent)]">
+            <Sparkles className="w-2.5 h-2.5" />
+            Summarising…
+          </span>
+        ) : session.status === 'error' ? (
+          <span className="text-[10.5px] font-medium text-[var(--color-error)]">Error</span>
         ) : (
           <div className="flex items-center gap-1 ml-auto">
-            {session.status === 'complete' && (
-              <>
-                <FileText className="w-2.5 h-2.5 text-[var(--color-text-tertiary)]" />
-                <Sparkles className="w-2.5 h-2.5 text-[var(--color-text-tertiary)]" />
-              </>
-            )}
+            <FileText className="w-2.5 h-2.5 text-[var(--color-text-tertiary)]" />
+            <Sparkles className="w-2.5 h-2.5 text-[var(--color-text-tertiary)]" />
           </div>
         )}
       </div>
