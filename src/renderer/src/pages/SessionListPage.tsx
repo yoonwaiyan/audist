@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
-import { AppLogo } from '../components/ui'
+import { ChevronDown, Settings, Cpu, Sparkles } from 'lucide-react'
 import { useRecorderContext } from '../contexts/RecorderContext'
 import type { ProviderName } from '../../../preload/index.d'
 
@@ -12,11 +11,27 @@ const PROVIDER_LABELS: Record<ProviderName, string> = {
 
 function MicIcon(): React.JSX.Element {
   return (
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
       <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
       <line x1="12" x2="12" y1="19" y2="22" />
     </svg>
+  )
+}
+
+function WaveformBar({ height, delay }: { height: number; delay: number }): React.JSX.Element {
+  const [h, setH] = useState(height)
+  useEffect(() => {
+    const t = setInterval(() => {
+      setH(0.1 + Math.random() * 0.3)
+    }, 140 + delay * 20)
+    return () => clearInterval(t)
+  }, [delay])
+  return (
+    <div
+      className="w-0.5 rounded-full bg-[var(--color-text-tertiary)] transition-all duration-150"
+      style={{ height: `${Math.max(3, h * 22)}px` }}
+    />
   )
 }
 
@@ -26,6 +41,8 @@ export default function SessionListPage(): React.JSX.Element {
   const [selectedModels, setSelectedModels] = useState<Partial<Record<ProviderName, string>>>({})
   const [verifiedProviders, setVerifiedProviders] = useState<ProviderName[]>([])
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [hovering, setHovering] = useState(false)
+  const [whisperModel, setWhisperModel] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const ALL_PROVIDERS: ProviderName[] = ['openai', 'anthropic', 'compatible']
@@ -45,14 +62,12 @@ export default function SessionListPage(): React.JSX.Element {
 
   useEffect(() => {
     void loadSettings()
-
-    // Refresh when window regains focus — picks up changes made in prefs window
+    void window.api.whisper.getModelName().then(setWhisperModel)
     const handleFocus = (): void => { void loadSettings() }
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
   }, [loadSettings])
 
-  // Close dropdown on outside click
   useEffect(() => {
     if (!dropdownOpen) return
     const handleClick = (e: MouseEvent): void => {
@@ -75,121 +90,160 @@ export default function SessionListPage(): React.JSX.Element {
     window.electron.ipcRenderer.send('audist:prefs:open', { section: 'llm' })
   }
 
-  const handleStart = (): void => {
-    void startRecording()
-  }
+  const displayProvider = activeProvider ?? (verifiedProviders.length > 0 ? verifiedProviders[0] : null)
+  const displayModel = displayProvider ? selectedModels[displayProvider] : null
+  const isConfigured = verifiedProviders.length > 0
+  const llmLabel = displayProvider
+    ? `${PROVIDER_LABELS[displayProvider]}${displayModel ? ` · ${displayModel}` : ''}`
+    : 'Not configured'
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-6 px-8 select-none">
-      {/* Logo */}
-      <AppLogo size="lg" />
-
-      {/* LLM provider selector */}
-      {(() => {
-        const displayProvider = activeProvider ?? (verifiedProviders.length > 0 ? verifiedProviders[0] : null)
-        const displayModel = displayProvider ? selectedModels[displayProvider] : null
-        const isConfigured = verifiedProviders.length > 0
-
-        return (
-          <div className="flex flex-col items-center gap-1.5">
-            <div ref={dropdownRef} className="relative">
-              <button
-                onClick={() => isConfigured && setDropdownOpen((o) => !o)}
-                disabled={!isConfigured}
-                className={[
-                  'flex items-center gap-2 px-4 py-2 rounded-lg border text-sm transition-colors cursor-default',
-                  isConfigured
-                    ? 'bg-[var(--color-bg-surface-hover)] border-[var(--color-border)] text-[var(--color-text-primary)] hover:border-[var(--color-accent)]/50'
-                    : 'bg-[var(--color-bg-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] opacity-50 cursor-not-allowed'
-                ].join(' ')}
-              >
-                <span className="text-[var(--color-text-muted)] text-xs">LLM:</span>
-                {displayProvider ? (
-                  <span>
-                    {PROVIDER_LABELS[displayProvider]}
-                    {displayModel && <span className="text-[var(--color-text-muted)]"> · {displayModel}</span>}
-                  </span>
-                ) : (
-                  <span>Not configured</span>
-                )}
-                <ChevronDown className="w-3.5 h-3.5 text-[var(--color-text-secondary)]" />
-              </button>
-
-              {dropdownOpen && (
-                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-52
-                  bg-[var(--color-bg-surface-hover)] border border-[var(--color-border)]
-                  rounded-lg shadow-lg py-1 z-50">
-                  {verifiedProviders.map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => handleSelectProvider(p)}
-                      className="w-full text-left px-4 py-2 text-sm text-[var(--color-text-primary)]
-                        hover:bg-[var(--color-bg-surface)] transition-colors flex items-center justify-between cursor-default"
-                    >
-                      <div>
-                        <div>{PROVIDER_LABELS[p]}</div>
-                        {selectedModels[p] && (
-                          <div className="text-xs text-[var(--color-text-muted)]">{selectedModels[p]}</div>
-                        )}
-                      </div>
-                      {activeProvider === p && (
-                        <span className="text-[var(--color-accent)] text-xs">✓</span>
-                      )}
-                    </button>
-                  ))}
-                  <div className="border-t border-[var(--color-border)] my-1" />
-                  <button
-                    onClick={handleOpenLLMPrefs}
-                    className="w-full text-left px-4 py-2 text-sm text-[var(--color-accent)]
-                      hover:bg-[var(--color-bg-surface)] transition-colors cursor-default"
-                  >
-                    Configure LLM Settings →
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {!isConfigured && (
-              <p className="text-xs text-[var(--color-text-muted)] text-center">
-                No AI provider configured —{' '}
-                <button
-                  onClick={handleOpenLLMPrefs}
-                  className="text-[var(--color-accent)] hover:underline cursor-default"
-                >
-                  set one up
-                </button>{' '}
-                to generate summaries.
-              </p>
-            )}
-          </div>
-        )
-      })()}
-
-      {/* Mic button */}
-      <button
-        onClick={handleStart}
-        className="w-[120px] h-[120px] rounded-full flex items-center justify-center bg-[var(--color-bg-surface)] border-2 border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-bg-surface-hover)] transition-colors cursor-default"
-        aria-label="Start recording"
-      >
-        <MicIcon />
-      </button>
-
-      <p className="text-sm text-[var(--color-text-muted)]">Click to start recording</p>
-
-      {/* Static waveform placeholder */}
-      <div className="flex items-end gap-[3px] h-6">
-        {[0.3, 0.5, 0.7, 0.4, 0.6, 0.8, 0.5, 0.3].map((h, i) => (
-          <div
-            key={i}
-            className="w-[3px] rounded-full bg-[var(--color-border)]"
-            style={{ height: `${Math.round(h * 20)}px` }}
-          />
-        ))}
+    <div className="flex flex-col items-center justify-center h-full gap-7 px-10 select-none relative">
+      {/* Header label */}
+      <div className="text-[10.5px] font-medium text-[var(--color-text-tertiary)] uppercase tracking-[1px]">
+        Ready to record
       </div>
 
-      {error && (
-        <p className="text-xs text-[var(--color-error)] max-w-xs text-center">{error}</p>
+      {/* Headline */}
+      <h1 className="m-0 text-[26px] font-semibold text-[var(--color-text-primary)] tracking-tight text-center leading-tight" style={{ marginTop: -8 }}>
+        What are you capturing today?
+      </h1>
+
+      {/* Giant mic button */}
+      <div className="relative flex items-center justify-center" style={{ marginTop: -4 }}>
+        {/* Breathing ring */}
+        <span
+          className="absolute rounded-full border border-[var(--color-accent)]/35 pointer-events-none animate-breathe"
+          style={{ width: 152, height: 152 }}
+        />
+        <button
+          onClick={() => void startRecording()}
+          onMouseEnter={() => setHovering(true)}
+          onMouseLeave={() => setHovering(false)}
+          style={{
+            width: 128,
+            height: 128,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle at 30% 30%, oklch(0.78 0.15 285), oklch(0.60 0.19 285))',
+            border: 'none',
+            cursor: 'default',
+            boxShadow: `0 0 0 8px var(--color-accent-dim), 0 20px 48px oklch(0.50 0.18 285 / 0.4), inset 0 1px 0 oklch(1 0 0 / 0.2)`,
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transform: hovering ? 'scale(1.04)' : 'scale(1)',
+            transition: 'transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+          }}
+          aria-label="Start recording"
+        >
+          <MicIcon />
+        </button>
+      </div>
+
+      {/* Hint */}
+      <div className="flex items-center gap-2 text-[12.5px]" style={{ marginTop: -4 }}>
+        <span className="text-[var(--color-text-secondary)]">Press the button</span>
+        <span className="text-[var(--color-text-tertiary)]">or</span>
+        <kbd className="px-1.5 py-0.5 text-[11px] font-medium rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-secondary)] font-mono">⌘R</kbd>
+        <span className="text-[var(--color-text-secondary)]">to start</span>
+      </div>
+
+      {/* Pre-roll ambient waveform */}
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-0.5 h-6">
+          {Array.from({ length: 24 }).map((_, i) => (
+            <WaveformBar key={i} height={0.1 + (i % 5) * 0.06} delay={i} />
+          ))}
+        </div>
+        <span className="text-[11px] font-mono text-[var(--color-text-tertiary)]">
+          MacBook Pro Mic · System audio
+        </span>
+      </div>
+
+      {/* LLM picker + whisper info */}
+      <div className="flex items-center gap-3.5">
+        <div ref={dropdownRef} className="relative">
+          <button
+            onClick={() => isConfigured && setDropdownOpen((o) => !o)}
+            disabled={!isConfigured}
+            className={[
+              'flex items-center gap-2 h-[30px] px-3 rounded-md border text-[12px] transition-colors cursor-default',
+              isConfigured
+                ? 'bg-[var(--color-bg-sidebar)] border-[var(--color-border)] text-[var(--color-text-primary)] hover:border-[var(--color-accent)]/40'
+                : 'bg-[var(--color-bg-sidebar)] border-[var(--color-border)] text-[var(--color-text-muted)] opacity-50 cursor-not-allowed'
+            ].join(' ')}
+          >
+            <Sparkles className="w-3 h-3 text-[var(--color-accent)]" />
+            <span className="text-[var(--color-text-muted)]">Summarise with</span>
+            <span className="font-medium text-[var(--color-text-primary)]">{llmLabel}</span>
+            <ChevronDown className="w-3 h-3 text-[var(--color-text-muted)]" />
+          </button>
+
+          {dropdownOpen && (
+            <div className="absolute top-[calc(100%+4px)] left-0 min-w-[240px] bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] rounded-lg p-1 z-50"
+              style={{ boxShadow: 'var(--shadow-3)' }}>
+              {verifiedProviders.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => handleSelectProvider(p)}
+                  className="w-full text-left px-2.5 py-1.5 rounded-md text-[12.5px] text-[var(--color-text-primary)] flex items-center gap-2.5 transition-colors cursor-default"
+                  style={{ background: p === displayProvider ? 'var(--color-bg-surface-hover)' : 'transparent' }}
+                  onMouseEnter={(e) => { if (p !== displayProvider) (e.currentTarget as HTMLElement).style.background = 'var(--color-bg-surface-hover)' }}
+                  onMouseLeave={(e) => { if (p !== displayProvider) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                >
+                  <Sparkles className="w-2.5 h-2.5 text-[var(--color-text-tertiary)]" />
+                  <span className="flex-1">
+                    {PROVIDER_LABELS[p]}
+                    {selectedModels[p] && <span className="text-[var(--color-text-muted)] ml-1">· {selectedModels[p]}</span>}
+                  </span>
+                  {p === displayProvider && <span className="text-[var(--color-accent)] text-xs">✓</span>}
+                </button>
+              ))}
+              <div className="h-px bg-[var(--color-border)] my-1" />
+              <button
+                onClick={handleOpenLLMPrefs}
+                className="w-full text-left px-2.5 py-1.5 rounded-md text-[12px] text-[var(--color-text-muted)] flex items-center gap-2 hover:bg-[var(--color-bg-surface-hover)] transition-colors cursor-default"
+              >
+                <Settings className="w-2.5 h-2.5" />
+                Configure providers…
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="w-px h-4 bg-[var(--color-border)]" />
+
+        <div className="flex items-center gap-1.5 text-[11.5px] text-[var(--color-text-muted)]">
+          <Cpu className="w-3 h-3" />
+          <span>{whisperModel ? `whisper.cpp · ${whisperModel}` : 'whisper.cpp · local'}</span>
+        </div>
+      </div>
+
+      {!isConfigured && (
+        <p className="text-[11.5px] text-[var(--color-text-muted)] text-center" style={{ marginTop: -12 }}>
+          No AI provider configured —{' '}
+          <button
+            onClick={handleOpenLLMPrefs}
+            className="text-[var(--color-accent)] hover:underline cursor-default"
+          >
+            set one up
+          </button>{' '}
+          to generate summaries.
+        </p>
       )}
+
+      {error && (
+        <p className="text-[11.5px] text-[var(--color-error)] max-w-xs text-center">{error}</p>
+      )}
+
+      {/* Status strip */}
+      <div className="absolute left-3 bottom-3 right-3 flex items-center gap-3 text-[11px] text-[var(--color-text-tertiary)] pointer-events-none">
+        <span className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)]" />
+          Mic & screen permission granted
+        </span>
+      </div>
     </div>
   )
 }
