@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { useLocation, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import {
-  Check, Loader2, Sparkles, AlertTriangle, RefreshCw, Settings, FileQuestion, Copy
+  Check, ChevronLeft, FolderOpen, Loader2, Sparkles, AlertTriangle, RefreshCw, Settings, FileQuestion, Copy
 } from 'lucide-react'
 import type { SessionMeta } from '../../../preload/index.d'
 
@@ -62,6 +62,7 @@ function TranscriptParagraph({ text }: { text: string }): React.JSX.Element {
 export default function SessionDetail(): React.JSX.Element {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
+  const navigate = useNavigate()
 
   const [session, setSession] = useState<SessionMeta | null>(null)
   const [activeTab, setActiveTab] = useState<'Summary' | 'Transcript'>('Summary')
@@ -71,6 +72,7 @@ export default function SessionDetail(): React.JSX.Element {
   const [transcriptionError, setTranscriptionError] = useState<{ code: string; message: string } | null>(null)
   const [retrying, setRetrying] = useState(false)
   const [copiedErrorLog, setCopiedErrorLog] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleValue, setTitleValue] = useState('')
   const titleInputRef = useRef<HTMLInputElement>(null)
@@ -193,6 +195,20 @@ export default function SessionDetail(): React.JSX.Element {
     window.electron.ipcRenderer.send('audist:prefs:open', { section: 'llm' })
   }
 
+  const handleCopy = (): void => {
+    const content = activeTab === 'Summary' ? summary : transcript
+    if (!content) return
+    void navigator.clipboard.writeText(content).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }
+
+  const handleOpenFolder = (): void => {
+    if (!session) return
+    void window.api.summary.openInFinder(session.dir)
+  }
+
   const handleTitleClick = (): void => {
     setTitleValue(displayName)
     setEditingTitle(true)
@@ -215,9 +231,53 @@ export default function SessionDetail(): React.JSX.Element {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Session header */}
+      {/* Nav bar — Back + action buttons */}
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-[var(--color-border)] shrink-0 bg-[var(--color-bg-base)]">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1 px-1.5 py-1 rounded text-[12px] text-[var(--color-text-secondary)]
+            hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-surface)] transition-colors cursor-default"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" />
+          Back
+        </button>
+
+        <div className="flex items-center gap-0.5">
+          {/* Regenerate summary — only when transcribed and on Summary tab */}
+          {activeTab === 'Summary' && isTranscribed && (
+            <button
+              onClick={handleRetry}
+              disabled={retrying}
+              title="Regenerate summary"
+              className="p-1.5 rounded hover:bg-[var(--color-bg-surface)] transition-colors cursor-default disabled:opacity-40"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-[var(--color-text-muted)] ${retrying ? 'animate-spin' : ''}`} />
+            </button>
+          )}
+          <button
+            onClick={handleOpenFolder}
+            title="Open in Finder"
+            className="p-1.5 rounded hover:bg-[var(--color-bg-surface)] transition-colors cursor-default"
+          >
+            <FolderOpen className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+          </button>
+          <button
+            onClick={handleCopy}
+            title="Copy"
+            disabled={!(activeTab === 'Summary' ? summary : transcript)}
+            className="p-1.5 rounded hover:bg-[var(--color-bg-surface)] transition-colors cursor-default disabled:opacity-40"
+          >
+            {copied
+              ? <Check className="w-3.5 h-3.5 text-[var(--color-success)]" />
+              : <Copy className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+            }
+          </button>
+        </div>
+      </div>
+
+      {/* Title + metadata */}
       <div className="border-b border-[var(--color-border)] px-5 py-3 shrink-0">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
           {editingTitle ? (
             <input
               ref={titleInputRef}
