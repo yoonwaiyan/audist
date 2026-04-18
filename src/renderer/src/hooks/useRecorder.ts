@@ -19,6 +19,12 @@ async function createPcmCapture(
   onChunk: (chunk: Uint8Array) => void
 ): Promise<{ audioContext: AudioContext; cleanup: () => void }> {
   const audioContext = new AudioContext({ sampleRate })
+  // AudioContext may start in "suspended" state when created deep in an async
+  // chain (past the user-gesture boundary). Explicitly resume so the worklet
+  // process() loop actually runs and produces audio chunks.
+  if (audioContext.state === 'suspended') {
+    await audioContext.resume()
+  }
   const workletUrl = new URL('./worklets/system-audio-processor.js', window.location.href).href
   await audioContext.audioWorklet.addModule(workletUrl)
 
