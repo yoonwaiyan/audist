@@ -2,7 +2,7 @@
 
 All notable changes to Audist are documented here.
 
-## [1.2.1] - 2026-04-20
+## [1.3.0] - 2026-04-20
 
 ### Added
 

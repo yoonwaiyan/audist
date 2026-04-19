@@ -8,8 +8,12 @@ import { launchApp } from './helpers/electron'
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Create a minimal silent mono WAV file (PCM zeros). */
-function createSilentWav(filePath: string, sampleRate: number, durationSec: number): void {
+/**
+ * Create a minimal silent mono WAV file (PCM zeros) at the given path.
+ * ffmpeg detects file format by magic bytes, so writing WAV content to a
+ * .webm path works fine as a test fixture.
+ */
+function createSilentAudio(filePath: string, sampleRate: number, durationSec: number): void {
   const dataBytes = sampleRate * durationSec * 2 // 16-bit mono
   const buf = Buffer.alloc(44 + dataBytes, 0)
   buf.write('RIFF', 0, 'ascii')
@@ -48,7 +52,7 @@ async function invokeMix(page: import('@playwright/test').Page, sessionDir: stri
 // ─────────────────────────────────────────────────────────────────────────────
 
 test.describe('Audio mix (AUD-11)', () => {
-  test('produces audio.wav and audio.m4a from mic.wav + system.wav', async () => {
+  test('produces audio.wav and audio.m4a from mic.webm + system.webm', async () => {
     const sessionDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-mix-'))
     const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
     const { app, page, cleanup } = await launchApp({
@@ -59,8 +63,8 @@ test.describe('Audio mix (AUD-11)', () => {
     })
 
     try {
-      createSilentWav(path.join(sessionDir, 'mic.wav'), 44100, 1)
-      createSilentWav(path.join(sessionDir, 'system.wav'), 44100, 1)
+      createSilentAudio(path.join(sessionDir, 'mic.webm'), 44100, 1)
+      createSilentAudio(path.join(sessionDir, 'system.webm'), 44100, 1)
 
       await invokeMix(page, sessionDir)
 
@@ -85,8 +89,8 @@ test.describe('Audio mix (AUD-11)', () => {
     })
 
     try {
-      createSilentWav(path.join(sessionDir, 'mic.wav'), 44100, 1)
-      createSilentWav(path.join(sessionDir, 'system.wav'), 44100, 1)
+      createSilentAudio(path.join(sessionDir, 'mic.webm'), 44100, 1)
+      createSilentAudio(path.join(sessionDir, 'system.webm'), 44100, 1)
 
       await invokeMix(page, sessionDir)
 
@@ -101,7 +105,7 @@ test.describe('Audio mix (AUD-11)', () => {
       const channels = header.readUInt16LE(22)
       const sampleRate = header.readUInt32LE(24)
       expect(audioFormat).toBe(1) // PCM
-      expect(channels).toBe(1) // mono
+      expect(channels).toBe(1)    // mono
       expect(sampleRate).toBe(16000) // 16 kHz
     } finally {
       await app.close()
@@ -111,7 +115,7 @@ test.describe('Audio mix (AUD-11)', () => {
     }
   })
 
-  test('deletes mic.wav and system.wav after successful mix', async () => {
+  test('deletes mic.webm and system.webm after successful mix', async () => {
     const sessionDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-mix-'))
     const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
     const { app, page, cleanup } = await launchApp({
@@ -122,13 +126,13 @@ test.describe('Audio mix (AUD-11)', () => {
     })
 
     try {
-      createSilentWav(path.join(sessionDir, 'mic.wav'), 44100, 1)
-      createSilentWav(path.join(sessionDir, 'system.wav'), 44100, 1)
+      createSilentAudio(path.join(sessionDir, 'mic.webm'), 44100, 1)
+      createSilentAudio(path.join(sessionDir, 'system.webm'), 44100, 1)
 
       await invokeMix(page, sessionDir)
 
-      expect(fs.existsSync(path.join(sessionDir, 'mic.wav'))).toBe(false)
-      expect(fs.existsSync(path.join(sessionDir, 'system.wav'))).toBe(false)
+      expect(fs.existsSync(path.join(sessionDir, 'mic.webm'))).toBe(false)
+      expect(fs.existsSync(path.join(sessionDir, 'system.webm'))).toBe(false)
     } finally {
       await app.close()
       cleanup()
@@ -137,7 +141,7 @@ test.describe('Audio mix (AUD-11)', () => {
     }
   })
 
-  test('throws when mic.wav is missing and leaves no partial outputs', async () => {
+  test('produces audio from mic-only capture when system.webm is absent', async () => {
     const sessionDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-mix-'))
     const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
     const { app, page, cleanup } = await launchApp({
@@ -148,9 +152,59 @@ test.describe('Audio mix (AUD-11)', () => {
     })
 
     try {
-      // Only create system.wav — mic.wav is absent
-      createSilentWav(path.join(sessionDir, 'system.wav'), 44100, 1)
+      // Only mic — system audio is optional (e.g. screen recording permission denied)
+      createSilentAudio(path.join(sessionDir, 'mic.webm'), 44100, 1)
 
+      await invokeMix(page, sessionDir)
+
+      expect(fs.existsSync(path.join(sessionDir, 'audio.wav'))).toBe(true)
+      expect(fs.existsSync(path.join(sessionDir, 'audio.m4a'))).toBe(true)
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(sessionDir, { recursive: true, force: true })
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('produces audio from system-only capture when mic.webm is absent', async () => {
+    const sessionDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-mix-'))
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready',
+      testMode: true
+    })
+
+    try {
+      // Only system audio — mic may have been silent/empty and was dropped
+      createSilentAudio(path.join(sessionDir, 'system.webm'), 44100, 1)
+
+      await invokeMix(page, sessionDir)
+
+      expect(fs.existsSync(path.join(sessionDir, 'audio.wav'))).toBe(true)
+      expect(fs.existsSync(path.join(sessionDir, 'audio.m4a'))).toBe(true)
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(sessionDir, { recursive: true, force: true })
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('throws when both mic.webm and system.webm are missing', async () => {
+    const sessionDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-mix-'))
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready',
+      testMode: true
+    })
+
+    try {
+      // No capture files at all
       const error = await page.evaluate(
         async (dir) => {
           try {
@@ -163,44 +217,7 @@ test.describe('Audio mix (AUD-11)', () => {
         sessionDir
       )
 
-      expect(error).toContain('mic.wav')
-      expect(fs.existsSync(path.join(sessionDir, 'audio.wav'))).toBe(false)
-      expect(fs.existsSync(path.join(sessionDir, 'audio.m4a'))).toBe(false)
-    } finally {
-      await app.close()
-      cleanup()
-      fs.rmSync(sessionDir, { recursive: true, force: true })
-      fs.rmSync(saveDir, { recursive: true, force: true })
-    }
-  })
-
-  test('throws when system.wav is missing and leaves no partial outputs', async () => {
-    const sessionDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-mix-'))
-    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
-    const { app, page, cleanup } = await launchApp({
-      saveDirectory: saveDir,
-      permissions: 'granted',
-      whisper: 'ready',
-      testMode: true
-    })
-
-    try {
-      // Only create mic.wav — system.wav is absent
-      createSilentWav(path.join(sessionDir, 'mic.wav'), 44100, 1)
-
-      const error = await page.evaluate(
-        async (dir) => {
-          try {
-            await window.electron.ipcRenderer.invoke('audist:test:mix-audio', dir)
-            return null
-          } catch (e) {
-            return (e as Error).message
-          }
-        },
-        sessionDir
-      )
-
-      expect(error).toContain('system.wav')
+      expect(error).toContain('No usable capture files found')
       expect(fs.existsSync(path.join(sessionDir, 'audio.wav'))).toBe(false)
       expect(fs.existsSync(path.join(sessionDir, 'audio.m4a'))).toBe(false)
     } finally {

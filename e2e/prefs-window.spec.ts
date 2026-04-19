@@ -20,11 +20,10 @@ test.describe('Preferences window', () => {
     const prefsPage = await app.waitForEvent('window')
     await prefsPage.waitForLoadState('domcontentloaded')
 
-    // Use role-based selectors to avoid strict-mode ambiguity
-    // (same text appears in sidebar links AND content h2)
     await expect(prefsPage.getByRole('link', { name: 'General' })).toBeVisible()
     await expect(prefsPage.getByRole('link', { name: 'LLM' })).toBeVisible()
-    await expect(prefsPage.getByRole('link', { name: 'Prompt' })).toBeVisible()
+    // Prompt section was removed from navigation in the redesign
+    await expect(prefsPage.getByRole('link', { name: 'Prompt' })).not.toBeVisible()
 
     await app.close()
     cleanup()
@@ -40,13 +39,9 @@ test.describe('Preferences window', () => {
     // Default section is General
     await expect(prefsPage.locator('h2').getByText('General')).toBeVisible()
 
-    // Navigate to AI / LLM
+    // Navigate to LLM
     await prefsPage.getByRole('link', { name: 'LLM' }).click()
     await expect(prefsPage.locator('h2').getByText('Language Model')).toBeVisible()
-
-    // Navigate to Prompt
-    await prefsPage.getByRole('link', { name: 'Prompt' }).click()
-    await expect(prefsPage.locator('h2').getByText('Prompt')).toBeVisible()
 
     await app.close()
     cleanup()
@@ -65,6 +60,19 @@ test.describe('Preferences window', () => {
     await page.waitForTimeout(500)
 
     expect(app.windows().length).toBe(countAfterFirstOpen)
+
+    await app.close()
+    cleanup()
+  })
+
+  test('preferences title is shown in the titlebar', async () => {
+    const { app, page, cleanup } = await launchAppWithSaveDir()
+
+    await page.locator('button[title*="Preferences"]').click()
+    const prefsPage = await app.waitForEvent('window')
+    await prefsPage.waitForLoadState('domcontentloaded')
+
+    await expect(prefsPage.getByText('Preferences')).toBeVisible()
 
     await app.close()
     cleanup()
