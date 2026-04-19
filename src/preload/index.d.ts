@@ -95,12 +95,7 @@ interface SummaryAPI {
 
 interface RecordingAPI {
   getScreenSource: () => Promise<string>
-  start: (payload: {
-    sessionDir: string
-    micSampleRate: number
-    systemSampleRate: number
-    hasSystemAudio?: boolean
-  }) => Promise<void>
+  start: (payload: { sessionDir: string; hasSystemAudio?: boolean }) => Promise<void>
   stop: (duration: number) => Promise<void>
   updateSystemAudioAvailability: (available: boolean) => Promise<void>
   sendMicAudioChunk: (chunk: Uint8Array) => void

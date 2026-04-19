@@ -15,8 +15,6 @@ interface SessionState {
   systemPath: string | null
   micStream: WriteStream
   systemStream: WriteStream | null
-  micSampleRate: number
-  systemSampleRate: number
   micBytesWritten: number
   systemBytesWritten: number
 }
@@ -49,14 +47,12 @@ export function registerRecordingHandlers(): void {
       _,
       payload: {
         sessionDir: string
-        micSampleRate: number
-        systemSampleRate: number
         hasSystemAudio?: boolean
       }
     ): void => {
       if (session) throw new Error('Recording already active')
 
-      const { sessionDir, micSampleRate, systemSampleRate, hasSystemAudio } = payload
+      const { sessionDir, hasSystemAudio } = payload
       const micPath = join(sessionDir, 'mic.webm')
       const systemPath = hasSystemAudio ? join(sessionDir, 'system.webm') : null
 
@@ -69,8 +65,6 @@ export function registerRecordingHandlers(): void {
         systemPath,
         micStream,
         systemStream,
-        micSampleRate,
-        systemSampleRate,
         micBytesWritten: 0,
         systemBytesWritten: 0
       }

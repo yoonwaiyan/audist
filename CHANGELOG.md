@@ -2,6 +2,17 @@
 
 All notable changes to Audist are documented here.
 
+## [1.2.1] - 2026-04-20
+
+### Fixed
+
+- **Mic capture silent on macOS** — `AudioContext` created for the level-meter analyser was starting in `suspended` state when instantiated deep in an async chain past the user-gesture boundary. The analyser's audio graph never ran, leaving both mic and system meters silent. `audioContext.resume()` is now explicitly awaited before the stream source is connected, matching the fix already applied to the worklet path in 1.1.4. (#AUD-102)
+- **Mic MediaRecorder empty blobs** — Explicitly disabling `echoCancellation`, `noiseSuppression`, and `autoGainControl` routes Chromium on macOS through a different audio-processing path that causes `MediaRecorder` to produce empty data events. Mic capture now requests `audio: true` with no explicit constraints. (#AUD-102)
+
+### Changed
+
+- **Recording pipeline cleanup** — Removed WAV-era leftovers following the switch to `MediaRecorder`/webm capture: `micSampleRate`/`systemSampleRate` fields dropped from session state and IPC payload; the temporary `AudioContext` opened only to read the native sample rate is gone; `mix.ts` simplified from a multi-format fallback to webm-only; stale `mic.wav` fallback removed from the transcription path. (#AUD-102)
+
 ## [1.2.0] - 2026-04-15
 
 ### Added

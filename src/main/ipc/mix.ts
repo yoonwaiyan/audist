@@ -1,6 +1,10 @@
 import { spawn } from 'child_process'
 import { app } from 'electron'
 import { existsSync, statSync, unlinkSync } from 'fs'
+
+function hasAudio(filePath: string): boolean {
+  return existsSync(filePath) && statSync(filePath).size > 0
+}
 import { join } from 'path'
 
 function getFfmpegPath(): string {
@@ -14,36 +18,28 @@ function getFfmpegPath(): string {
 }
 
 /**
- * Mix captured mic/system audio into:
+ * Mix mic.webm + system.webm (whichever are present and non-empty) into:
  *   audio.wav  — 16 kHz mono PCM for whisper.cpp transcription
  *   audio.m4a  — 16 kHz mono AAC 64 kbps for long-term storage
  *
  * Deletes source capture files on success.
  */
-function getUsableCapturePath(sessionDir: string, candidates: string[]): string | null {
-  for (const candidate of candidates) {
-    const fullPath = join(sessionDir, candidate)
-    if (!existsSync(fullPath)) continue
-    if (statSync(fullPath).size <= 0) continue
-    return fullPath
-  }
-  return null
-}
-
 export async function mixAudio(sessionDir: string): Promise<void> {
-  const micPath = getUsableCapturePath(sessionDir, ['mic.webm', 'mic.wav'])
-  const systemPath = getUsableCapturePath(sessionDir, ['system.webm', 'system.wav'])
+  const micPath = join(sessionDir, 'mic.webm')
+  const systemPath = join(sessionDir, 'system.webm')
+  const mic = hasAudio(micPath) ? micPath : null
+  const system = hasAudio(systemPath) ? systemPath : null
   const audioWavPath = join(sessionDir, 'audio.wav')
   const audioM4aPath = join(sessionDir, 'audio.m4a')
 
-  if (!micPath && !systemPath) {
+  if (!mic && !system) {
     throw new Error('No usable capture files found in session directory')
   }
 
   const ffmpeg = getFfmpegPath()
 
   await new Promise<void>((resolve, reject) => {
-    const inputs = [micPath, systemPath].filter((value): value is string => value !== null)
+    const inputs = [mic, system].filter((value): value is string => value !== null)
     const args = ['-y']
     for (const input of inputs) {
       args.push('-i', input)
@@ -87,6 +83,6 @@ export async function mixAudio(sessionDir: string): Promise<void> {
     proc.on('error', reject)
   })
 
-  if (micPath && existsSync(micPath)) unlinkSync(micPath)
-  if (systemPath && existsSync(systemPath)) unlinkSync(systemPath)
+  if (mic && existsSync(mic)) unlinkSync(mic)
+  if (system && existsSync(system)) unlinkSync(system)
 }

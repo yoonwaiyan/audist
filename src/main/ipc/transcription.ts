@@ -46,11 +46,7 @@ export async function transcribeSession(sessionDir: string, win: BrowserWindow):
   const controller = new AbortController()
   activeControllers.set(sessionDir, controller)
 
-  // AUD-11 will produce audio.wav; until then use mic.wav (same format: 16kHz mono PCM)
-  const inputPath = join(
-    sessionDir,
-    existsSync(join(sessionDir, 'audio.wav')) ? 'audio.wav' : 'mic.wav'
-  )
+  const inputPath = join(sessionDir, 'audio.wav')
 
   if (!existsSync(inputPath)) {
     activeControllers.delete(sessionDir)

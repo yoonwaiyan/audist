@@ -18,12 +18,18 @@ function getRecorderMimeType(): string {
   return candidates.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) ?? ''
 }
 
-function createAnalyser(stream: MediaStream): {
+async function createAnalyser(stream: MediaStream): Promise<{
   analyser: AnalyserNode
   cleanup: () => void
   audioContext: AudioContext
-} {
+}> {
   const audioContext = new AudioContext()
+  // AudioContext may start suspended when created deep in an async chain past the
+  // user-gesture boundary. Resume it before connecting the stream source, otherwise
+  // the analyser process() loop never fires and the level meters stay silent.
+  if (audioContext.state === 'suspended') {
+    await audioContext.resume()
+  }
   const source = audioContext.createMediaStreamSource(stream)
   const analyser = audioContext.createAnalyser()
   analyser.fftSize = 512
@@ -96,17 +102,10 @@ function isPreferredPhysicalMic(device: MediaDeviceInfo): boolean {
 async function getPreferredMicStream(): Promise<{
   stream: MediaStream
 }> {
-  const baseConstraints: MediaTrackConstraints = {
-    echoCancellation: false,
-    noiseSuppression: false,
-    autoGainControl: false,
-    channelCount: 1
-  }
-
-  const initialStream = await navigator.mediaDevices.getUserMedia({
-    audio: baseConstraints,
-    video: false
-  })
+  // Use minimal constraints — disabling echoCancellation/noiseSuppression/autoGainControl
+  // causes Chromium on macOS to route mic audio through a different processing path that
+  // makes MediaRecorder produce empty blobs.
+  const initialStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
 
   const currentTrack = initialStream.getAudioTracks()[0]
   const currentSettings = currentTrack?.getSettings()
@@ -128,10 +127,7 @@ async function getPreferredMicStream(): Promise<{
   }
 
   const preferredStream = await navigator.mediaDevices.getUserMedia({
-    audio: {
-      ...baseConstraints,
-      deviceId: { exact: preferredDevice.deviceId }
-    },
+    audio: { deviceId: { exact: preferredDevice.deviceId } },
     video: false
   })
 
@@ -190,16 +186,8 @@ export function useRecorder(): UseRecorderResult {
         return
       }
 
-      // 3. Open the output WAVs before the first PCM chunk is emitted.
-      const nativeCtx = new AudioContext()
-      const nativeSampleRate = nativeCtx.sampleRate
-      void nativeCtx.close()
-      await window.api.recording.start({
-        sessionDir: dir,
-        micSampleRate: nativeSampleRate,
-        systemSampleRate: nativeSampleRate,
-        hasSystemAudio: false
-      })
+      // 3. Open the output file before the first chunk is emitted.
+      await window.api.recording.start({ sessionDir: dir, hasSystemAudio: false })
       if (startTokenRef.current !== startToken) {
         micStream.getTracks().forEach((track) => track.stop())
         await window.api.recording.stop(0)
@@ -210,7 +198,7 @@ export function useRecorder(): UseRecorderResult {
       const micRecorder = createStreamRecorder(micStream, (chunk) => {
         window.api.recording.sendMicAudioChunk(chunk)
       })
-      const micAnalyserHandle = createAnalyser(micStream)
+      const micAnalyserHandle = await createAnalyser(micStream)
       if (startTokenRef.current !== startToken) {
         await micRecorder.stop()
         micAnalyserHandle.cleanup()
@@ -244,7 +232,7 @@ export function useRecorder(): UseRecorderResult {
           const systemRecorder = createStreamRecorder(systemStream, (chunk) => {
             window.api.recording.sendSystemAudioChunk(chunk)
           })
-          const systemAnalyserHandle = createAnalyser(systemStream)
+          const systemAnalyserHandle = await createAnalyser(systemStream)
 
           if (startTokenRef.current !== startToken) {
             await systemRecorder.stop()

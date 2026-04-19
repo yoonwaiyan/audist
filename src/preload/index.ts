@@ -102,8 +102,6 @@ const api = {
       ipcRenderer.invoke('audist:recording:get-screen-source'),
     start: (payload: {
       sessionDir: string
-      micSampleRate: number
-      systemSampleRate: number
       hasSystemAudio?: boolean
     }): Promise<void> => ipcRenderer.invoke('audist:recording:start', payload),
     stop: (duration: number): Promise<void> => ipcRenderer.invoke('audist:recording:stop', duration),
