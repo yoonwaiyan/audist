@@ -104,8 +104,11 @@ const api = {
       sessionDir: string
       micSampleRate: number
       systemSampleRate: number
+      hasSystemAudio?: boolean
     }): Promise<void> => ipcRenderer.invoke('audist:recording:start', payload),
     stop: (duration: number): Promise<void> => ipcRenderer.invoke('audist:recording:stop', duration),
+    updateSystemAudioAvailability: (available: boolean): Promise<void> =>
+      ipcRenderer.invoke('audist:recording:update-system-audio', available),
     sendMicAudioChunk: (chunk: Uint8Array): void =>
       ipcRenderer.send('audist:recording:mic-audio-chunk', chunk),
     sendSystemAudioChunk: (chunk: Uint8Array): void =>

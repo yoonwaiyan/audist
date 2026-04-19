@@ -45,15 +45,18 @@ function InputMeter({ label, level }: { label: string; level: number }): React.J
 }
 
 export default function RecordingPage(): React.JSX.Element {
-  const { state, sessionDir, analyserRef, stopRecording } = useRecorderContext()
+  const { state, sessionDir, micAnalyserRef, systemAnalyserRef, analyserVersion, stopRecording } =
+    useRecorderContext()
   const [elapsed, setElapsed] = useState(0)
   const [activeProvider, setActiveProvider] = useState<ProviderName | null>(null)
   const [paused, setPaused] = useState(false)
   const [labelEdit, setLabelEdit] = useState(false)
   const [label, setLabel] = useState('Untitled recording')
   const [micLevel, setMicLevel] = useState(0)
+  const [systemLevel, setSystemLevel] = useState(0)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const rafRef = useRef<number | null>(null)
+  const micRafRef = useRef<number | null>(null)
+  const systemRafRef = useRef<number | null>(null)
   const isStarting = state === 'starting'
   const isStopping = state === 'stopping'
 
@@ -65,32 +68,67 @@ export default function RecordingPage(): React.JSX.Element {
 
   // Timer
   useEffect(() => {
-    setElapsed(0)
+    if (state === 'starting') {
+      setElapsed(0)
+    }
+
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+
+    if (state !== 'recording' || paused) {
+      return
+    }
+
     intervalRef.current = setInterval(() => {
-      if (!paused) setElapsed((s) => s + 1)
+      setElapsed((s) => s + 1)
     }, 1000)
+
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [paused])
+  }, [paused, state])
 
-  // Real input level from analyser (single RMS value drives both meters)
+  // Real mic level.
   useEffect(() => {
-    if (paused || !analyserRef.current) {
+    if (paused || !micAnalyserRef.current) {
       setMicLevel(0)
       return
     }
-    const analyser = analyserRef.current
+    const analyser = micAnalyserRef.current
     const data = new Uint8Array(analyser.frequencyBinCount)
     function tick(): void {
       analyser.getByteFrequencyData(data)
       const rms = Math.sqrt(data.reduce((sum, v) => sum + (v / 255) ** 2, 0) / data.length)
       setMicLevel(Math.min(1, rms * 3.5))
-      rafRef.current = requestAnimationFrame(tick)
+      micRafRef.current = requestAnimationFrame(tick)
     }
     tick()
-    return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current) }
-  }, [paused, analyserRef])
+    return () => {
+      if (micRafRef.current !== null) cancelAnimationFrame(micRafRef.current)
+    }
+  }, [paused, micAnalyserRef, analyserVersion, state])
+
+  // Real system-audio level.
+  useEffect(() => {
+    if (paused || !systemAnalyserRef.current) {
+      setSystemLevel(0)
+      return
+    }
+    const analyser = systemAnalyserRef.current
+    const data = new Uint8Array(analyser.frequencyBinCount)
+    function tick(): void {
+      analyser.getByteFrequencyData(data)
+      const rms = Math.sqrt(data.reduce((sum, v) => sum + (v / 255) ** 2, 0) / data.length)
+      setSystemLevel(Math.min(1, rms * 3.5))
+      systemRafRef.current = requestAnimationFrame(tick)
+    }
+    tick()
+    return () => {
+      if (systemRafRef.current !== null) cancelAnimationFrame(systemRafRef.current)
+    }
+  }, [paused, systemAnalyserRef, analyserVersion, state])
 
   const handleStop = useCallback((): void => {
     if (intervalRef.current) {
@@ -148,12 +186,12 @@ export default function RecordingPage(): React.JSX.Element {
       </div>
 
       {/* Waveform */}
-      <Waveform active={!isStopping && !paused} analyserRef={analyserRef} />
+      <Waveform active={!isStopping && !paused} analyserRef={micAnalyserRef} />
 
-      {/* Input meters — single RMS level drives both (both go through the same analyser) */}
+      {/* Input meters */}
       <div className="flex items-center gap-6">
         <InputMeter label="Microphone" level={micLevel} />
-        <InputMeter label="System audio" level={micLevel * 0.7} />
+        <InputMeter label="System audio" level={systemLevel} />
       </div>
 
       {/* Controls: pause + stop + marker */}

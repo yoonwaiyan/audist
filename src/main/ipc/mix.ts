@@ -1,6 +1,6 @@
 import { spawn } from 'child_process'
 import { app } from 'electron'
-import { existsSync, unlinkSync } from 'fs'
+import { existsSync, statSync, unlinkSync } from 'fs'
 import { join } from 'path'
 
 function getFfmpegPath(): string {
@@ -14,33 +14,68 @@ function getFfmpegPath(): string {
 }
 
 /**
- * Mix mic.wav + system.wav into:
+ * Mix captured mic/system audio into:
  *   audio.wav  — 16 kHz mono PCM for whisper.cpp transcription
  *   audio.m4a  — 16 kHz mono AAC 64 kbps for long-term storage
  *
- * Deletes mic.wav and system.wav on success.
+ * Deletes source capture files on success.
  */
+function getUsableCapturePath(sessionDir: string, candidates: string[]): string | null {
+  for (const candidate of candidates) {
+    const fullPath = join(sessionDir, candidate)
+    if (!existsSync(fullPath)) continue
+    if (statSync(fullPath).size <= 0) continue
+    return fullPath
+  }
+  return null
+}
+
 export async function mixAudio(sessionDir: string): Promise<void> {
-  const micPath = join(sessionDir, 'mic.wav')
-  const systemPath = join(sessionDir, 'system.wav')
+  const micPath = getUsableCapturePath(sessionDir, ['mic.webm', 'mic.wav'])
+  const systemPath = getUsableCapturePath(sessionDir, ['system.webm', 'system.wav'])
   const audioWavPath = join(sessionDir, 'audio.wav')
   const audioM4aPath = join(sessionDir, 'audio.m4a')
 
-  if (!existsSync(micPath)) throw new Error(`mic.wav not found in session directory`)
-  if (!existsSync(systemPath)) throw new Error(`system.wav not found in session directory`)
+  if (!micPath && !systemPath) {
+    throw new Error('No usable capture files found in session directory')
+  }
 
   const ffmpeg = getFfmpegPath()
 
   await new Promise<void>((resolve, reject) => {
-    const args = [
-      '-y', // overwrite outputs without prompting
-      '-i', micPath,
-      '-i', systemPath,
+    const inputs = [micPath, systemPath].filter((value): value is string => value !== null)
+    const args = ['-y']
+    for (const input of inputs) {
+      args.push('-i', input)
+    }
+
+    const filter =
+      inputs.length === 2
+        ? '[0:a][1:a]amix=inputs=2:duration=longest:normalize=0[mixed];[mixed]asplit=2[aout1][aout2]'
+        : '[0:a]asplit=2[aout1][aout2]'
+
+    args.push(
       '-filter_complex',
-      '[0:a][1:a]amix=inputs=2:duration=longest:normalize=0[mixed];[mixed]asplit=2[aout1][aout2]',
-      '-map', '[aout1]', '-ar', '16000', '-ac', '1', audioWavPath,
-      '-map', '[aout2]', '-ar', '16000', '-ac', '1', '-c:a', 'aac', '-b:a', '64k', audioM4aPath
-    ]
+      filter,
+      '-map',
+      '[aout1]',
+      '-ar',
+      '16000',
+      '-ac',
+      '1',
+      audioWavPath,
+      '-map',
+      '[aout2]',
+      '-ar',
+      '16000',
+      '-ac',
+      '1',
+      '-c:a',
+      'aac',
+      '-b:a',
+      '64k',
+      audioM4aPath
+    )
 
     const proc = spawn(ffmpeg, args)
     const stderr: string[] = []
@@ -52,7 +87,6 @@ export async function mixAudio(sessionDir: string): Promise<void> {
     proc.on('error', reject)
   })
 
-  // Remove source files only after confirmed success
-  unlinkSync(micPath)
-  unlinkSync(systemPath)
+  if (micPath && existsSync(micPath)) unlinkSync(micPath)
+  if (systemPath && existsSync(systemPath)) unlinkSync(systemPath)
 }

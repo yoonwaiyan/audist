@@ -1,47 +1,9 @@
 import { ipcMain, BrowserWindow, desktopCapturer } from 'electron'
-import { createWriteStream, openSync, writeSync, closeSync, writeFileSync } from 'fs'
+import { createWriteStream, writeFileSync } from 'fs'
 import { join, basename } from 'path'
 import type { WriteStream } from 'fs'
 import { mixAudio } from './mix'
 import { transcribeSession } from './transcription'
-
-// ─────────────────────────────────────────────────────────────────────────────
-// WAV helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-function makeWavHeader(sampleRate: number, numChannels: number): Buffer {
-  const bitsPerSample = 16
-  const byteRate = (sampleRate * numChannels * bitsPerSample) / 8
-  const blockAlign = (numChannels * bitsPerSample) / 8
-  const buf = Buffer.alloc(44)
-  buf.write('RIFF', 0, 'ascii')
-  buf.writeUInt32LE(0, 4) // placeholder: RIFF chunk size (fileSize - 8)
-  buf.write('WAVE', 8, 'ascii')
-  buf.write('fmt ', 12, 'ascii')
-  buf.writeUInt32LE(16, 16) // PCM sub-chunk size
-  buf.writeUInt16LE(1, 20) // PCM format
-  buf.writeUInt16LE(numChannels, 22)
-  buf.writeUInt32LE(sampleRate, 24)
-  buf.writeUInt32LE(byteRate, 28)
-  buf.writeUInt16LE(blockAlign, 32)
-  buf.writeUInt16LE(bitsPerSample, 34)
-  buf.write('data', 36, 'ascii')
-  buf.writeUInt32LE(0, 40) // placeholder: data chunk size
-  return buf
-}
-
-function patchWavHeader(filePath: string, bytesWritten: number): void {
-  const fd = openSync(filePath, 'r+')
-  try {
-    const buf = Buffer.alloc(4)
-    buf.writeUInt32LE(bytesWritten + 36)
-    writeSync(fd, buf, 0, 4, 4) // RIFF chunk size
-    buf.writeUInt32LE(bytesWritten)
-    writeSync(fd, buf, 0, 4, 40) // data chunk size
-  } finally {
-    closeSync(fd)
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Session state
@@ -50,9 +12,11 @@ function patchWavHeader(filePath: string, bytesWritten: number): void {
 interface SessionState {
   sessionDir: string
   micPath: string
-  systemPath: string
+  systemPath: string | null
   micStream: WriteStream
-  systemStream: WriteStream
+  systemStream: WriteStream | null
+  micSampleRate: number
+  systemSampleRate: number
   micBytesWritten: number
   systemBytesWritten: number
 }
@@ -81,18 +45,23 @@ export function registerRecordingHandlers(): void {
   // Opens WAV files and writes placeholder headers; both streams are fed from the renderer
   ipcMain.handle(
     'audist:recording:start',
-    (_, payload: { sessionDir: string; micSampleRate: number; systemSampleRate: number }): void => {
+    (
+      _,
+      payload: {
+        sessionDir: string
+        micSampleRate: number
+        systemSampleRate: number
+        hasSystemAudio?: boolean
+      }
+    ): void => {
       if (session) throw new Error('Recording already active')
 
-      const { sessionDir, micSampleRate, systemSampleRate } = payload
-      const micPath = join(sessionDir, 'mic.wav')
-      const systemPath = join(sessionDir, 'system.wav')
+      const { sessionDir, micSampleRate, systemSampleRate, hasSystemAudio } = payload
+      const micPath = join(sessionDir, 'mic.webm')
+      const systemPath = hasSystemAudio ? join(sessionDir, 'system.webm') : null
 
       const micStream = createWriteStream(micPath)
-      const systemStream = createWriteStream(systemPath)
-
-      micStream.write(makeWavHeader(micSampleRate, 1))
-      systemStream.write(makeWavHeader(systemSampleRate, 1))
+      const systemStream = systemPath ? createWriteStream(systemPath) : null
 
       session = {
         sessionDir,
@@ -100,6 +69,8 @@ export function registerRecordingHandlers(): void {
         systemPath,
         micStream,
         systemStream,
+        micSampleRate,
+        systemSampleRate,
         micBytesWritten: 0,
         systemBytesWritten: 0
       }
@@ -107,6 +78,15 @@ export function registerRecordingHandlers(): void {
       acceptingChunks = true
     }
   )
+
+  ipcMain.handle('audist:recording:update-system-audio', (_, available: boolean): void => {
+    if (!session) return
+    if (!available || session.systemStream) return
+
+    const systemPath = join(session.sessionDir, 'system.webm')
+    session.systemPath = systemPath
+    session.systemStream = createWriteStream(systemPath)
+  })
 
   // One-way: renderer sends raw Int16 PCM chunks for mic audio
   ipcMain.on('audist:recording:mic-audio-chunk', (_, chunk: Buffer) => {
@@ -117,7 +97,7 @@ export function registerRecordingHandlers(): void {
 
   // One-way: renderer sends raw Int16 PCM chunks for system audio
   ipcMain.on('audist:recording:system-audio-chunk', (_, chunk: Buffer) => {
-    if (!acceptingChunks || !session) return
+    if (!acceptingChunks || !session || !session.systemStream) return
     session.systemBytesWritten += chunk.length
     session.systemStream.write(chunk)
   })
@@ -131,19 +111,25 @@ export function registerRecordingHandlers(): void {
     session = null
 
     // Close both write streams and wait for drain
-    await Promise.all([
-      new Promise<void>((resolve, reject) => s.micStream.end((err) => (err ? reject(err) : resolve()))),
-      new Promise<void>((resolve, reject) =>
-        s.systemStream.end((err) => (err ? reject(err) : resolve()))
+    const streamClosures = [
+      new Promise<void>((resolve, reject) => s.micStream.end((err) => (err ? reject(err) : resolve())))
+    ]
+    if (s.systemStream) {
+      streamClosures.push(
+        new Promise<void>((resolve, reject) =>
+          s.systemStream?.end((err) => (err ? reject(err) : resolve()))
+        )
       )
-    ])
-
-    // Patch WAV headers with real sizes
-    if (s.micBytesWritten > 0) patchWavHeader(s.micPath, s.micBytesWritten)
-    if (s.systemBytesWritten > 0) patchWavHeader(s.systemPath, s.systemBytesWritten)
+    }
+    await Promise.all(streamClosures)
 
     // Write session metadata — status starts as 'transcribing'; transcription pipeline updates it
-    const meta = { duration, status: 'transcribing' }
+    const meta = {
+      duration,
+      status: 'transcribing',
+      micBytesWritten: s.micBytesWritten,
+      systemBytesWritten: s.systemBytesWritten
+    }
     writeFileSync(join(s.sessionDir, 'session.json'), JSON.stringify(meta), 'utf-8')
 
     const win = BrowserWindow.fromWebContents(event.sender)
@@ -158,7 +144,13 @@ export function registerRecordingHandlers(): void {
         const message = err instanceof Error ? err.message : 'Audio mix failed'
         writeFileSync(
           join(s.sessionDir, 'session.json'),
-          JSON.stringify({ duration, status: 'error', error: message }),
+          JSON.stringify({
+            duration,
+            status: 'error',
+            error: message,
+            micBytesWritten: s.micBytesWritten,
+            systemBytesWritten: s.systemBytesWritten
+          }),
           'utf-8'
         )
         if (win) {
