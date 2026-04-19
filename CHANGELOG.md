@@ -4,13 +4,24 @@ All notable changes to Audist are documented here.
 
 ## [1.2.1] - 2026-04-20
 
+### Added
+
+- **UI redesign** — Main window, session list, and session detail rebuilt with a Linear-inspired visual style. New design tokens, CSS animations, and a dark/violet theme replace the previous layout. (#AUD-102)
+- **Redesigned recording screen** — New visual style for the recording page with separate mic and system audio level meters driven by real analyser RMS. Session rename on stop is now inline on the recording screen. (#AUD-102)
+- **In-progress pipeline labels** — Transcribing and summarising states now show descriptive labels in the session list instead of a generic spinner. (#AUD-102)
+- **Whisper model name in UI** — The active Whisper model name is fetched via IPC and displayed dynamically in the Whisper setup screen. (#AUD-102)
+
 ### Fixed
 
 - **Mic capture silent on macOS** — `AudioContext` created for the level-meter analyser was starting in `suspended` state when instantiated deep in an async chain past the user-gesture boundary. The analyser's audio graph never ran, leaving both mic and system meters silent. `audioContext.resume()` is now explicitly awaited before the stream source is connected, matching the fix already applied to the worklet path in 1.1.4. (#AUD-102)
 - **Mic MediaRecorder empty blobs** — Explicitly disabling `echoCancellation`, `noiseSuppression`, and `autoGainControl` routes Chromium on macOS through a different audio-processing path that causes `MediaRecorder` to produce empty data events. Mic capture now requests `audio: true` with no explicit constraints. (#AUD-102)
+- **Double-click recording bug** — A `starting` transitional state now blocks a second record invocation while the first is still initialising. (#AUD-102)
+- **Session detail navigation** — Back button and action buttons restored in the session detail nav bar after the redesign removed them. (#AUD-102)
 
 ### Changed
 
+- **LLM provider selector** — Provider picker in preferences replaced with a segmented pill control. (#AUD-102)
+- **Preferences window** — Title centred in the preferences window titlebar; Prompt section removed from navigation. (#AUD-102)
 - **Recording pipeline cleanup** — Removed WAV-era leftovers following the switch to `MediaRecorder`/webm capture: `micSampleRate`/`systemSampleRate` fields dropped from session state and IPC payload; the temporary `AudioContext` opened only to read the native sample rate is gone; `mix.ts` simplified from a multi-format fallback to webm-only; stale `mic.wav` fallback removed from the transcription path. (#AUD-102)
 
 ## [1.2.0] - 2026-04-15
