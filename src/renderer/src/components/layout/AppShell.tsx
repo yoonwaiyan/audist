@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
-import { Settings, Plus } from 'lucide-react'
+import { Mic, Search, Settings } from 'lucide-react'
 import { AppLogo } from '../ui'
 import { RecorderProvider, useRecorderContext } from '../../contexts/RecorderContext'
 import SessionList from './SessionList'
@@ -9,12 +9,13 @@ import type { SessionMeta } from '../../../../preload/index.d'
 
 const SIDEBAR_MIN = 180
 const SIDEBAR_MAX = 380
-const SIDEBAR_DEFAULT = 256
+const SIDEBAR_DEFAULT = 248
 
 function AppShellInner(): React.JSX.Element {
   const navigate = useNavigate()
   const { state: recorderState } = useRecorderContext()
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Sidebar resize
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT)
@@ -46,19 +47,14 @@ function AppShellInner(): React.JSX.Element {
     document.addEventListener('mouseup', onMouseUp)
   }
 
-  const isRecording = recorderState === 'recording' || recorderState === 'stopping'
+  const isRecording = recorderState === 'starting' || recorderState === 'recording' || recorderState === 'stopping'
 
-  // Belt-and-suspenders mount check — the requireSetup() route loader guards the
-  // normal path but can be bypassed if an IPC call throws during startup. Running
-  // the same check here ensures the shell never stays visible with whisper missing.
   useEffect(() => {
     window.api.whisper.isReady().then((ready) => {
       if (!ready) navigate('/whisper-setup')
     })
   }, [navigate])
 
-  // Re-check permissions and whisper readiness on window focus.
-  // Whisper files can disappear (e.g. iCloud storage optimisation) while the app is running.
   useEffect(() => {
     const handleFocus = async (): Promise<void> => {
       const [perms, whisperReady] = await Promise.all([
@@ -91,28 +87,48 @@ function AppShellInner(): React.JSX.Element {
         className="flex flex-col bg-[var(--color-bg-sidebar)] border-r border-[var(--color-border)] shrink-0 relative"
         style={{ width: sidebarWidth }}
       >
-        {/* Logo — pt accounts for macOS traffic lights (hiddenInset) */}
-        <div className="pt-[52px] px-5 pb-4 border-b border-[var(--color-border)] shrink-0 [-webkit-app-region:drag]">
+        {/* Brand row — inline with macOS traffic lights */}
+        <div
+          className="h-10 flex items-center shrink-0 [-webkit-app-region:drag]"
+          style={{ paddingLeft: 78, paddingRight: 14 }}
+        >
           <AppLogo size="sm" />
         </div>
 
+        {/* Search */}
+        <div className="px-2.5 pb-2 shrink-0">
+          <div className="flex items-center gap-2 h-7 px-2 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-md">
+            <Search className="w-3 h-3 text-[var(--color-text-muted)] shrink-0" />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search recordings"
+              className="flex-1 bg-transparent border-none outline-none text-[12px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
+            />
+          </div>
+        </div>
+
         {/* Session list — scrollable */}
-        <div className="flex-1 overflow-y-auto py-1">
+        <div className="flex-1 overflow-y-auto">
           <SessionList
             activeSessionId={activeSessionId}
             onSelectSession={handleSelectSession}
+            searchQuery={searchQuery}
           />
         </div>
 
         {/* New Recording — pinned to bottom */}
-        <div className="px-4 py-3 border-t border-[var(--color-border)] shrink-0 [-webkit-app-region:drag]">
+        <div className="px-2.5 py-2.5 border-t border-[var(--color-border)] shrink-0 [-webkit-app-region:drag]">
           <button
             onClick={handleNewRecording}
             disabled={isRecording}
-            className="[-webkit-app-region:no-drag] w-full flex items-center justify-center gap-2 px-3 py-2 rounded bg-[var(--color-accent)]/15 hover:bg-[var(--color-accent)]/25 border border-[var(--color-accent)]/30 text-[var(--color-accent)] text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-default select-none"
+            className="[-webkit-app-region:no-drag] w-full h-[34px] flex items-center justify-center gap-2 px-3 rounded-md
+              bg-[var(--color-accent)] text-[var(--color-accent-fg)] text-[12.5px] font-medium
+              hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:cursor-not-allowed
+              transition-colors cursor-default select-none"
           >
-            <Plus className="w-4 h-4" />
-            New Recording
+            <Mic className="w-3.5 h-3.5" />
+            New recording
           </button>
         </div>
 
@@ -128,15 +144,18 @@ function AppShellInner(): React.JSX.Element {
 
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0 bg-[var(--color-bg-base)]">
-        {/* Toolbar */}
-        <div className="relative z-10 flex items-center justify-end gap-2 px-4 py-2 border-b border-[var(--color-border)] bg-[var(--color-bg-surface)] shrink-0 [-webkit-app-region:drag]">
-          <button
-            onClick={() => window.electron.ipcRenderer.send('audist:prefs:open')}
-            title="Preferences (⌘,)"
-            className="[-webkit-app-region:no-drag] p-1.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-surface-hover)] transition-colors cursor-default"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
+        {/* Thin drag region for main area — no toolbar buttons here */}
+        <div className="h-10 shrink-0 [-webkit-app-region:drag] flex items-center justify-end px-3 border-b border-[var(--color-border)] bg-[var(--color-bg-base)]">
+          {/* Settings icon visible only when NOT in session detail (which has its own) */}
+          {!isRecording && (
+            <button
+              onClick={() => window.electron.ipcRenderer.send('audist:prefs:open')}
+              title="Preferences (⌘,)"
+              className="[-webkit-app-region:no-drag] p-1.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-surface)] transition-colors cursor-default"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         {/* Content — swap between recording and idle/session */}

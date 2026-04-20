@@ -16,31 +16,39 @@
 
   /* Borders */
   --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
 
   /* Accent */
   --color-accent: var(--color-accent);
   --color-accent-hover: var(--color-accent-hover);
+  --color-accent-dim: var(--color-accent-dim);
+  --color-accent-fg: var(--color-accent-fg);
 
   /* Text */
   --color-text-primary: var(--color-text-primary);
   --color-text-secondary: var(--color-text-secondary);
   --color-text-muted: var(--color-text-muted);
+  --color-text-tertiary: var(--color-text-tertiary);
 
   /* Semantic */
   --color-success: var(--color-success);
+  --color-success-dim: var(--color-success-dim);
   --color-warning: var(--color-warning);
+  --color-warning-dim: var(--color-warning-dim);
   --color-error: var(--color-error);
-  --color-recording: var(--color-recording);
+  --color-error-dim: var(--color-error-dim);
 
-  /* Surface aliases — matches Figma token names */
+  /* Recording */
+  --color-recording: var(--color-recording);
+  --color-recording-dim: var(--color-recording-dim);
+
+  /* Surface aliases */
   --color-surface: var(--color-bg-surface);
   --color-surface-raised: var(--color-bg-surface-hover);
 
-  /* Extended text */
-  --color-text-tertiary: var(--color-text-tertiary);
-
   /* Secondary accent */
   --color-accent-secondary: var(--color-accent-secondary);
+  --color-accent-secondary-dim: var(--color-accent-secondary-dim);
 
   /* Typography */
   --font-sans: 'Inter', system-ui, sans-serif;
@@ -66,5 +74,59 @@ body {
   color: var(--color-text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  font-size: 13px;
+  line-height: 1.5;
   user-select: none;
+}
+
+/* ── Animations ────────────────────────────────────────────── */
+@keyframes breathe {
+  0%, 100% { opacity: 0.35; transform: scale(0.94); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+
+@keyframes recPulse {
+  0% { box-shadow: 0 0 0 0 var(--color-recording-dim, oklch(0.5 0.18 25 / 0.5)); }
+  70% { box-shadow: 0 0 0 10px oklch(0 0 0 / 0); }
+  100% { box-shadow: 0 0 0 0 oklch(0 0 0 / 0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-breathe {
+  animation: breathe 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-rec-pulse {
+  animation: recPulse 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-bg-surface-hover);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.275 0.009 265);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }

@@ -333,18 +333,17 @@ export default function LLMPrefsPage(): React.JSX.Element {
         Configure your AI provider. API keys are encrypted and never leave your device.
       </p>
 
-      {/* Provider tabs */}
-      <div className="flex border-b border-border mb-6">
+      {/* Provider segmented control */}
+      <div className="flex items-center gap-1 mb-6 p-1 bg-[var(--color-bg-surface)] rounded-lg border border-[var(--color-border)]">
         {PROVIDERS.map(({ id, label }) => (
           <button
             key={id}
             type="button"
-            aria-label={label}
             onClick={() => setTab(id)}
-            className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors cursor-default
+            className={`flex-1 px-3 py-1.5 rounded text-[12.5px] font-medium transition-colors cursor-default
               ${tab === id
-                ? 'border-accent text-text-primary'
-                : 'border-transparent text-text-secondary hover:text-text-primary'
+                ? 'bg-[var(--color-accent)] text-[var(--color-accent-fg)]'
+                : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
               }`}
           >
             {label}

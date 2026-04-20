@@ -1,20 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { useLocation, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import {
-  FolderOpen, Copy, Check, Loader2, Sparkles, AlertTriangle, RefreshCw, Settings, FileQuestion
+  Check, ChevronLeft, FolderOpen, Loader2, Sparkles, AlertTriangle, RefreshCw, Settings, FileQuestion, Copy
 } from 'lucide-react'
-import type { SessionMeta, LLMSettings } from '../../../preload/index.d'
-import { Tooltip } from '../components/ui'
+import type { SessionMeta } from '../../../preload/index.d'
 
 const TABS = ['Summary', 'Transcript'] as const
 
-const PROVIDER_LABELS: Record<string, string> = {
-  openai: 'OpenAI',
-  anthropic: 'Anthropic',
-  compatible: 'Custom',
-}
 
 function formatTimestamp(id: string): { name: string; date: string; time: string } {
   const match = id.match(/^(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})$/)
@@ -68,26 +62,21 @@ function TranscriptParagraph({ text }: { text: string }): React.JSX.Element {
 export default function SessionDetail(): React.JSX.Element {
   const { id } = useParams<{ id: string }>()
   const location = useLocation()
+  const navigate = useNavigate()
 
   const [session, setSession] = useState<SessionMeta | null>(null)
   const [activeTab, setActiveTab] = useState<'Summary' | 'Transcript'>('Summary')
   const [summary, setSummary] = useState<string | null>(null)
   const [transcript, setTranscript] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
   const [summaryError, setSummaryError] = useState<{ code: string; message: string } | null>(null)
   const [transcriptionError, setTranscriptionError] = useState<{ code: string; message: string } | null>(null)
   const [retrying, setRetrying] = useState(false)
   const [copiedErrorLog, setCopiedErrorLog] = useState(false)
-  const [llmSettings, setLlmSettings] = useState<LLMSettings | null>(null)
+  const [copied, setCopied] = useState(false)
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleValue, setTitleValue] = useState('')
   const titleInputRef = useRef<HTMLInputElement>(null)
 
-
-  // Load LLM settings once on mount for provider/model display
-  useEffect(() => {
-    window.api.settings.getLLMSettings().then(setLlmSettings)
-  }, [])
 
   // Reset and load session whenever the route id changes
   useEffect(() => {
@@ -182,26 +171,6 @@ export default function SessionDetail(): React.JSX.Element {
   const isTranscribed = session.status === 'complete' || session.status === 'summarising'
   const isSummarized = session.status === 'complete' && summary != null
 
-  const activeProvider = llmSettings?.activeProvider
-  const activeModel = activeProvider ? llmSettings?.models?.[activeProvider] : undefined
-  const providerLabel = activeProvider ? (PROVIDER_LABELS[activeProvider] ?? activeProvider) : null
-  const llmLabel = providerLabel && activeModel ? `${providerLabel} · ${activeModel}` : providerLabel ?? null
-
-  const isProcessing = session.status === 'summarising' || session.status === 'transcribing'
-  const canRegenerate = summary !== null && !isProcessing
-
-  const handleCopy = (): void => {
-    if (!summary) return
-    void navigator.clipboard.writeText(summary).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    })
-  }
-
-  const handleOpenFolder = (): void => {
-    void window.api.summary.openInFinder(session.dir)
-  }
-
   const handleRetry = (): void => {
     if (!session) return
     setRetrying(true)
@@ -226,6 +195,20 @@ export default function SessionDetail(): React.JSX.Element {
     window.electron.ipcRenderer.send('audist:prefs:open', { section: 'llm' })
   }
 
+  const handleCopy = (): void => {
+    const content = activeTab === 'Summary' ? summary : transcript
+    if (!content) return
+    void navigator.clipboard.writeText(content).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }
+
+  const handleOpenFolder = (): void => {
+    if (!session) return
+    void window.api.summary.openInFinder(session.dir)
+  }
+
   const handleTitleClick = (): void => {
     setTitleValue(displayName)
     setEditingTitle(true)
@@ -248,9 +231,53 @@ export default function SessionDetail(): React.JSX.Element {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Session header */}
+      {/* Nav bar — Back + action buttons */}
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-[var(--color-border)] shrink-0 bg-[var(--color-bg-base)]">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1 px-1.5 py-1 rounded text-[12px] text-[var(--color-text-secondary)]
+            hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-surface)] transition-colors cursor-default"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" />
+          Back
+        </button>
+
+        <div className="flex items-center gap-0.5">
+          {/* Regenerate summary — only when summary exists and on Summary tab */}
+          {activeTab === 'Summary' && summary != null && (
+            <button
+              onClick={handleRetry}
+              disabled={retrying}
+              title="Regenerate summary"
+              className="p-1.5 rounded hover:bg-[var(--color-bg-surface)] transition-colors cursor-default disabled:opacity-40"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-[var(--color-text-muted)] ${retrying ? 'animate-spin' : ''}`} />
+            </button>
+          )}
+          <button
+            onClick={handleOpenFolder}
+            title="Open in Finder"
+            className="p-1.5 rounded hover:bg-[var(--color-bg-surface)] transition-colors cursor-default"
+          >
+            <FolderOpen className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+          </button>
+          <button
+            onClick={handleCopy}
+            title="Copy"
+            disabled={!(activeTab === 'Summary' ? summary : transcript)}
+            className="p-1.5 rounded hover:bg-[var(--color-bg-surface)] transition-colors cursor-default disabled:opacity-40"
+          >
+            {copied
+              ? <Check className="w-3.5 h-3.5 text-[var(--color-success)]" />
+              : <Copy className="w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+            }
+          </button>
+        </div>
+      </div>
+
+      {/* Title + metadata */}
       <div className="border-b border-[var(--color-border)] px-5 py-3 shrink-0">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
           {editingTitle ? (
             <input
               ref={titleInputRef}
@@ -260,7 +287,7 @@ export default function SessionDetail(): React.JSX.Element {
               onBlur={handleTitleConfirm}
               onKeyDown={handleTitleKeyDown}
               className="text-[15px] font-semibold text-[var(--color-text-primary)] bg-transparent
-                border-b border-[var(--color-accent)] outline-none truncate w-full"
+                border-b border-[var(--color-accent)] outline-none truncate flex-1"
               aria-label="Session title"
             />
           ) : (
@@ -271,57 +298,12 @@ export default function SessionDetail(): React.JSX.Element {
               onClick={handleTitleClick}
               onKeyDown={(e) => e.key === 'Enter' && handleTitleClick()}
               title="Click to rename"
-              className="text-[15px] font-semibold text-[var(--color-text-primary)] truncate
-                cursor-text hover:text-[var(--color-text-primary)] select-none"
+              className="text-[15px] font-semibold text-[var(--color-text-primary)] truncate flex-1
+                cursor-text select-none"
             >
               {displayName}
             </h2>
           )}
-          <div className="flex items-center gap-1 shrink-0 ml-3">
-            {canRegenerate && llmLabel && (
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-secondary)] mr-1">
-                Generated by: <span className="text-[var(--color-text-primary)] font-medium">{llmLabel}</span>
-              </span>
-            )}
-            {canRegenerate && (
-              <Tooltip label={llmLabel ? `Regenerate summary using ${llmLabel}` : 'Regenerate summary'}>
-                <button
-                  aria-label="Regenerate summary"
-                  onClick={handleRetry}
-                  disabled={retrying}
-                  className="p-1.5 hover:bg-[var(--color-bg-surface-hover)] rounded transition-colors disabled:opacity-50 cursor-default"
-                >
-                  <RefreshCw className={`w-4 h-4 text-[var(--color-text-secondary)] ${retrying ? 'animate-spin' : ''}`} />
-                </button>
-              </Tooltip>
-            )}
-            <Tooltip label="Reveal in Finder">
-              <button
-                aria-label="Reveal in Finder"
-                onClick={handleOpenFolder}
-                className="p-1.5 hover:bg-[var(--color-bg-surface-hover)] rounded transition-colors cursor-default"
-              >
-                <FolderOpen className="w-4 h-4 text-[var(--color-text-secondary)]" />
-              </button>
-            </Tooltip>
-            <Tooltip
-              label="Copy summary to clipboard"
-              open={copied || undefined}
-            >
-              <button
-                aria-label="Copy summary"
-                onClick={handleCopy}
-                disabled={!summary}
-                className="p-1.5 hover:bg-[var(--color-bg-surface-hover)] rounded transition-colors disabled:opacity-30 cursor-default"
-              >
-                {copied
-                  ? <Check className="w-4 h-4 text-[var(--color-success)]" />
-                  : <Copy className="w-4 h-4 text-[var(--color-text-secondary)]" />
-                }
-              </button>
-            </Tooltip>
-
-          </div>
         </div>
 
         {/* Meta row */}

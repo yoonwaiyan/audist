@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { Settings, Zap, FileText } from 'lucide-react'
+import { Settings, Zap } from 'lucide-react'
 
 type NavItem = {
   label: string
@@ -11,7 +11,6 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { label: 'General', to: '/prefs', icon: Settings },
   { label: 'LLM', to: '/prefs/llm', icon: Zap },
-  { label: 'Prompt', to: '/prefs/prompt', icon: FileText }
 ]
 
 export default function PrefsLayout(): React.JSX.Element {
@@ -25,7 +24,6 @@ export default function PrefsLayout(): React.JSX.Element {
         const sectionToRoute: Record<string, string> = {
           general: '/prefs',
           llm: '/prefs/llm',
-          prompt: '/prefs/prompt'
         }
         const route = sectionToRoute[payload.section]
         if (route) navigate(route)
@@ -45,7 +43,11 @@ export default function PrefsLayout(): React.JSX.Element {
   return (
     <div className="flex flex-col h-full bg-[var(--color-bg-base)]">
       {/* Full-width draggable titlebar — reserves space for macOS traffic lights */}
-      <div className="h-8 w-full shrink-0 [-webkit-app-region:drag]" />
+      <div className="h-8 w-full shrink-0 [-webkit-app-region:drag] flex items-center justify-center">
+        <span className="text-[11.5px] font-medium text-[var(--color-text-muted)] select-none pointer-events-none">
+          Preferences
+        </span>
+      </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}

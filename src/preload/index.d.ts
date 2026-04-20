@@ -40,6 +40,7 @@ type IpcUnsub = () => void
 
 interface WhisperAPI {
   isReady: () => Promise<boolean>
+  getModelName: () => Promise<string>
   install: () => Promise<void>
   onBootstrap: (cb: (data: { stage: string; percent: number }) => void) => IpcUnsub
   onReady: (cb: (data: Record<string, never>) => void) => IpcUnsub
@@ -94,8 +95,9 @@ interface SummaryAPI {
 
 interface RecordingAPI {
   getScreenSource: () => Promise<string>
-  start: (payload: { sessionDir: string; micSampleRate: number; systemSampleRate: number }) => Promise<void>
+  start: (payload: { sessionDir: string; hasSystemAudio?: boolean }) => Promise<void>
   stop: (duration: number) => Promise<void>
+  updateSystemAudioAvailability: (available: boolean) => Promise<void>
   sendMicAudioChunk: (chunk: Uint8Array) => void
   sendSystemAudioChunk: (chunk: Uint8Array) => void
   onSaved: (cb: (data: { sessionDir: string }) => void) => IpcUnsub

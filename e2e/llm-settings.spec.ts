@@ -453,7 +453,7 @@ test.describe('Main window — LLM selector', () => {
       whisper: 'ready'
     })
     try {
-      const llmBtn = page.getByRole('button', { name: /LLM:/ })
+      const llmBtn = page.getByRole('button', { name: /Summarise with/ })
       await expect(llmBtn).toBeVisible()
       await expect(llmBtn).toBeDisabled()
       await expect(llmBtn).toContainText('Not configured')
@@ -495,7 +495,7 @@ test.describe('Main window — LLM selector', () => {
       }
     })
     try {
-      const llmBtn = page.getByRole('button', { name: /LLM:/ })
+      const llmBtn = page.getByRole('button', { name: /Summarise with/ })
       await expect(llmBtn).toBeEnabled()
       await expect(llmBtn).toContainText('OpenAI')
       await expect(llmBtn).toContainText('gpt-4o')
@@ -520,7 +520,7 @@ test.describe('Main window — LLM selector', () => {
       }
     })
     try {
-      const llmBtn = page.getByRole('button', { name: /LLM:/ })
+      const llmBtn = page.getByRole('button', { name: /Summarise with/ })
       await expect(llmBtn).toBeEnabled()
       await expect(llmBtn).toContainText('Anthropic')
       await expect(llmBtn).toContainText('claude-haiku-4-5')
@@ -548,7 +548,7 @@ test.describe('Main window — LLM selector', () => {
       }
     })
     try {
-      await page.getByRole('button', { name: /LLM:/ }).click()
+      await page.getByRole('button', { name: /Summarise with/ }).click()
       // Both providers should appear in the dropdown
       await expect(page.getByText('OpenAI').last()).toBeVisible()
       await expect(page.getByText('gpt-4o').last()).toBeVisible()

@@ -1,17 +1,11 @@
 import { formatDistanceToNow, isToday, isYesterday, isThisYear, format } from 'date-fns'
+import { Sparkles, FileText, Loader2 } from 'lucide-react'
 import type { SessionMeta } from '../../../../preload/index.d'
 
 interface SessionListItemProps {
   session: SessionMeta
   active: boolean
   onClick: () => void
-}
-
-const DOT_COLOR: Record<SessionMeta['status'], string> = {
-  complete: 'bg-[var(--color-success)]',
-  transcribing: 'bg-[var(--color-accent-secondary)]',
-  summarising: 'bg-[var(--color-accent)]',
-  error: 'bg-[var(--color-error)]'
 }
 
 function sessionDate(id: string): Date | null {
@@ -24,7 +18,7 @@ function sessionDate(id: string): Date | null {
 function fallbackName(id: string): string {
   const dt = sessionDate(id)
   if (!dt) return id
-  return dt.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+  return dt.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + ' Recording'
 }
 
 function formatRecordedTime(date: Date): string {
@@ -48,58 +42,65 @@ export default function SessionListItem({ session, active, onClick }: SessionLis
   const name = session.title ?? fallbackName(session.id)
   const dt = sessionDate(session.id)
   const recordedTime = dt ? formatRecordedTime(dt) : null
-  const dotColor = DOT_COLOR[session.status]
 
   return (
     <button
       data-testid="session-item"
       onClick={onClick}
       className={[
-        'w-full text-left px-5 py-2.5 transition-all relative cursor-default select-none',
+        'w-full text-left px-2.5 py-2 rounded-md transition-all relative cursor-default select-none',
         active
-          ? 'bg-[var(--color-accent)]/10'
+          ? 'bg-[var(--color-bg-surface-hover)]'
           : isClickable
-          ? 'hover:bg-[var(--color-bg-surface-hover)]'
+          ? 'hover:bg-[var(--color-bg-surface)]'
           : 'opacity-70'
       ].join(' ')}
     >
       {/* Active left bar */}
       {active && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-[var(--color-accent)] rounded-r" />
+        <span className="absolute left-0 top-2 bottom-2 w-0.5 bg-[var(--color-accent)] rounded-r" />
       )}
 
-      {/* Row 1: dot + name (left) + recorded time (right) */}
-      <div className="flex items-center gap-2 mb-0.5">
-        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
+      {/* Row 1: name (left) + recorded time (right) */}
+      <div className="flex items-baseline gap-2 mb-0.5">
         <span
-          className={`text-sm font-medium truncate flex-1 ${
-            active ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]'
+          className={`text-[12.5px] font-medium truncate flex-1 leading-snug ${
+            active ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-primary)]'
           }`}
         >
           {name}
         </span>
         {recordedTime && (
-          <span className="text-[11px] text-[var(--color-text-muted)] shrink-0 ml-1">
+          <span className="text-[11px] text-[var(--color-text-tertiary)] shrink-0">
             {recordedTime}
           </span>
         )}
       </div>
 
-      {/* Row 2: duration */}
-      <div className="pl-3.5">
-        <span className="font-mono text-xs text-[var(--color-text-primary)]/60">
+      {/* Row 2: duration + status */}
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-[10.5px] text-[var(--color-text-muted)]">
           {formatDuration(session.duration)}
         </span>
-      </div>
-
-      {/* Row 3: progress bar while transcribing */}
-      {session.status === 'transcribing' && (
-        <div className="mt-1.5 pl-3.5">
-          <div className="h-0.5 bg-[var(--color-border)] rounded-full overflow-hidden">
-            <div className="h-full w-1/2 bg-[var(--color-accent-secondary)] rounded-full animate-pulse" />
+        {session.status === 'transcribing' ? (
+          <span className="flex items-center gap-1 text-[10.5px] font-medium text-[var(--color-accent-secondary)]">
+            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+            Transcribing…
+          </span>
+        ) : session.status === 'summarising' ? (
+          <span className="flex items-center gap-1 text-[10.5px] font-medium text-[var(--color-accent)]">
+            <Sparkles className="w-2.5 h-2.5" />
+            Summarising…
+          </span>
+        ) : session.status === 'error' ? (
+          <span className="text-[10.5px] font-medium text-[var(--color-error)]">Error</span>
+        ) : (
+          <div className="flex items-center gap-1 ml-auto">
+            <FileText className="w-2.5 h-2.5 text-[var(--color-text-tertiary)]" />
+            <Sparkles className="w-2.5 h-2.5 text-[var(--color-text-tertiary)]" />
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </button>
   )
 }
