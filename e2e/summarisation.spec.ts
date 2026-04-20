@@ -743,13 +743,14 @@ test.describe('No summary placeholder and regenerate button (AUD-84)', () => {
     }
   })
 
-  test('Generate Summary placeholder not shown when session is currently summarising', async () => {
+  test('Generate Summary placeholder not shown when transcription error exists', async () => {
     const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
-    // Seed with summarising status to simulate an in-progress session
+    // Transcription error — summary placeholder must not appear; error UI takes over
     seedSessions(saveDir, [{
       id: '2026-01-01_10-00-00',
       duration: 60,
-      status: 'summarising'
+      status: 'error',
+      error: 'Transcription failed due to corrupted audio.'
     }])
 
     const { app, page, cleanup } = await launchApp({
@@ -763,7 +764,7 @@ test.describe('No summary placeholder and regenerate button (AUD-84)', () => {
       await page.waitForTimeout(500)
       await expect(page.getByRole('heading', { name: 'No AI Summary Available' })).not.toBeVisible()
       await expect(page.getByRole('button', { name: 'Generate Summary', exact: true })).not.toBeVisible()
-      await expect(page.getByText('Generating summary')).toBeVisible()
+      await expect(page.getByText('Error transcribing')).toBeVisible()
     } finally {
       await app.close()
       cleanup()
