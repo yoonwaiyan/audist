@@ -243,8 +243,8 @@ export default function SessionDetail(): React.JSX.Element {
         </button>
 
         <div className="flex items-center gap-0.5">
-          {/* Regenerate summary — only when transcribed and on Summary tab */}
-          {activeTab === 'Summary' && isTranscribed && (
+          {/* Regenerate summary — only when summary exists and on Summary tab */}
+          {activeTab === 'Summary' && summary != null && (
             <button
               onClick={handleRetry}
               disabled={retrying}

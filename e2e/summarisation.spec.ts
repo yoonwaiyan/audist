@@ -712,4 +712,90 @@ test.describe('No summary placeholder and regenerate button (AUD-84)', () => {
       fs.rmSync(saveDir, { recursive: true, force: true })
     }
   })
+
+  test('regenerate button hidden when on Transcript tab even if summary exists', async () => {
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    seedSessions(saveDir, [{
+      id: '2026-01-01_10-00-00',
+      duration: 60,
+      status: 'complete',
+      summaryMd: '# Meeting Notes\n\nSome content.',
+      transcriptTxt: SAMPLE_TRANSCRIPT
+    }])
+
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready'
+    })
+
+    try {
+      await page.locator('[data-testid="session-item"]').first().click()
+      await expect(page.getByText('Meeting Notes')).toBeVisible({ timeout: 5000 })
+      await expect(page.locator('button[title="Regenerate summary"]')).toBeVisible()
+
+      await page.getByRole('button', { name: 'Transcript', exact: true }).click()
+      await expect(page.locator('button[title="Regenerate summary"]')).not.toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('Generate Summary placeholder not shown when session is currently summarising', async () => {
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    // Seed with summarising status to simulate an in-progress session
+    seedSessions(saveDir, [{
+      id: '2026-01-01_10-00-00',
+      duration: 60,
+      status: 'summarising'
+    }])
+
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready'
+    })
+
+    try {
+      await page.locator('[data-testid="session-item"]').first().click()
+      await page.waitForTimeout(500)
+      await expect(page.getByRole('heading', { name: 'No AI Summary Available' })).not.toBeVisible()
+      await expect(page.getByRole('button', { name: 'Generate Summary', exact: true })).not.toBeVisible()
+      await expect(page.getByText('Generating summary')).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
+
+  test('Generate Summary placeholder button not shown when summary already exists', async () => {
+    const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
+    seedSessions(saveDir, [{
+      id: '2026-01-01_10-00-00',
+      duration: 60,
+      status: 'complete',
+      summaryMd: '# Meeting Notes\n\nSome content.'
+    }])
+
+    const { app, page, cleanup } = await launchApp({
+      saveDirectory: saveDir,
+      permissions: 'granted',
+      whisper: 'ready'
+    })
+
+    try {
+      await page.locator('[data-testid="session-item"]').first().click()
+      await expect(page.getByText('Meeting Notes')).toBeVisible({ timeout: 5000 })
+      await expect(page.getByRole('heading', { name: 'No AI Summary Available' })).not.toBeVisible()
+      await expect(page.getByRole('button', { name: 'Generate Summary', exact: true })).not.toBeVisible()
+      await expect(page.locator('button[title="Regenerate summary"]')).toBeVisible()
+    } finally {
+      await app.close()
+      cleanup()
+      fs.rmSync(saveDir, { recursive: true, force: true })
+    }
+  })
 })
