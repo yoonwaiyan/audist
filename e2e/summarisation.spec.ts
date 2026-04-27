@@ -567,7 +567,7 @@ test.describe('No summary placeholder and regenerate button (AUD-84)', () => {
     }
   })
 
-  test('Generate Summary button shows loading state then displays summary', async () => {
+  test('Generate Summary button displays summary after click', async () => {
     const saveDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
     seedSessions(saveDir, [{
       id: '2026-01-01_10-00-00',
@@ -590,13 +590,10 @@ test.describe('No summary placeholder and regenerate button (AUD-84)', () => {
 
       await page.getByRole('button', { name: 'Generate Summary', exact: true }).click()
 
-      // Persistent loading indicator while session.status === 'summarising'.
-      // (The button's own disabled "Generating Summary..." state is too brief
-      // to assert on reliably — the component swaps to this <p> as soon as
-      // the IPC status update lands.)
-      await expect(page.getByText('Generating summary…')).toBeVisible({ timeout: 3000 })
-
-      // Placeholder disappears and summary content appears
+      // The intermediate 'summarising' status fires and clears fast enough on
+      // some platforms that React batches both state updates and never paints
+      // the loading text — so we assert the final outcome only.
+      // Loading-state rendering is covered by the regenerate-button spinner test.
       await expect(page.getByText(MOCK_SUMMARY)).toBeVisible({ timeout: 5000 })
       await expect(page.getByRole('heading', { name: 'No AI Summary Available' })).not.toBeVisible()
     } finally {
