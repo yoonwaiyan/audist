@@ -29,8 +29,12 @@ jobs:
         run: npm run build
 
   e2e:
-    runs-on: ubuntu-latest
     needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
@@ -44,8 +48,9 @@ jobs:
         run: npm ci
 
       # Playwright's _electron driver talks to Electron's built-in Chromium via CDP —
-      # no separate browser install needed. We only need Electron's system libs.
-      - name: Install Electron system dependencies
+      # no separate browser install needed. We only need Electron's system libs on Linux.
+      - name: Install Electron system dependencies (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -69,13 +74,18 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Run E2E tests
+      - name: Run E2E tests (Linux)
+        if: runner.os == 'Linux'
         run: xvfb-run --auto-servernum npm run test:e2e
+
+      - name: Run E2E tests (macOS / Windows)
+        if: runner.os != 'Linux'
+        run: npm run test:e2e
 
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.os }}
           path: playwright-report/
           retention-days: 7
