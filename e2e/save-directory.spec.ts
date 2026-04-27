@@ -12,7 +12,7 @@ async function openGeneralPrefsPage(
 ): Promise<Page> {
   const [prefsPage] = await Promise.all([
     app.waitForEvent('window'),
-    mainPage.getByTitle('Preferences (⌘,)').click()
+    mainPage.getByTestId('prefs-button').click()
   ])
   await prefsPage.waitForLoadState('domcontentloaded')
   return prefsPage
@@ -28,7 +28,7 @@ test.describe('First launch (no save directory configured)', () => {
     ).toBeVisible()
 
     // Main recording UI must NOT be shown (gear button is only in the main window header)
-    await expect(page.locator('button[title*="Preferences"]')).not.toBeVisible()
+    await expect(page.getByTestId('prefs-button')).not.toBeVisible()
 
     await app.close()
     cleanup()

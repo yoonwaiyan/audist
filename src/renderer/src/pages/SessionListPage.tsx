@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronDown, Settings, Cpu, Sparkles } from 'lucide-react'
 import { useRecorderContext } from '../contexts/RecorderContext'
 import type { ProviderName } from '../../../preload/index.d'
+import { SHORTCUTS, formatShortcut } from '../lib/shortcuts'
 
 const PROVIDER_LABELS: Record<ProviderName, string> = {
   openai: 'OpenAI',
@@ -145,7 +146,7 @@ export default function SessionListPage(): React.JSX.Element {
       <div className="flex items-center gap-2 text-[12.5px]" style={{ marginTop: -4 }}>
         <span className="text-[var(--color-text-secondary)]">Press the button</span>
         <span className="text-[var(--color-text-tertiary)]">or</span>
-        <kbd className="px-1.5 py-0.5 text-[11px] font-medium rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-secondary)] font-mono">⌘R</kbd>
+        <kbd className="px-1.5 py-0.5 text-[11px] font-medium rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-secondary)] font-mono">{formatShortcut(SHORTCUTS.startRecording)}</kbd>
         <span className="text-[var(--color-text-secondary)]">to start</span>
       </div>
 

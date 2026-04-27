@@ -122,7 +122,7 @@ export async function launchApp(opts?: {
 export async function openLLMPrefsPage(app: ElectronApplication, mainPage: Page): Promise<Page> {
   const [prefsPage] = await Promise.all([
     app.waitForEvent('window'),
-    mainPage.getByTitle('Preferences (⌘,)').click()
+    mainPage.getByTestId('prefs-button').click()
   ])
   await prefsPage.waitForLoadState('domcontentloaded')
   await prefsPage.getByRole('link', { name: 'LLM' }).click()
