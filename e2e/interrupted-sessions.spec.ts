@@ -59,7 +59,7 @@ test.describe('Interrupted session recovery', () => {
 
       await page.locator('[data-testid="session-item"]').first().click()
       // Should not show any in-progress indicator
-      await expect(page.getByText('Transcribing')).not.toBeVisible({ timeout: 3000 })
+      await expect(page.getByText('Transcribing', { exact: true })).not.toBeVisible({ timeout: 3000 })
       await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible()
     } finally {
       await app.close()
