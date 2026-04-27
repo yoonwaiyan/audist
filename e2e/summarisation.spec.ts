@@ -590,8 +590,11 @@ test.describe('No summary placeholder and regenerate button (AUD-84)', () => {
 
       await page.getByRole('button', { name: 'Generate Summary', exact: true }).click()
 
-      // Button becomes disabled with loading copy
-      await expect(page.getByRole('button', { name: /Generating Summary/ })).toBeDisabled({ timeout: 2000 })
+      // Persistent loading indicator while session.status === 'summarising'.
+      // (The button's own disabled "Generating Summary..." state is too brief
+      // to assert on reliably — the component swaps to this <p> as soon as
+      // the IPC status update lands.)
+      await expect(page.getByText('Generating summary…')).toBeVisible({ timeout: 3000 })
 
       // Placeholder disappears and summary content appears
       await expect(page.getByText(MOCK_SUMMARY)).toBeVisible({ timeout: 5000 })
