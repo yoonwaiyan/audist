@@ -151,6 +151,11 @@ test.describe('Change save directory — validation (AUD-40)', () => {
   })
 
   test('non-writable path shows inline error and preserves old path', async () => {
+    // fs.chmodSync is a no-op for directories on Windows (ACL-based permissions,
+    // not Unix bits), so accessSync(W_OK) always returns true there. Skip rather
+    // than producing a false-positive pass or a confusing failure.
+    test.skip(process.platform === 'win32', 'chmod does not restrict directory access on Windows')
+
     const originalDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-saves-'))
     const readOnlyDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audist-readonly-'))
     fs.chmodSync(readOnlyDir, 0o444)

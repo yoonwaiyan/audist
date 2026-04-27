@@ -55,6 +55,11 @@ export class MockLLMProvider implements LLMProvider {
   }
 
   async complete(_messages: LLMMessage[], _options: LLMOptions): Promise<string> {
+    // Simulate a small network round-trip so the renderer can observe the
+    // intermediate "generating" UI state in e2e tests (otherwise the promise
+    // resolves on the same tick and React never paints the loading state).
+    await new Promise((r) => setTimeout(r, 100))
+
     const mode = (process.env['AUDIST_TEST_LLM'] ?? 'success').toLowerCase()
     if (mode === 'success') return 'Mock LLM response'
 
