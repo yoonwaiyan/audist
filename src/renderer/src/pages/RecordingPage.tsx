@@ -3,6 +3,7 @@ import { Info } from 'lucide-react'
 import Waveform from '../components/Waveform'
 import { useRecorderContext } from '../contexts/RecorderContext'
 import type { ProviderName } from '../../../preload/index.d'
+import { SHORTCUTS, formatShortcut } from '../lib/shortcuts'
 
 const PROVIDER_LABELS: Record<ProviderName, string> = {
   openai: 'OpenAI',
@@ -214,7 +215,7 @@ export default function RecordingPage(): React.JSX.Element {
         <button
           onClick={handleStop}
           disabled={isStopping || isStarting}
-          title="Stop recording (⌘⇧R)"
+          title={`Stop recording (${formatShortcut(SHORTCUTS.stopRecording)})`}
           className="w-16 h-16 rounded-full flex items-center justify-center text-white disabled:opacity-60 transition-all cursor-default"
           style={{
             background: 'var(--color-recording)',

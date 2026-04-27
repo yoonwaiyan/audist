@@ -144,7 +144,7 @@ test.describe('Session keyboard navigation', () => {
       // Open preferences where there is an input, focus it, and press ArrowDown
       const [prefsPage] = await Promise.all([
         app.waitForEvent('window'),
-        page.getByTitle('Preferences (⌘,)').click()
+        page.getByTestId('prefs-button').click()
       ])
       await prefsPage.waitForLoadState('domcontentloaded')
       // Focus an input in the prefs window — arrow key there should NOT change the main window session

@@ -6,6 +6,7 @@ import { RecorderProvider, useRecorderContext } from '../../contexts/RecorderCon
 import SessionList from './SessionList'
 import RecordingPage from '../../pages/RecordingPage'
 import type { SessionMeta } from '../../../../preload/index.d'
+import { SHORTCUTS, formatShortcut } from '../../lib/shortcuts'
 
 const SIDEBAR_MIN = 180
 const SIDEBAR_MAX = 380
@@ -150,7 +151,8 @@ function AppShellInner(): React.JSX.Element {
           {!isRecording && (
             <button
               onClick={() => window.electron.ipcRenderer.send('audist:prefs:open')}
-              title="Preferences (⌘,)"
+              title={`Preferences (${formatShortcut(SHORTCUTS.openPrefs)})`}
+              data-testid="prefs-button"
               className="[-webkit-app-region:no-drag] p-1.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-surface)] transition-colors cursor-default"
             >
               <Settings className="w-3.5 h-3.5" />

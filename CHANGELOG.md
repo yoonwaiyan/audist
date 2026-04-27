@@ -2,6 +2,12 @@
 
 All notable changes to Audist are documented here.
 
+## [Unreleased]
+
+### Fixed
+
+- **Platform-aware shortcut hints** — Tooltip and `<kbd>` labels in the renderer hardcoded `⌘`/`⇧` glyphs, showing macOS shortcuts to Windows and Linux users. Hints now resolve at runtime: `⌘,` / `⌘⇧R` on macOS, `Ctrl+,` / `Ctrl+Shift+R` on Windows/Linux. A new `formatShortcut` helper in `src/renderer/src/lib/shortcuts.ts` and a `SHORTCUTS` registry serve as the single source of truth, keeping the door open for user-customisable bindings later.
+
 ## [1.3.0] - 2026-04-20
 
 ### Added
