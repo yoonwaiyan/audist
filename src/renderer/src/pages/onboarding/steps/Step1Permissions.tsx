@@ -7,6 +7,8 @@ interface Step1PermissionsProps {
   onNext: () => void
 }
 
+const isLinux = window.electron.process.platform === 'linux'
+
 function isGranted(s: string): boolean {
   return s === 'granted'
 }
@@ -17,12 +19,33 @@ function toRowStatus(s: string): 'granted' | 'denied' | 'not-yet-granted' {
   return 'not-yet-granted'
 }
 
+// On Linux the main process always returns 'granted' for mic (no systemPreferences API).
+// Probe the real state from the renderer via getUserMedia.
+async function probeLinuxMic(): Promise<'granted' | 'denied'> {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    stream.getTracks().forEach((t) => t.stop())
+    return 'granted'
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'NotAllowedError') {
+      return 'denied'
+    }
+    return 'granted'
+  }
+}
+
 export default function Step1Permissions({ onNext }: Step1PermissionsProps): React.JSX.Element {
   const [perms, setPerms] = useState<PermissionsState | null>(null)
   const [requesting, setRequesting] = useState(false)
 
   const checkPermissions = useCallback(async (): Promise<PermissionsState> => {
     const state = await window.api.permissions.check()
+    if (isLinux) {
+      const micStatus = await probeLinuxMic()
+      const resolved = { ...state, microphone: micStatus }
+      setPerms(resolved)
+      return resolved
+    }
     setPerms(state)
     return state
   }, [])
@@ -89,7 +112,9 @@ export default function Step1Permissions({ onNext }: Step1PermissionsProps): Rea
 
         {anyDenied && (
           <p className="text-xs text-[var(--color-text-muted)]">
-            Open System Settings → Privacy &amp; Security to enable denied permissions.
+            {isLinux
+              ? 'Check your PulseAudio/PipeWire microphone settings to enable denied permissions.'
+              : 'Open System Settings → Privacy & Security to enable denied permissions.'}
           </p>
         )}
 

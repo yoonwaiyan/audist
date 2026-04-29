@@ -54,10 +54,16 @@ export function registerPermissionHandlers(): void {
     return systemPreferences.askForMediaAccess('microphone')
   })
 
-  // Open the relevant macOS System Settings Privacy pane.
+  // Open the relevant System Settings Privacy pane.
+  // On macOS, deep-links to the appropriate System Settings section.
+  // On Linux (and other non-macOS platforms), deep-linking is not supported —
+  // returns { supported: false } so the renderer can show inline guidance instead.
   ipcMain.handle(
     'audist:permissions:open-settings',
-    (_, target: 'microphone' | 'screen'): void => {
+    (_, target: 'microphone' | 'screen'): { supported: boolean } => {
+      if (process.platform !== 'darwin') {
+        return { supported: false }
+      }
       const urls: Record<string, string> = {
         microphone:
           'x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone',
@@ -65,6 +71,7 @@ export function registerPermissionHandlers(): void {
           'x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture'
       }
       shell.openExternal(urls[target])
+      return { supported: true }
     }
   )
 }

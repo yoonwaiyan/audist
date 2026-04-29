@@ -7,6 +7,8 @@ import AppLogo from '../components/ui/AppLogo'
 import PermissionRow from '../components/ui/PermissionRow'
 import Button from '../components/ui/Button'
 
+const isLinux = window.electron.process.platform === 'linux'
+
 function isGranted(s: string): boolean {
   return s === 'granted'
 }
@@ -17,12 +19,35 @@ function toRowStatus(s: string): 'granted' | 'denied' | 'not-yet-granted' {
   return 'not-yet-granted'
 }
 
+// On Linux the main process always returns 'granted' for mic (no systemPreferences API).
+// Probe the real state from the renderer via getUserMedia.
+async function probeLinuxMic(): Promise<'granted' | 'denied'> {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    stream.getTracks().forEach((t) => t.stop())
+    return 'granted'
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'NotAllowedError') {
+      return 'denied'
+    }
+    // Other errors (NotFoundError, etc.) — treat as granted so we don't block setup
+    return 'granted'
+  }
+}
+
 export default function PermissionsPage(): React.JSX.Element {
   const navigate = useNavigate()
   const [perms, setPerms] = useState<PermissionsState | null>(null)
+  const [openSettingsSupported, setOpenSettingsSupported] = useState(true)
 
   const checkPermissions = useCallback(async (): Promise<PermissionsState> => {
     const state = await window.api.permissions.check()
+    if (isLinux) {
+      const micStatus = await probeLinuxMic()
+      const resolved = { ...state, microphone: micStatus }
+      setPerms(resolved)
+      return resolved
+    }
     setPerms(state)
     return state
   }, [])
@@ -53,12 +78,12 @@ export default function PermissionsPage(): React.JSX.Element {
     navigateIfGranted(state)
   }
 
-  const handleOpenSettings = (): void => {
+  const handleOpenSettings = async (): Promise<void> => {
     if (!perms) return
-    if (!isGranted(perms.microphone)) {
-      window.api.permissions.openSettings('microphone')
-    } else {
-      window.api.permissions.openSettings('screen')
+    const target = !isGranted(perms.microphone) ? 'microphone' : 'screen'
+    const result = await window.api.permissions.openSettings(target)
+    if (!result.supported) {
+      setOpenSettingsSupported(false)
     }
   }
 
@@ -107,9 +132,15 @@ export default function PermissionsPage(): React.JSX.Element {
 
         {/* Primary CTA */}
         <div className="w-full flex flex-col items-center gap-3">
-          <Button variant="primary" className="w-full" onClick={handleOpenSettings}>
-            Open System Settings →
-          </Button>
+          {openSettingsSupported ? (
+            <Button variant="primary" className="w-full" onClick={handleOpenSettings}>
+              Open System Settings →
+            </Button>
+          ) : (
+            <p className="text-sm text-[var(--color-text-secondary)] text-center">
+              Check your PulseAudio/PipeWire microphone settings
+            </p>
+          )}
 
           <Button variant="text" onClick={handleRecheck}>
             Check again
