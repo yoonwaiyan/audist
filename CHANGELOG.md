@@ -4,9 +4,15 @@ All notable changes to Audist are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **Linux AppImage release pipeline** — Unified `release.yml` CI workflow builds a Linux AppImage on Ubuntu and a macOS DMG on every `v*` tag push. Supports manual `workflow_dispatch` with a platform selector for pre-release testing. (#AUD-111, #AUD-116)
+- **Linux audio loopback guidance** — The permissions page detects whether a PulseAudio/PipeWire monitor source is available on Linux. When none is found, an inline guidance card explains how to enable system audio capture with `pactl load-module module-loopback`. (#AUD-112)
+- **Linux mic permission probe** — On Linux, microphone access is verified via a `getUserMedia` probe in the renderer rather than the macOS-only `systemPreferences` API, giving accurate denied/granted feedback instead of always-granted. (#AUD-113)
+
 ### Fixed
 
-- **Platform-aware shortcut hints** — Tooltip and `<kbd>` labels in the renderer hardcoded `⌘`/`⇧` glyphs, showing macOS shortcuts to Windows and Linux users. Hints now resolve at runtime: `⌘,` / `⌘⇧R` on macOS, `Ctrl+,` / `Ctrl+Shift+R` on Windows/Linux. A new `formatShortcut` helper in `src/renderer/src/lib/shortcuts.ts` and a `SHORTCUTS` registry serve as the single source of truth, keeping the door open for user-customisable bindings later.
+- **Platform-aware shortcut hints — Tooltip and `<kbd>` labels in the renderer hardcoded `⌘`/`⇧` glyphs, showing macOS shortcuts to Windows and Linux users. Hints now resolve at runtime: `⌘,` / `⌘⇧R` on macOS, `Ctrl+,` / `Ctrl+Shift+R` on Windows/Linux. A new `formatShortcut` helper in `src/renderer/src/lib/shortcuts.ts` and a `SHORTCUTS` registry serve as the single source of truth, keeping the door open for user-customisable bindings later.
 
 ## [1.3.0] - 2026-04-20
 
