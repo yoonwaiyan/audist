@@ -33,7 +33,7 @@ interface SessionAPI {
 interface PermissionsAPI {
   check: () => Promise<PermissionsState>
   requestMic: () => Promise<boolean>
-  openSettings: (target: 'microphone' | 'screen') => Promise<void>
+  openSettings: (target: 'microphone' | 'screen') => Promise<{ supported: boolean }>
 }
 
 type IpcUnsub = () => void

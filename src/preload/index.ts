@@ -27,7 +27,7 @@ const api = {
     check: (): Promise<{ microphone: string; screen: string }> =>
       ipcRenderer.invoke('audist:permissions:check'),
     requestMic: (): Promise<boolean> => ipcRenderer.invoke('audist:permissions:request-mic'),
-    openSettings: (target: 'microphone' | 'screen'): Promise<void> =>
+    openSettings: (target: 'microphone' | 'screen'): Promise<{ supported: boolean }> =>
       ipcRenderer.invoke('audist:permissions:open-settings', target)
   },
   whisper: {

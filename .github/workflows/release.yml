@@ -4,6 +4,17 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]*'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'linux'
+        type: choice
+        options:
+          - linux
+          - macos
+          - all
 
 # Opt into Node.js 24 for GitHub Actions runners ahead of the June 2026 deadline
 env:
@@ -14,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest]
+        os: ${{ (github.event_name == 'workflow_dispatch' && inputs.platform == 'linux') && fromJSON('["ubuntu-latest"]') || (github.event_name == 'workflow_dispatch' && inputs.platform == 'macos') && fromJSON('["macos-latest"]') || fromJSON('["macos-latest", "ubuntu-latest"]') }}
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
@@ -95,6 +106,23 @@ jobs:
           files: dist/*.dmg
           fail_on_unmatched_files: true
 
-      # TODO: AUD-116 — wire up electron-builder and artifact upload
-      # Linux build, packaging (AppImage / deb), artifact upload, and GitHub Release
-      # publish steps go here once the Linux release workflow is fully implemented.
+      - name: Build Electron app (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          npx electron-vite build
+          npx electron-builder --linux appimage
+
+      - name: Upload AppImage artifact (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: audist-linux-${{ github.ref_name || github.sha }}
+          path: dist/*.AppImage
+          retention-days: 30
+
+      - name: Publish to GitHub Release (Linux)
+        if: runner.os == 'Linux' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.AppImage
+          fail_on_unmatched_files: true
