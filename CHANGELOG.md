@@ -4,6 +4,8 @@ All notable changes to Audist are documented here.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-04-29
+
 ### Added
 
 - **Linux AppImage release pipeline** — Unified `release.yml` CI workflow builds a Linux AppImage on Ubuntu and a macOS DMG on every `v*` tag push. Supports manual `workflow_dispatch` with a platform selector for pre-release testing. (#AUD-111, #AUD-116)
