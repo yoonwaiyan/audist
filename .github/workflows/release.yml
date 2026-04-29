@@ -6,6 +6,9 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]*'
   workflow_dispatch:
     inputs:
+      tag_name:
+        description: 'Pre-release tag (e.g. v1.4.0-beta.1)'
+        required: true
       platform:
         description: 'Platform to build'
         required: true
@@ -95,7 +98,7 @@ jobs:
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
-          name: audist-mac-${{ github.ref_name }}
+          name: audist-mac-${{ inputs.tag_name || github.ref_name }}
           path: dist/*.dmg
           retention-days: 30
 
@@ -103,6 +106,8 @@ jobs:
         if: runner.os == 'macOS'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.tag_name || github.ref_name }}
+          prerelease: ${{ github.event_name == 'workflow_dispatch' }}
           files: dist/*.dmg
           fail_on_unmatched_files: true
 
@@ -116,13 +121,15 @@ jobs:
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
-          name: audist-linux-${{ github.ref_name || github.sha }}
+          name: audist-linux-${{ inputs.tag_name || github.ref_name }}
           path: dist/*.AppImage
           retention-days: 30
 
       - name: Publish to GitHub Release (Linux)
-        if: runner.os == 'Linux' && github.event_name == 'push'
+        if: runner.os == 'Linux'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ inputs.tag_name || github.ref_name }}
+          prerelease: ${{ github.event_name == 'workflow_dispatch' }}
           files: dist/*.AppImage
           fail_on_unmatched_files: true
