@@ -6,6 +6,8 @@ import SetupShell from '../components/layout/SetupShell'
 import AppLogo from '../components/ui/AppLogo'
 import PermissionRow from '../components/ui/PermissionRow'
 import Button from '../components/ui/Button'
+import LinuxAudioLoopbackGuidance from '../components/ui/LinuxAudioLoopbackGuidance'
+import { hasLinuxMonitorSource } from '../lib/audioDevices'
 
 function isGranted(s: string): boolean {
   return s === 'granted'
@@ -17,9 +19,12 @@ function toRowStatus(s: string): 'granted' | 'denied' | 'not-yet-granted' {
   return 'not-yet-granted'
 }
 
+const isLinux = window.electron?.process?.platform === 'linux'
+
 export default function PermissionsPage(): React.JSX.Element {
   const navigate = useNavigate()
   const [perms, setPerms] = useState<PermissionsState | null>(null)
+  const [linuxMissingMonitor, setLinuxMissingMonitor] = useState(false)
 
   const checkPermissions = useCallback(async (): Promise<PermissionsState> => {
     const state = await window.api.permissions.check()
@@ -39,6 +44,11 @@ export default function PermissionsPage(): React.JSX.Element {
   useEffect(() => {
     checkPermissions().then(navigateIfGranted)
   }, [checkPermissions, navigateIfGranted])
+
+  useEffect(() => {
+    if (!isLinux) return
+    hasLinuxMonitorSource().then((found) => setLinuxMissingMonitor(!found))
+  }, [])
 
   useEffect(() => {
     const handleFocus = (): void => {
@@ -104,6 +114,9 @@ export default function PermissionsPage(): React.JSX.Element {
             />
           </div>
         )}
+
+        {/* Linux: missing monitor source guidance */}
+        {isLinux && linuxMissingMonitor && <LinuxAudioLoopbackGuidance />}
 
         {/* Primary CTA */}
         <div className="w-full flex flex-col items-center gap-3">
