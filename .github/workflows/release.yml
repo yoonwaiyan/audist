@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]*'
+
+# Opt into Node.js 24 for GitHub Actions runners ahead of the June 2026 deadline
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # whisper.cpp compilation requires a C++ toolchain and CMake on Linux.
+      # macOS runners already include Xcode CLT + cmake via Homebrew.
+      - name: Install build tools (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake
+
+      - name: Prepare Whisper binary
+        run: node scripts/prepare-whisper.mjs
+
+      - name: Install ImageMagick (macOS)
+        if: runner.os == 'macOS'
+        run: brew install imagemagick
+
+      - name: Generate icon set (macOS)
+        if: runner.os == 'macOS'
+        run: node scripts/generate-icons.mjs
+
+      - name: Build Electron app (macOS)
+        if: runner.os == 'macOS'
+        # Code signing is enabled automatically when CSC_LINK and CSC_KEY_PASSWORD
+        # repository secrets are present. Without them the build is unsigned
+        # (CSC_IDENTITY_AUTO_DISCOVERY=false) and suitable for internal testing only.
+        #
+        # To enable signing:
+        #   1. Export your Apple Developer certificate as a .p12 file
+        #   2. Base-64 encode it: base64 -i cert.p12 | tr -d '\n'
+        #   3. Add CSC_LINK (the encoded cert) and CSC_KEY_PASSWORD as repo secrets
+        #
+        # To enable notarization after signing:
+        #   Set notarize: true in electron-builder.yml and add secrets:
+        #   APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.CSC_LINK != '' && 'true' || 'false' }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          npx electron-vite build
+          if [ -n "$CSC_LINK" ]; then
+            npx electron-builder --mac
+          else
+            npx electron-builder --mac --config.mac.identity=null
+          fi
+
+      - name: Upload DMG artifact (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: audist-mac-${{ github.ref_name }}
+          path: dist/*.dmg
+          retention-days: 30
+
+      - name: Publish to GitHub Release (macOS)
+        if: runner.os == 'macOS'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.dmg
+          fail_on_unmatched_files: true
+
+      # TODO: AUD-116 — wire up electron-builder and artifact upload
+      # Linux build, packaging (AppImage / deb), artifact upload, and GitHub Release
+      # publish steps go here once the Linux release workflow is fully implemented.
