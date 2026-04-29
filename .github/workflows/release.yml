@@ -25,11 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{
-          (github.event_name == 'workflow_dispatch' && inputs.platform == 'linux') && fromJSON('["ubuntu-latest"]') ||
-          (github.event_name == 'workflow_dispatch' && inputs.platform == 'macos') && fromJSON('["macos-latest"]') ||
-          fromJSON('["macos-latest", "ubuntu-latest"]')
-        }}
+        os: ${{ (github.event_name == 'workflow_dispatch' && inputs.platform == 'linux') && fromJSON('["ubuntu-latest"]') || (github.event_name == 'workflow_dispatch' && inputs.platform == 'macos') && fromJSON('["macos-latest"]') || fromJSON('["macos-latest", "ubuntu-latest"]') }}
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
