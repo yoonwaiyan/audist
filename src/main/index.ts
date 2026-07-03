@@ -13,6 +13,8 @@ import { registerSettingsHandlers } from './ipc/settings'
 import { registerSummaryHandlers, summariseSession } from './ipc/summary'
 import { mixAudio } from './ipc/mix'
 import { registerTemplateHandlers } from './templates/ipc'
+import { getWindowBounds, setWindowBounds } from './store'
+import { isOnScreen } from './windows/bounds'
 import { bootstrapWhisper, markTestInstallComplete } from './whisper/bootstrap'
 import { llmRegistry } from './llm/registry'
 import { OpenAIProvider } from './llm/providers/openai'
@@ -21,9 +23,11 @@ import { CompatibleProvider } from './llm/providers/compatible'
 import { MockLLMProvider } from './llm/providers/mock'
 
 function createWindow(): void {
+  const savedBounds = getWindowBounds('main')
+  const bounds = savedBounds && isOnScreen(savedBounds) ? savedBounds : { width: 900, height: 670 }
+
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    ...bounds,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -37,6 +41,10 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
+  })
+
+  mainWindow.on('close', () => {
+    setWindowBounds('main', mainWindow.getBounds())
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
