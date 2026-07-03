@@ -11,9 +11,17 @@ interface LLMSettings {
   summarisationEnabled?: boolean
 }
 
+interface WindowBounds {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 interface AppSettings {
   saveDirectory?: string
   llm?: LLMSettings
+  windowBounds?: Partial<Record<'main' | 'prefs', WindowBounds>>
 }
 
 function settingsPath(): string {
@@ -145,4 +153,17 @@ export function clearCredential(key: string): void {
 
 export function isCredentialSet(key: string): boolean {
   return !!readCredentials()[key]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Window bounds
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function getWindowBounds(window: 'main' | 'prefs'): WindowBounds | undefined {
+  return read().windowBounds?.[window]
+}
+
+export function setWindowBounds(window: 'main' | 'prefs', bounds: WindowBounds): void {
+  const current = read()
+  write({ ...current, windowBounds: { ...current.windowBounds, [window]: bounds } })
 }
