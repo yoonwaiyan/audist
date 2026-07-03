@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import type { OutputSection, PromptTemplate } from '../../../../../preload/index.d'
@@ -44,6 +44,7 @@ export default function TemplateEditorPage(): React.JSX.Element {
   >(null)
 
   const { hasUnsavedChanges, markSaved } = useUnsavedChanges(form, null)
+  const previewTokenRef = useRef(0)
 
   useEffect(() => {
     if (!id) return
@@ -132,11 +133,14 @@ export default function TemplateEditorPage(): React.JSX.Element {
 
   const handlePreview = async (): Promise<void> => {
     if (!id) return
+    const token = ++previewTokenRef.current
     setPreviewState({ status: 'loading' })
     try {
       const { markdown } = await window.api.templates.preview(id)
+      if (previewTokenRef.current !== token) return // closed (or re-opened) before this resolved
       setPreviewState({ status: 'done', markdown })
     } catch (err) {
+      if (previewTokenRef.current !== token) return
       setPreviewState({
         status: 'error',
         message: err instanceof Error ? err.message : 'Failed to generate preview'
@@ -144,8 +148,13 @@ export default function TemplateEditorPage(): React.JSX.Element {
     }
   }
 
+  const closePreview = (): void => {
+    previewTokenRef.current++ // invalidate any in-flight preview request
+    setPreviewState(null)
+  }
+
   return (
-    <div className="max-w-2xl flex flex-col">
+    <div className="max-w-2xl flex flex-col pb-20">
       <BackLink onClick={handleBack} />
 
       <div className="flex items-baseline gap-2 mb-1">
@@ -244,7 +253,7 @@ export default function TemplateEditorPage(): React.JSX.Element {
           aria-modal="true"
           aria-label="Preview"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={() => setPreviewState(null)}
+          onClick={() => closePreview()}
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -265,7 +274,7 @@ export default function TemplateEditorPage(): React.JSX.Element {
             )}
             <button
               type="button"
-              onClick={() => setPreviewState(null)}
+              onClick={() => closePreview()}
               className="mt-4 px-3 py-1.5 rounded-[var(--radius-sm)] text-xs font-medium
                 bg-[var(--color-bg-surface-hover)] text-[var(--color-text-secondary)]
                 hover:text-[var(--color-text-primary)] transition-colors cursor-default"

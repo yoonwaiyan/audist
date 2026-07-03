@@ -21,8 +21,8 @@ export default function TemplateActionBar({
 }: TemplateActionBarProps): React.JSX.Element {
   return (
     <div
-      className="sticky bottom-0 flex items-center justify-between gap-3 px-1 py-3 mt-6
-        border-t border-[var(--color-border)] bg-[var(--color-bg-base)]"
+      className="fixed bottom-0 left-44 right-0 z-10 flex items-center justify-between gap-3
+        px-6 py-3 border-t border-[var(--color-border)] bg-[var(--color-bg-base)]"
     >
       <div>
         {!isBuiltIn &&
