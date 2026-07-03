@@ -17,7 +17,9 @@ export default function TemplateListPage(): React.JSX.Element {
   }
 
   const handleDuplicate = (id: string): void => {
-    void window.api.templates.duplicate(id)
+    void window.api.templates.duplicate(id).then((created) => {
+      navigate(`/prefs/templates/${created.id}`)
+    })
   }
 
   const handleDelete = (id: string): void => {

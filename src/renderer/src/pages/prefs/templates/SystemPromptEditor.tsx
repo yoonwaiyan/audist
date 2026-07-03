@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import VariableChip from './VariableChip'
 
 export const TEMPLATE_VARIABLES = [
@@ -53,20 +53,37 @@ export default function SystemPromptEditor({
 }: SystemPromptEditorProps): React.JSX.Element {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
+  // Tracks the caret position while the textarea is focused. Clicking a variable chip
+  // blurs the textarea before the click handler runs, so `document.activeElement` can't
+  // tell us whether there was a cursor — this ref is the source of truth instead.
+  const lastSelectionRef = useRef<{ start: number; end: number } | null>(null)
+
+  useEffect(() => {
+    // Once the textarea is empty (e.g. a fresh/duplicated template), there's no prior
+    // cursor to honour — reset so the next insertion appends rather than using a stale index.
+    if (value === '') lastSelectionRef.current = null
+  }, [value])
+
+  const captureSelection = (): void => {
+    const el = textareaRef.current
+    if (!el) return
+    lastSelectionRef.current = { start: el.selectionStart ?? 0, end: el.selectionEnd ?? 0 }
+  }
 
   const insertVariable = (token: string): void => {
     const el = textareaRef.current
-    if (!el || document.activeElement !== el) {
+    const selection = lastSelectionRef.current
+    if (!el || !selection) {
       onChange(value + token)
       return
     }
-    const start = el.selectionStart ?? value.length
-    const end = el.selectionEnd ?? value.length
+    const { start, end } = selection
     const next = value.slice(0, start) + token + value.slice(end)
     onChange(next)
+    const caret = start + token.length
+    lastSelectionRef.current = { start: caret, end: caret }
     requestAnimationFrame(() => {
       el.focus()
-      const caret = start + token.length
       el.setSelectionRange(caret, caret)
     })
   }
@@ -102,6 +119,10 @@ export default function SystemPromptEditor({
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
           onScroll={syncScroll}
+          onSelect={captureSelection}
+          onKeyUp={captureSelection}
+          onClick={captureSelection}
+          onFocus={captureSelection}
           rows={6}
           spellCheck={false}
           data-testid="system-prompt-textarea"
