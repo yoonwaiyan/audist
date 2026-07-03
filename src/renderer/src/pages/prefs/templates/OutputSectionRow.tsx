@@ -1,3 +1,4 @@
+import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core'
 import { GripVertical, X } from 'lucide-react'
 import type { OutputSection } from '../../../../../preload/index.d'
 import InlineEditableText from './InlineEditableText'
@@ -8,6 +9,15 @@ interface OutputSectionRowProps {
   onChangeHeading: (heading: string) => void
   onChangeInstruction: (instruction: string) => void
   onDelete: () => void
+  /** Attributes/listeners from useSortable, applied only to the drag handle icon. */
+  dragHandleAttributes?: DraggableAttributes
+  dragHandleListeners?: DraggableSyntheticListeners
+  dragHandleRef?: (el: HTMLElement | null) => void
+  /** True while this row is the one being dragged — renders an empty placeholder slot
+   *  in its place (the floating preview is rendered separately via DragOverlay). */
+  isDragging?: boolean
+  /** Which edge of this row the drop-zone indicator line should appear on, if any. */
+  dropIndicator?: 'before' | 'after' | null
 }
 
 export default function OutputSectionRow({
@@ -15,18 +25,57 @@ export default function OutputSectionRow({
   disabled = false,
   onChangeHeading,
   onChangeInstruction,
-  onDelete
+  onDelete,
+  dragHandleAttributes,
+  dragHandleListeners,
+  dragHandleRef,
+  isDragging = false,
+  dropIndicator = null
 }: OutputSectionRowProps): React.JSX.Element {
+  if (isDragging) {
+    return (
+      <div
+        data-testid="output-section-row"
+        aria-hidden
+        className="h-[60px] rounded-[var(--radius-md)] border-2 border-dashed border-[var(--color-border)]"
+      />
+    )
+  }
+
   return (
     <div
       data-testid="output-section-row"
-      className="group flex items-start gap-2 px-3 py-2.5 rounded-[var(--radius-md)]
+      className="group relative flex items-start gap-2 px-3 py-2.5 rounded-[var(--radius-md)]
         bg-[var(--color-bg-surface)] border border-[var(--color-border)]"
     >
-      <GripVertical
-        className="w-4 h-4 mt-1 shrink-0 text-[var(--color-text-tertiary)] cursor-grab"
-        aria-hidden
-      />
+      {dropIndicator === 'before' && (
+        <div
+          data-testid="drop-indicator"
+          className="absolute -top-[5px] left-0 right-0 h-0.5 rounded-full bg-[var(--color-accent)]
+            shadow-[0_0_6px_var(--color-accent)]"
+        />
+      )}
+      {dropIndicator === 'after' && (
+        <div
+          data-testid="drop-indicator"
+          className="absolute -bottom-[5px] left-0 right-0 h-0.5 rounded-full bg-[var(--color-accent)]
+            shadow-[0_0_6px_var(--color-accent)]"
+        />
+      )}
+
+      <button
+        type="button"
+        ref={dragHandleRef}
+        aria-label="Drag to reorder section"
+        disabled={disabled}
+        {...dragHandleAttributes}
+        {...dragHandleListeners}
+        className="p-0 mt-1 shrink-0 bg-transparent border-none text-[var(--color-text-tertiary)]
+          hover:text-[var(--color-text-secondary)] disabled:opacity-40 disabled:cursor-not-allowed
+          cursor-grab active:cursor-grabbing touch-none"
+      >
+        <GripVertical className="w-4 h-4" aria-hidden />
+      </button>
 
       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
         <InlineEditableText
