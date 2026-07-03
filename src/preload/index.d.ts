@@ -133,6 +133,7 @@ interface TemplatesAPI {
   delete: (id: string) => Promise<{ success: boolean }>
   duplicate: (id: string, name?: string) => Promise<PromptTemplate>
   setDefault: (id: string) => Promise<{ success: boolean }>
+  resolveForSession: (sessionDir: string) => Promise<{ id: string; name: string }>
   preview: (templateId: string, sessionId?: string) => Promise<{ markdown: string }>
   onChanged: (cb: () => void) => IpcUnsub
 }

@@ -120,6 +120,8 @@ const api = {
     duplicate: (id: string, name?: string) =>
       ipcRenderer.invoke('audist:templates:duplicate', { id, name }),
     setDefault: (id: string) => ipcRenderer.invoke('audist:templates:setDefault', { id }),
+    resolveForSession: (sessionDir: string) =>
+      ipcRenderer.invoke('audist:templates:resolveForSession', { sessionDir }),
     preview: (templateId: string, sessionId?: string) =>
       ipcRenderer.invoke('audist:templates:preview', { templateId, sessionId }),
     onChanged: (cb: () => void) => listen('audist:templates:changed', cb)

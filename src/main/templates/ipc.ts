@@ -12,7 +12,7 @@ import {
   setDefaultTemplate,
   updateTemplate
 } from './store'
-import { buildPromptFromTemplate, buildVarsFromSession } from './engine'
+import { buildPromptFromTemplate, buildVarsFromSession, resolveTemplateForSession } from './engine'
 import { getSampleTranscriptVars } from './sample-transcript'
 import type { PromptTemplate } from './types'
 
@@ -68,6 +68,14 @@ export function registerTemplateHandlers(): void {
       const result = setDefaultTemplate(id)
       broadcastChanged()
       return result
+    }
+  )
+
+  ipcMain.handle(
+    'audist:templates:resolveForSession',
+    (_, { sessionDir }: { sessionDir: string }): { id: string; name: string } => {
+      const template = resolveTemplateForSession(sessionDir)
+      return { id: template.id, name: template.name }
     }
   )
 
