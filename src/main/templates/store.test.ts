@@ -28,7 +28,7 @@ describe('templates store persistence', () => {
 
     const onDisk = JSON.parse(readFileSync(join(userDataDir, 'templates.json'), 'utf-8'))
     expect(onDisk.templates).toHaveLength(4)
-    expect(onDisk.activeTemplateId).toBe('builtin-default')
+    expect(onDisk.defaultTemplateId).toBe('builtin-default')
   })
 
   it('migrates legacy settings.json prompt keys and deletes them after seeding', async () => {
@@ -42,7 +42,7 @@ describe('templates store persistence', () => {
     const templates = store.listTemplates()
     const migrated = templates.find((t) => t.name === 'My Custom Prompt')
     expect(migrated).toBeDefined()
-    expect(migrated?.isActive).toBe(true)
+    expect(migrated?.isDefault).toBe(true)
 
     const settingsOnDisk = JSON.parse(readFileSync(join(userDataDir, 'settings.json'), 'utf-8'))
     expect(settingsOnDisk.llm.systemPrompt).toBeUndefined()
@@ -61,13 +61,13 @@ describe('templates store persistence', () => {
     const duplicated = store.duplicateTemplate(created.id)
     expect(duplicated.name).toBe('Copy of Team Retro v2')
 
-    const activateResult = store.setActiveTemplate(created.id)
+    const activateResult = store.setDefaultTemplate(created.id)
     expect(activateResult.success).toBe(true)
-    expect(store.getTemplate(created.id)?.isActive).toBe(true)
+    expect(store.getTemplate(created.id)?.isDefault).toBe(true)
 
     expect(() => store.deleteTemplate(created.id)).toThrow()
 
-    store.setActiveTemplate('builtin-default')
+    store.setDefaultTemplate('builtin-default')
     const deleteResult = store.deleteTemplate(created.id)
     expect(deleteResult.success).toBe(true)
     expect(store.getTemplate(created.id)).toBeNull()

@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'fs'
 import { basename, join } from 'path'
-import { getActiveTemplateId, getTemplate } from './store'
+import { getDefaultTemplateId, getTemplate } from './store'
 import { DEFAULT_BUILTIN_TEMPLATE_ID } from './builtins'
 import type { PromptTemplate } from './types'
 
@@ -85,7 +85,7 @@ export function resolveTemplateForSession(sessionDir: string): PromptTemplate {
     // Non-critical — fall through to the active/default template
   }
 
-  const resolvedId = templateId ?? getActiveTemplateId()
+  const resolvedId = templateId ?? getDefaultTemplateId()
   return (
     getTemplate(resolvedId) ??
     getTemplate(DEFAULT_BUILTIN_TEMPLATE_ID) ??

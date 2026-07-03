@@ -14,10 +14,11 @@ test.describe('Prompt Templates list view', () => {
     await prefsPage.getByRole('link', { name: 'Prompt Templates' }).click()
     await expect(prefsPage.getByRole('heading', { name: 'Prompt Templates' })).toBeVisible()
 
-    // Default Meeting Notes is the seeded active built-in template.
-    const activeCard = prefsPage.getByText('Default Meeting Notes').locator('..').locator('..')
-    await expect(activeCard.getByText('Active')).toBeVisible()
-    await expect(activeCard.getByText('Built-in')).toBeVisible()
+    // Default Meeting Notes is the seeded default built-in template.
+    const defaultCard = prefsPage.getByText('Default Meeting Notes').locator('..').locator('..')
+    // exact: true — the template's own name also contains the substring "Default"
+    await expect(defaultCard.getByText('Default', { exact: true })).toBeVisible()
+    await expect(defaultCard.getByText('Built-in')).toBeVisible()
 
     // Empty-state CTA shown since no custom templates exist yet.
     await expect(
@@ -39,7 +40,7 @@ test.describe('Prompt Templates list view', () => {
     await prefsPage.getByRole('link', { name: 'Prompt Templates' }).click()
 
     await prefsPage.locator('button[aria-label="Template actions"]').first().click()
-    await expect(prefsPage.getByText('Set as Active')).toBeVisible()
+    await expect(prefsPage.getByText('Set as Default')).toBeVisible()
     await expect(prefsPage.getByText('Duplicate & Customise')).toBeVisible()
     await expect(prefsPage.getByText('Delete', { exact: true })).not.toBeVisible()
 

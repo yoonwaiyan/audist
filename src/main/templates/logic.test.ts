@@ -7,7 +7,7 @@ import {
   duplicateTemplate,
   getTemplate,
   listTemplates,
-  setActiveTemplate,
+  setDefaultTemplate,
   TemplateOperationError,
   updateTemplate
 } from './logic'
@@ -21,7 +21,7 @@ function genId(): string {
 }
 
 function freshStore(): PromptTemplatesStore {
-  return { templates: createBuiltinTemplates(NOW), activeTemplateId: DEFAULT_BUILTIN_TEMPLATE_ID }
+  return { templates: createBuiltinTemplates(NOW), defaultTemplateId: DEFAULT_BUILTIN_TEMPLATE_ID }
 }
 
 describe('createBuiltinTemplates', () => {
@@ -37,11 +37,11 @@ describe('createBuiltinTemplates', () => {
     expect(templates.every((t) => t.isBuiltIn)).toBe(true)
   })
 
-  it('marks only the Default Meeting Notes preset as active', () => {
+  it('marks only the Default Meeting Notes preset as default', () => {
     const templates = createBuiltinTemplates(NOW)
-    const active = templates.filter((t) => t.isActive)
-    expect(active).toHaveLength(1)
-    expect(active[0].id).toBe(DEFAULT_BUILTIN_TEMPLATE_ID)
+    const defaults = templates.filter((t) => t.isDefault)
+    expect(defaults).toHaveLength(1)
+    expect(defaults[0].id).toBe(DEFAULT_BUILTIN_TEMPLATE_ID)
   })
 
   it('is idempotent across repeated calls (same ids each time)', () => {
@@ -52,13 +52,13 @@ describe('createBuiltinTemplates', () => {
 })
 
 describe('buildInitialStore', () => {
-  it('seeds built-ins with the default active when there is no legacy prompt', () => {
+  it('seeds built-ins with the default set when there is no legacy prompt', () => {
     const store = buildInitialStore(null, NOW, genId)
     expect(store.templates).toHaveLength(4)
-    expect(store.activeTemplateId).toBe(DEFAULT_BUILTIN_TEMPLATE_ID)
+    expect(store.defaultTemplateId).toBe(DEFAULT_BUILTIN_TEMPLATE_ID)
   })
 
-  it('migrates legacy systemPrompt/userPromptTemplate into a new active user template', () => {
+  it('migrates legacy systemPrompt/userPromptTemplate into a new default user template', () => {
     const store = buildInitialStore(
       { systemPrompt: 'Legacy system prompt', userPromptTemplate: 'Legacy instructions' },
       NOW,
@@ -69,26 +69,26 @@ describe('buildInitialStore', () => {
     const migrated = store.templates.find((t) => t.name === 'My Custom Prompt')
     expect(migrated).toBeDefined()
     expect(migrated?.isBuiltIn).toBe(false)
-    expect(migrated?.isActive).toBe(true)
+    expect(migrated?.isDefault).toBe(true)
     expect(migrated?.systemPrompt).toBe('Legacy system prompt')
     expect(migrated?.outputSections).toHaveLength(1)
     expect(migrated?.outputSections[0].instruction).toBe('Legacy instructions')
-    expect(store.activeTemplateId).toBe(migrated?.id)
+    expect(store.defaultTemplateId).toBe(migrated?.id)
 
-    // The default built-in must be deactivated since the migrated template is now active
+    // The default built-in must be unset since the migrated template is now the default
     const defaultBuiltin = store.templates.find((t) => t.id === DEFAULT_BUILTIN_TEMPLATE_ID)
-    expect(defaultBuiltin?.isActive).toBe(false)
+    expect(defaultBuiltin?.isDefault).toBe(false)
   })
 })
 
 describe('listTemplates', () => {
-  it('sorts active first, then by updatedAt desc', () => {
+  it('sorts default first, then by updatedAt desc', () => {
     const store: PromptTemplatesStore = {
-      activeTemplateId: 'b',
+      defaultTemplateId: 'b',
       templates: [
-        { ...blank('a'), updatedAt: '2026-01-03T00:00:00.000Z', isActive: false },
-        { ...blank('b'), updatedAt: '2026-01-01T00:00:00.000Z', isActive: true },
-        { ...blank('c'), updatedAt: '2026-01-02T00:00:00.000Z', isActive: false }
+        { ...blank('a'), updatedAt: '2026-01-03T00:00:00.000Z', isDefault: false },
+        { ...blank('b'), updatedAt: '2026-01-01T00:00:00.000Z', isDefault: true },
+        { ...blank('c'), updatedAt: '2026-01-02T00:00:00.000Z', isDefault: false }
       ]
     }
     const sorted = listTemplates(store)
@@ -101,7 +101,7 @@ describe('CRUD operations', () => {
     const store = freshStore()
     const { created } = createTemplate(store, { name: 'New One' }, NOW, genId)
     expect(created.isBuiltIn).toBe(false)
-    expect(created.isActive).toBe(false)
+    expect(created.isDefault).toBe(false)
     expect(created.name).toBe('New One')
     expect(created.createdAt).toBe(NOW)
     expect(created.updatedAt).toBe(NOW)
@@ -130,16 +130,16 @@ describe('CRUD operations', () => {
     expect(() => deleteTemplate(store, DEFAULT_BUILTIN_TEMPLATE_ID)).toThrow(TemplateOperationError)
   })
 
-  it('delete rejects the active template', () => {
+  it('delete rejects the default template', () => {
     let store = freshStore()
     const { store: s1, created } = createTemplate(store, { name: 'Mine' }, NOW, genId)
     store = s1
-    const { store: s2 } = setActiveTemplate(store, created.id)
+    const { store: s2 } = setDefaultTemplate(store, created.id)
     store = s2
     expect(() => deleteTemplate(store, created.id)).toThrow(TemplateOperationError)
   })
 
-  it('delete succeeds for a non-active user template', () => {
+  it('delete succeeds for a non-default user template', () => {
     let store = freshStore()
     const { store: s1, created } = createTemplate(store, { name: 'Mine' }, NOW, genId)
     store = s1
@@ -155,7 +155,7 @@ describe('CRUD operations', () => {
     expect(created.id).not.toBe(original.id)
     expect(created.name).toBe(`Copy of ${original.name}`)
     expect(created.isBuiltIn).toBe(false)
-    expect(created.isActive).toBe(false)
+    expect(created.isDefault).toBe(false)
     expect(created.outputSections).toHaveLength(original.outputSections.length)
     created.outputSections.forEach((section, i) => {
       expect(section.id).not.toBe(original.outputSections[i].id)
@@ -169,16 +169,16 @@ describe('CRUD operations', () => {
     expect(created.name).toBe('My Copy')
   })
 
-  it('setActive activates the target and deactivates all others, updating activeTemplateId', () => {
+  it('setDefault marks the target as default and unsets all others, updating defaultTemplateId', () => {
     let store = freshStore()
     const { store: s1, created } = createTemplate(store, { name: 'Mine' }, NOW, genId)
     store = s1
-    const { store: s2, success } = setActiveTemplate(store, created.id)
+    const { store: s2, success } = setDefaultTemplate(store, created.id)
     expect(success).toBe(true)
-    expect(s2.activeTemplateId).toBe(created.id)
-    const activeOnes = s2.templates.filter((t) => t.isActive)
-    expect(activeOnes).toHaveLength(1)
-    expect(activeOnes[0].id).toBe(created.id)
+    expect(s2.defaultTemplateId).toBe(created.id)
+    const defaultOnes = s2.templates.filter((t) => t.isDefault)
+    expect(defaultOnes).toHaveLength(1)
+    expect(defaultOnes[0].id).toBe(created.id)
   })
 
   it('operations on an unknown id throw TemplateOperationError', () => {
@@ -188,7 +188,7 @@ describe('CRUD operations', () => {
     expect(() => duplicateTemplate(store, 'nope', undefined, NOW, genId)).toThrow(
       TemplateOperationError
     )
-    expect(() => setActiveTemplate(store, 'nope')).toThrow(TemplateOperationError)
+    expect(() => setDefaultTemplate(store, 'nope')).toThrow(TemplateOperationError)
   })
 })
 
@@ -198,7 +198,7 @@ function blank(id: string): PromptTemplatesStore['templates'][number] {
     name: id,
     description: '',
     isBuiltIn: false,
-    isActive: false,
+    isDefault: false,
     systemPrompt: '',
     outputSections: [],
     createdAt: NOW,

@@ -5,7 +5,7 @@ import TemplateOverflowMenu from './TemplateOverflowMenu'
 interface TemplateCardProps {
   template: PromptTemplate
   onOpen: (id: string) => void
-  onSetActive: (id: string) => void
+  onSetDefault: (id: string) => void
   onDuplicate: (id: string) => void
   onDelete: (id: string) => void
 }
@@ -13,7 +13,7 @@ interface TemplateCardProps {
 export default function TemplateCard({
   template,
   onOpen,
-  onSetActive,
+  onSetDefault,
   onDuplicate,
   onDelete
 }: TemplateCardProps): React.JSX.Element {
@@ -40,7 +40,7 @@ export default function TemplateCard({
           <span className="text-[15px] font-bold text-[var(--color-text-primary)] truncate">
             {template.name}
           </span>
-          {template.isActive && <PillBadge variant="active">Active</PillBadge>}
+          {template.isDefault && <PillBadge variant="default">Default</PillBadge>}
           {template.isBuiltIn && <PillBadge variant="built-in">Built-in</PillBadge>}
         </div>
         <span className="text-[13px] text-[var(--color-text-muted)] truncate">
@@ -50,7 +50,7 @@ export default function TemplateCard({
 
       <TemplateOverflowMenu
         template={template}
-        onSetActive={onSetActive}
+        onSetDefault={onSetDefault}
         onDuplicate={onDuplicate}
         onDelete={onDelete}
       />

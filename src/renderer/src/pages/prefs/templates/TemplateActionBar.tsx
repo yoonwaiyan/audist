@@ -1,6 +1,6 @@
 interface TemplateActionBarProps {
   isBuiltIn: boolean
-  isActive: boolean
+  isDefault: boolean
   hasUnsavedChanges: boolean
   saving: boolean
   onDelete: () => void
@@ -11,7 +11,7 @@ interface TemplateActionBarProps {
 
 export default function TemplateActionBar({
   isBuiltIn,
-  isActive,
+  isDefault,
   hasUnsavedChanges,
   saving,
   onDelete,
@@ -26,7 +26,7 @@ export default function TemplateActionBar({
     >
       <div>
         {!isBuiltIn &&
-          (isActive ? (
+          (isDefault ? (
             <span
               title="Switch to another template before deleting this one."
               className="text-xs font-medium text-[var(--color-text-tertiary)] cursor-not-allowed"

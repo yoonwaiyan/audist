@@ -118,7 +118,7 @@ export interface PromptTemplate {
   name: string
   description: string
   isBuiltIn: boolean
-  isActive: boolean
+  isDefault: boolean
   systemPrompt: string
   outputSections: OutputSection[]
   createdAt: string
@@ -132,7 +132,7 @@ interface TemplatesAPI {
   update: (id: string, changes: Partial<PromptTemplate>) => Promise<PromptTemplate>
   delete: (id: string) => Promise<{ success: boolean }>
   duplicate: (id: string, name?: string) => Promise<PromptTemplate>
-  setActive: (id: string) => Promise<{ success: boolean }>
+  setDefault: (id: string) => Promise<{ success: boolean }>
   preview: (templateId: string, sessionId?: string) => Promise<{ markdown: string }>
   onChanged: (cb: () => void) => IpcUnsub
 }

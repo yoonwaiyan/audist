@@ -20,7 +20,7 @@ function makeTemplate(overrides: Partial<PromptTemplate> = {}): PromptTemplate {
     name: 'Test Template',
     description: '',
     isBuiltIn: false,
-    isActive: false,
+    isDefault: false,
     systemPrompt: 'You summarise meetings about {{meeting_title}} held on {{date}}.',
     outputSections: [
       { id: 's2', heading: 'Second', instruction: 'Second instruction', order: 1 },
@@ -97,7 +97,7 @@ describe('template resolution', () => {
     rmSync(userDataDir, { recursive: true, force: true })
   })
 
-  it('falls back to the built-in default when no session override or active template exists', async () => {
+  it('falls back to the built-in default when no session override or default template exists', async () => {
     const { resolveTemplateForSession } = await import('./engine')
     const sessionDir = mkdtempSync(join(tmpdir(), 'audist-session-'))
     try {
@@ -108,11 +108,11 @@ describe('template resolution', () => {
     }
   })
 
-  it('uses the globally active template when no per-session override is set', async () => {
+  it('uses the globally default template when no per-session override is set', async () => {
     const store = await import('./store')
     const { resolveTemplateForSession } = await import('./engine')
     const created = store.createTemplate({ name: 'Active One' })
-    store.setActiveTemplate(created.id)
+    store.setDefaultTemplate(created.id)
 
     const sessionDir = mkdtempSync(join(tmpdir(), 'audist-session-'))
     try {
@@ -123,11 +123,11 @@ describe('template resolution', () => {
     }
   })
 
-  it('respects a per-session templateId override over the active template', async () => {
+  it('respects a per-session templateId override over the default template', async () => {
     const store = await import('./store')
     const { resolveTemplateForSession } = await import('./engine')
     const created = store.createTemplate({ name: 'Session Override' })
-    // Leave builtin-default active globally
+    // Leave builtin-default as the default globally
 
     const sessionDir = mkdtempSync(join(tmpdir(), 'audist-session-'))
     try {

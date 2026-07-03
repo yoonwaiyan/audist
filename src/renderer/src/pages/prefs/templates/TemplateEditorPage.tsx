@@ -213,7 +213,7 @@ export default function TemplateEditorPage(): React.JSX.Element {
 
       <TemplateActionBar
         isBuiltIn={isBuiltIn}
-        isActive={template.isActive}
+        isDefault={template.isDefault}
         hasUnsavedChanges={hasUnsavedChanges}
         saving={saving}
         onDelete={() => setShowDeleteDialog(true)}

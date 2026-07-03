@@ -4,14 +4,14 @@ import type { PromptTemplate } from '../../../../../preload/index.d'
 
 interface TemplateOverflowMenuProps {
   template: PromptTemplate
-  onSetActive: (id: string) => void
+  onSetDefault: (id: string) => void
   onDuplicate: (id: string) => void
   onDelete: (id: string) => void
 }
 
 export default function TemplateOverflowMenu({
   template,
-  onSetActive,
+  onSetDefault,
   onDuplicate,
   onDelete
 }: TemplateOverflowMenuProps): React.JSX.Element {
@@ -87,9 +87,9 @@ export default function TemplateOverflowMenu({
             <>
               <button
                 type="button"
-                disabled={template.isActive}
+                disabled={template.isDefault}
                 onClick={() => {
-                  onSetActive(template.id)
+                  onSetDefault(template.id)
                   close()
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm
@@ -97,9 +97,9 @@ export default function TemplateOverflowMenu({
                   disabled:text-[var(--color-text-muted)] disabled:cursor-not-allowed transition-colors cursor-default"
               >
                 <Check
-                  className={`w-3.5 h-3.5 ${template.isActive ? 'opacity-100' : 'opacity-0'}`}
+                  className={`w-3.5 h-3.5 ${template.isDefault ? 'opacity-100' : 'opacity-0'}`}
                 />
-                Set as Active
+                Set as Default
               </button>
 
               <button

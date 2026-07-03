@@ -9,7 +9,7 @@ import {
   duplicateTemplate,
   getTemplate,
   listTemplates,
-  setActiveTemplate,
+  setDefaultTemplate,
   updateTemplate
 } from './store'
 import { buildPromptFromTemplate, buildVarsFromSession } from './engine'
@@ -63,9 +63,9 @@ export function registerTemplateHandlers(): void {
   )
 
   ipcMain.handle(
-    'audist:templates:setActive',
+    'audist:templates:setDefault',
     (_, { id }: { id: string }): { success: boolean } => {
-      const result = setActiveTemplate(id)
+      const result = setDefaultTemplate(id)
       broadcastChanged()
       return result
     }

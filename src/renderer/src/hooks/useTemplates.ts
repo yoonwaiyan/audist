@@ -3,7 +3,7 @@ import type { PromptTemplate } from '../../../preload/index.d'
 
 function sortTemplates(templates: PromptTemplate[]): PromptTemplate[] {
   return [...templates].sort((a, b) => {
-    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1
+    if (a.isDefault !== b.isDefault) return a.isDefault ? -1 : 1
     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   })
 }

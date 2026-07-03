@@ -10,7 +10,7 @@ export interface PromptTemplate {
   name: string
   description: string
   isBuiltIn: boolean
-  isActive: boolean
+  isDefault: boolean
   systemPrompt: string
   outputSections: OutputSection[]
   createdAt: string
@@ -26,5 +26,5 @@ export type TemplateVariable =
 
 export interface PromptTemplatesStore {
   templates: PromptTemplate[]
-  activeTemplateId: string
+  defaultTemplateId: string
 }
