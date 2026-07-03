@@ -43,7 +43,7 @@ const discovery = await agent(
 
   Step 1 — call list_projects with team="Audist", includeArchived=false. Discard any project labeled "project-on-hold" entirely — none of its issues should appear in your output, regardless of their own labels. Only projects labeled "project-ready" (or otherwise not on-hold) are in scope.
 
-  Step 2 — call list_issues with team="Audist", limit=250, includeArchived=false. Keep only issues that (a) belong to one of the in-scope projects from Step 1, (b) are labeled agent:ready AND risk:low, excluding any still labeled agent:blocked or agent:needs-clarification, and (c) have status Backlog or Todo/Unstarted specifically — EXCLUDE anything already In Progress, In Review, Done, Completed, or Canceled. This is a recurring job: issues already In Review are mid-PR from a previous run and must not be picked up again.
+  Step 2 — call list_issues with team="Audist", limit=250, includeArchived=false. Keep only issues that (a) belong to one of the in-scope projects from Step 1, (b) are labeled agent:ready AND (risk:low OR risk:medium) — risk:high is NEVER eligible regardless of agent:* label — excluding any still labeled agent:blocked or agent:needs-clarification, and (c) have status Backlog or Todo/Unstarted specifically — EXCLUDE anything already In Progress, In Review, Done, Completed, or Canceled. This is a recurring job: issues already In Review are mid-PR from a previous run and must not be picked up again.
 
   Group the remaining issues by their "project" field. Within each project, order issues so that any issue with a blockedBy relation to another issue in the same list comes after it (topological order) — call get_issue with includeRelations=true where an issue's description suggests a dependency and you're unsure of the order.
 
@@ -71,7 +71,7 @@ const results = await parallel(
       1. Call mcp__claude_ai_Linear__get_issue to read its full description and acceptance criteria.
       2. Implement the change. Run the project's typecheck/lint/tests before committing (see CLAUDE.md for commands).
       3. git commit with a message referencing the ticket id, e.g. "AUD-111: compile whisper.cpp on Ubuntu CI runner".
-      4. Update the Linear issue's status to "In Review" via mcp__claude_ai_Linear__save_issue.
+      4. The Audist Linear team has no "In Review" state — its states are Backlog, Todo, In Progress, Canceled, Done. Once you've committed the change and it's ready for human review via the PR, set the issue's status to "In Progress" via mcp__claude_ai_Linear__save_issue (this signals "actively being worked / awaiting merge", distinct from Backlog/Todo which the Discover phase treats as still up for grabs).
       5. If a ticket turns out to be unclear or riskier than expected once you're actually reading it, stop working on that ticket, relabel it agent:needs-clarification via save_issue, leave a comment explaining why via save_comment, and move on to the next ticket rather than guessing.
 
       When all tickets are done (or skipped with a reason), push the branch and open a single PR (gh pr create) covering all the commits, with a description listing every ticket id you completed and every one you skipped and why. Report back a short summary: tickets completed, tickets skipped, PR URL.`,
