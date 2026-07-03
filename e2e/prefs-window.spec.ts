@@ -22,8 +22,9 @@ test.describe('Preferences window', () => {
 
     await expect(prefsPage.getByRole('link', { name: 'General' })).toBeVisible()
     await expect(prefsPage.getByRole('link', { name: 'LLM' })).toBeVisible()
-    // Prompt section was removed from navigation in the redesign
-    await expect(prefsPage.getByRole('link', { name: 'Prompt' })).not.toBeVisible()
+    // Prompt Templates (AUD-59) added a new sidebar item under the old "Prompt" section,
+    // which was itself removed from navigation in an earlier redesign.
+    await expect(prefsPage.getByRole('link', { name: 'Prompt Templates' })).toBeVisible()
 
     await app.close()
     cleanup()

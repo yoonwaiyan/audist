@@ -63,23 +63,20 @@ const api = {
       ipcRenderer.invoke('audist:settings:setModel', { provider, model }),
     setCompatibleBaseUrl: (url: string): Promise<void> =>
       ipcRenderer.invoke('audist:settings:setCompatibleBaseUrl', { url }),
-    getLLMSettings: (): Promise<unknown> =>
-      ipcRenderer.invoke('audist:settings:getLLMSettings'),
+    getLLMSettings: (): Promise<unknown> => ipcRenderer.invoke('audist:settings:getLLMSettings'),
     getProviderModels: (provider: string): Promise<string[] | null> =>
       ipcRenderer.invoke('audist:settings:getProviderModels', { provider }),
     onCredentialStatus: (cb: IpcListener<{ key: string; isSet: boolean }>) =>
       listen('audist:settings:credentialStatus', cb),
     testConnection: (provider: string): Promise<void> =>
       ipcRenderer.invoke('audist:llm:testConnection', { provider }),
-    onTestResult: (
-      cb: IpcListener<{ provider: string; result: unknown }>
-    ) => listen('audist:llm:testResult', cb),
+    onTestResult: (cb: IpcListener<{ provider: string; result: unknown }>) =>
+      listen('audist:llm:testResult', cb),
     getSummarisationEnabled: (): Promise<boolean> =>
       ipcRenderer.invoke('audist:settings:getSummarisationEnabled'),
     setSummarisationEnabled: (enabled: boolean): Promise<void> =>
       ipcRenderer.invoke('audist:settings:setSummarisationEnabled', { enabled }),
-    clearLLMConfig: (): Promise<void> =>
-      ipcRenderer.invoke('audist:settings:clearLLMConfig'),
+    clearLLMConfig: (): Promise<void> => ipcRenderer.invoke('audist:settings:clearLLMConfig'),
     clearProviderConfig: (provider: string): Promise<void> =>
       ipcRenderer.invoke('audist:settings:clearProviderConfig', { provider })
   },
@@ -100,11 +97,10 @@ const api = {
   recording: {
     getScreenSource: (): Promise<string> =>
       ipcRenderer.invoke('audist:recording:get-screen-source'),
-    start: (payload: {
-      sessionDir: string
-      hasSystemAudio?: boolean
-    }): Promise<void> => ipcRenderer.invoke('audist:recording:start', payload),
-    stop: (duration: number): Promise<void> => ipcRenderer.invoke('audist:recording:stop', duration),
+    start: (payload: { sessionDir: string; hasSystemAudio?: boolean }): Promise<void> =>
+      ipcRenderer.invoke('audist:recording:start', payload),
+    stop: (duration: number, templateId?: string): Promise<void> =>
+      ipcRenderer.invoke('audist:recording:stop', duration, templateId),
     updateSystemAudioAvailability: (available: boolean): Promise<void> =>
       ipcRenderer.invoke('audist:recording:update-system-audio', available),
     sendMicAudioChunk: (chunk: Uint8Array): void =>
@@ -124,6 +120,8 @@ const api = {
     duplicate: (id: string, name?: string) =>
       ipcRenderer.invoke('audist:templates:duplicate', { id, name }),
     setActive: (id: string) => ipcRenderer.invoke('audist:templates:setActive', { id }),
+    preview: (templateId: string, sessionId?: string) =>
+      ipcRenderer.invoke('audist:templates:preview', { templateId, sessionId }),
     onChanged: (cb: () => void) => listen('audist:templates:changed', cb)
   }
 }

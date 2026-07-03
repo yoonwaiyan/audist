@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { Settings, Zap } from 'lucide-react'
+import { FileText, Settings, Zap } from 'lucide-react'
 
 type NavItem = {
   label: string
@@ -11,6 +11,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { label: 'General', to: '/prefs', icon: Settings },
   { label: 'LLM', to: '/prefs/llm', icon: Zap },
+  { label: 'Prompt Templates', to: '/prefs/templates', icon: FileText }
 ]
 
 export default function PrefsLayout(): React.JSX.Element {
@@ -24,6 +25,7 @@ export default function PrefsLayout(): React.JSX.Element {
         const sectionToRoute: Record<string, string> = {
           general: '/prefs',
           llm: '/prefs/llm',
+          templates: '/prefs/templates'
         }
         const route = sectionToRoute[payload.section]
         if (route) navigate(route)

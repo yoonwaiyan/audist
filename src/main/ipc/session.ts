@@ -11,6 +11,7 @@ export interface SessionMeta {
   error?: string
   summaryErrorCode?: string
   title?: string
+  templateId?: string
 }
 
 // Called once at startup to fix sessions whose status was left as 'transcribing' or
@@ -33,7 +34,11 @@ export function resetInterruptedSessions(): void {
           if (raw.status === 'transcribing' || raw.status === 'summarising') {
             writeFileSync(
               metaPath,
-              JSON.stringify({ ...raw, status: 'error', error: 'Processing was interrupted. Click Retry to restart.' }),
+              JSON.stringify({
+                ...raw,
+                status: 'error',
+                error: 'Processing was interrupted. Click Retry to restart.'
+              }),
               'utf-8'
             )
           }

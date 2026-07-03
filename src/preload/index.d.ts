@@ -21,6 +21,7 @@ export interface SessionMeta {
   error?: string
   summaryErrorCode?: string
   title?: string
+  templateId?: string
 }
 
 interface SessionAPI {
@@ -49,7 +50,9 @@ interface WhisperAPI {
 interface TranscriptionAPI {
   read: (sessionDir: string) => Promise<string | null>
   retry: (sessionDir: string) => Promise<void>
-  onProgress: (cb: (data: { sessionId: string; percent: number; stage: string }) => void) => IpcUnsub
+  onProgress: (
+    cb: (data: { sessionId: string; percent: number; stage: string }) => void
+  ) => IpcUnsub
   onComplete: (cb: (data: { sessionId: string }) => void) => IpcUnsub
   onError: (cb: (data: { sessionId: string; code: string; message: string }) => void) => IpcUnsub
 }
@@ -96,7 +99,7 @@ interface SummaryAPI {
 interface RecordingAPI {
   getScreenSource: () => Promise<string>
   start: (payload: { sessionDir: string; hasSystemAudio?: boolean }) => Promise<void>
-  stop: (duration: number) => Promise<void>
+  stop: (duration: number, templateId?: string) => Promise<void>
   updateSystemAudioAvailability: (available: boolean) => Promise<void>
   sendMicAudioChunk: (chunk: Uint8Array) => void
   sendSystemAudioChunk: (chunk: Uint8Array) => void
@@ -130,6 +133,7 @@ interface TemplatesAPI {
   delete: (id: string) => Promise<{ success: boolean }>
   duplicate: (id: string, name?: string) => Promise<PromptTemplate>
   setActive: (id: string) => Promise<{ success: boolean }>
+  preview: (templateId: string, sessionId?: string) => Promise<{ markdown: string }>
   onChanged: (cb: () => void) => IpcUnsub
 }
 

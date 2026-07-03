@@ -3,7 +3,7 @@ import { join } from 'path'
 import { platform } from 'process'
 import { is } from '@electron-toolkit/utils'
 
-export type PrefsSection = 'general' | 'llm' | 'prompt'
+export type PrefsSection = 'general' | 'llm' | 'prompt' | 'templates'
 
 let prefsWindow: BrowserWindow | null = null
 let isQuitting = false
