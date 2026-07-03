@@ -12,6 +12,7 @@ import { registerTranscriptionHandlers } from './ipc/transcription'
 import { registerSettingsHandlers } from './ipc/settings'
 import { registerSummaryHandlers, summariseSession } from './ipc/summary'
 import { mixAudio } from './ipc/mix'
+import { registerTemplateHandlers } from './templates/ipc'
 import { bootstrapWhisper, markTestInstallComplete } from './whisper/bootstrap'
 import { llmRegistry } from './llm/registry'
 import { OpenAIProvider } from './llm/providers/openai'
@@ -85,6 +86,7 @@ app.whenReady().then(() => {
   registerTranscriptionHandlers()
   registerSettingsHandlers()
   registerSummaryHandlers()
+  registerTemplateHandlers()
 
   // Bootstrap IPC — renderer calls this from the whisper setup screen
   ipcMain.handle('audist:whisper:install', async (event): Promise<void> => {

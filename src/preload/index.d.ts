@@ -103,6 +103,36 @@ interface RecordingAPI {
   onSaved: (cb: (data: { sessionDir: string }) => void) => IpcUnsub
 }
 
+export interface OutputSection {
+  id: string
+  heading: string
+  instruction: string
+  order: number
+}
+
+export interface PromptTemplate {
+  id: string
+  name: string
+  description: string
+  isBuiltIn: boolean
+  isActive: boolean
+  systemPrompt: string
+  outputSections: OutputSection[]
+  createdAt: string
+  updatedAt: string
+}
+
+interface TemplatesAPI {
+  list: () => Promise<PromptTemplate[]>
+  get: (id: string) => Promise<PromptTemplate | null>
+  create: (template: Partial<PromptTemplate>) => Promise<PromptTemplate>
+  update: (id: string, changes: Partial<PromptTemplate>) => Promise<PromptTemplate>
+  delete: (id: string) => Promise<{ success: boolean }>
+  duplicate: (id: string, name?: string) => Promise<PromptTemplate>
+  setActive: (id: string) => Promise<{ success: boolean }>
+  onChanged: (cb: () => void) => IpcUnsub
+}
+
 interface AppAPI {
   directory: DirectoryAPI
   session: SessionAPI
@@ -112,6 +142,7 @@ interface AppAPI {
   settings: SettingsAPI
   summary: SummaryAPI
   recording: RecordingAPI
+  templates: TemplatesAPI
 }
 
 declare global {

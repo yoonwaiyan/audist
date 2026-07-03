@@ -22,7 +22,8 @@
     "build:mac": "node scripts/prepare-whisper.mjs && electron-vite build && electron-builder --mac",
     "build:linux": "node scripts/prepare-whisper.mjs && electron-vite build && electron-builder --linux",
     "pretest:e2e": "electron-vite build",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test": "vitest run"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",
@@ -60,6 +61,7 @@
     "react-dom": "^19.2.1",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
-    "vite": "^7.2.6"
+    "vite": "^7.2.6",
+    "vitest": "^4.1.9"
   }
 }
