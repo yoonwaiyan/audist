@@ -6,8 +6,15 @@ on:
     paths:
       - 'landing/**'
       - '.github/workflows/landing-pages.yml'
-  release:
-    types: [published]
+  # NOT `release: types: [published]` — release.yml publishes via the default
+  # GITHUB_TOKEN, and GitHub does not dispatch events from the default token
+  # to other workflows (recursive-trigger prevention). That release event
+  # would never actually fire this workflow. workflow_run isn't subject to
+  # that restriction since it's driven by run completion, not a token-authored
+  # API event.
+  workflow_run:
+    workflows: ['Release']
+    types: [completed]
   workflow_dispatch:
 
 env:
@@ -24,6 +31,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
 
     steps:
