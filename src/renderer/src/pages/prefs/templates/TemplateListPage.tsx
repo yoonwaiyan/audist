@@ -74,7 +74,9 @@ export default function TemplateListPage(): React.JSX.Element {
         </div>
       )}
 
-      {showNewTemplateModal && <NewTemplateModal onClose={() => setShowNewTemplateModal(false)} />}
+      {showNewTemplateModal && (
+        <NewTemplateModal templates={templates} onClose={() => setShowNewTemplateModal(false)} />
+      )}
     </div>
   )
 }
