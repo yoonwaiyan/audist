@@ -9,6 +9,9 @@ export interface UseRecorderResult {
   micAnalyserRef: React.RefObject<AnalyserNode | null>
   systemAnalyserRef: React.RefObject<AnalyserNode | null>
   analyserVersion: number
+  /** Per-session Afterword override — `null` means "use the global active template". */
+  selectedTemplateId: string | null
+  setSelectedTemplateId: (id: string | null) => void
   startRecording: () => Promise<void>
   stopRecording: (elapsed: number) => Promise<void>
 }
@@ -140,6 +143,13 @@ export function useRecorder(): UseRecorderResult {
   const [sessionDir, setSessionDir] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [analyserVersion, setAnalyserVersion] = useState(0)
+  const [selectedTemplateId, setSelectedTemplateIdState] = useState<string | null>(null)
+  const selectedTemplateIdRef = useRef<string | null>(null)
+
+  const setSelectedTemplateId = useCallback((id: string | null): void => {
+    selectedTemplateIdRef.current = id
+    setSelectedTemplateIdState(id)
+  }, [])
 
   const cleanupMicRef = useRef<(() => void) | null>(null)
   const cleanupSystemRef = useRef<(() => void) | null>(null)
@@ -269,34 +279,42 @@ export function useRecorder(): UseRecorderResult {
     }
   }, [])
 
-  const stopRecording = useCallback(async (elapsed: number): Promise<void> => {
-    startTokenRef.current += 1
-    setState('stopping')
-    try {
-      const stopMicRecorder = stopMicRecorderRef.current
-      const stopSystemRecorder = stopSystemRecorderRef.current
-      await Promise.all([stopMicRecorder?.(), stopSystemRecorder?.()])
+  const stopRecording = useCallback(
+    async (elapsed: number): Promise<void> => {
+      startTokenRef.current += 1
+      setState('stopping')
+      try {
+        const stopMicRecorder = stopMicRecorderRef.current
+        const stopSystemRecorder = stopSystemRecorderRef.current
+        await Promise.all([stopMicRecorder?.(), stopSystemRecorder?.()])
 
-      // Stop both audio streams after the recorder has flushed the final chunks.
-      cleanupMicRef.current?.()
-      cleanupSystemRef.current?.()
-      cleanupMicRef.current = null
-      cleanupSystemRef.current = null
-      stopMicRecorderRef.current = null
-      stopSystemRecorderRef.current = null
-      micAnalyserRef.current = null
-      systemAnalyserRef.current = null
-      setAnalyserVersion((v) => v + 1)
+        // Stop both audio streams after the recorder has flushed the final chunks.
+        cleanupMicRef.current?.()
+        cleanupSystemRef.current?.()
+        cleanupMicRef.current = null
+        cleanupSystemRef.current = null
+        stopMicRecorderRef.current = null
+        stopSystemRecorderRef.current = null
+        micAnalyserRef.current = null
+        systemAnalyserRef.current = null
+        setAnalyserVersion((v) => v + 1)
 
-      // Flush and close WAV files in main process; pass duration for session metadata
-      await window.api.recording.stop(elapsed)
+        // Flush and close WAV files in main process; pass duration + the per-session
+        // template override (if any) for session metadata
+        await window.api.recording.stop(elapsed, selectedTemplateIdRef.current ?? undefined)
 
-      setState('idle')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Recording failed to stop')
-      setState('idle')
-    }
-  }, [])
+        // Reset the per-session override — the next recording defaults back to the
+        // global active template unless the user picks one again.
+        setSelectedTemplateId(null)
+
+        setState('idle')
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Recording failed to stop')
+        setState('idle')
+      }
+    },
+    [setSelectedTemplateId]
+  )
 
   return {
     state,
@@ -305,6 +323,8 @@ export function useRecorder(): UseRecorderResult {
     micAnalyserRef,
     systemAnalyserRef,
     analyserVersion,
+    selectedTemplateId,
+    setSelectedTemplateId,
     startRecording,
     stopRecording
   }

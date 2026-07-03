@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChevronDown, Settings, Cpu, Sparkles } from 'lucide-react'
 import { useRecorderContext } from '../contexts/RecorderContext'
+import TemplateSelector from '../components/TemplateSelector'
 import type { ProviderName } from '../../../preload/index.d'
 import { SHORTCUTS, formatShortcut } from '../lib/shortcuts'
 
@@ -12,7 +13,17 @@ const PROVIDER_LABELS: Record<ProviderName, string> = {
 
 function MicIcon(): React.JSX.Element {
   return (
-    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      width="44"
+      height="44"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
       <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
       <line x1="12" x2="12" y1="19" y2="22" />
@@ -23,9 +34,12 @@ function MicIcon(): React.JSX.Element {
 function WaveformBar({ height, delay }: { height: number; delay: number }): React.JSX.Element {
   const [h, setH] = useState(height)
   useEffect(() => {
-    const t = setInterval(() => {
-      setH(0.1 + Math.random() * 0.3)
-    }, 140 + delay * 20)
+    const t = setInterval(
+      () => {
+        setH(0.1 + Math.random() * 0.3)
+      },
+      140 + delay * 20
+    )
     return () => clearInterval(t)
   }, [delay])
   return (
@@ -37,7 +51,7 @@ function WaveformBar({ height, delay }: { height: number; delay: number }): Reac
 }
 
 export default function SessionListPage(): React.JSX.Element {
-  const { startRecording, error } = useRecorderContext()
+  const { startRecording, error, selectedTemplateId, setSelectedTemplateId } = useRecorderContext()
   const [activeProvider, setActiveProvider] = useState<ProviderName | null>(null)
   const [selectedModels, setSelectedModels] = useState<Partial<Record<ProviderName, string>>>({})
   const [verifiedProviders, setVerifiedProviders] = useState<ProviderName[]>([])
@@ -52,7 +66,10 @@ export default function SessionListPage(): React.JSX.Element {
     const [s, providerResults] = await Promise.all([
       window.api.settings.getLLMSettings(),
       Promise.all(
-        ALL_PROVIDERS.map(async (p) => ({ p, models: await window.api.settings.getProviderModels(p) }))
+        ALL_PROVIDERS.map(async (p) => ({
+          p,
+          models: await window.api.settings.getProviderModels(p)
+        }))
       )
     ])
     if (s.activeProvider) setActiveProvider(s.activeProvider)
@@ -64,7 +81,9 @@ export default function SessionListPage(): React.JSX.Element {
   useEffect(() => {
     void loadSettings()
     void window.api.whisper.getModelName().then(setWhisperModel)
-    const handleFocus = (): void => { void loadSettings() }
+    const handleFocus = (): void => {
+      void loadSettings()
+    }
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
   }, [loadSettings])
@@ -91,7 +110,8 @@ export default function SessionListPage(): React.JSX.Element {
     window.electron.ipcRenderer.send('audist:prefs:open', { section: 'llm' })
   }
 
-  const displayProvider = activeProvider ?? (verifiedProviders.length > 0 ? verifiedProviders[0] : null)
+  const displayProvider =
+    activeProvider ?? (verifiedProviders.length > 0 ? verifiedProviders[0] : null)
   const displayModel = displayProvider ? selectedModels[displayProvider] : null
   const isConfigured = verifiedProviders.length > 0
   const llmLabel = displayProvider
@@ -100,13 +120,24 @@ export default function SessionListPage(): React.JSX.Element {
 
   return (
     <div className="flex flex-col items-center justify-center h-full gap-7 px-10 select-none relative">
+      {/* Afterword (prompt template) selector — per-session override */}
+      <div className="absolute top-3 right-3">
+        <TemplateSelector
+          selectedTemplateId={selectedTemplateId}
+          onSelectTemplate={setSelectedTemplateId}
+        />
+      </div>
+
       {/* Header label */}
       <div className="text-[10.5px] font-medium text-[var(--color-text-tertiary)] uppercase tracking-[1px]">
         Ready to record
       </div>
 
       {/* Headline */}
-      <h1 className="m-0 text-[26px] font-semibold text-[var(--color-text-primary)] tracking-tight text-center leading-tight" style={{ marginTop: -8 }}>
+      <h1
+        className="m-0 text-[26px] font-semibold text-[var(--color-text-primary)] tracking-tight text-center leading-tight"
+        style={{ marginTop: -8 }}
+      >
         What are you capturing today?
       </h1>
 
@@ -125,7 +156,8 @@ export default function SessionListPage(): React.JSX.Element {
             width: 128,
             height: 128,
             borderRadius: '50%',
-            background: 'radial-gradient(circle at 30% 30%, oklch(0.78 0.15 285), oklch(0.60 0.19 285))',
+            background:
+              'radial-gradient(circle at 30% 30%, oklch(0.78 0.15 285), oklch(0.60 0.19 285))',
             border: 'none',
             cursor: 'default',
             boxShadow: `0 0 0 8px var(--color-accent-dim), 0 20px 48px oklch(0.50 0.18 285 / 0.4), inset 0 1px 0 oklch(1 0 0 / 0.2)`,
@@ -134,7 +166,7 @@ export default function SessionListPage(): React.JSX.Element {
             alignItems: 'center',
             justifyContent: 'center',
             transform: hovering ? 'scale(1.04)' : 'scale(1)',
-            transition: 'transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+            transition: 'transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1)'
           }}
           aria-label="Start recording"
         >
@@ -146,7 +178,9 @@ export default function SessionListPage(): React.JSX.Element {
       <div className="flex items-center gap-2 text-[12.5px]" style={{ marginTop: -4 }}>
         <span className="text-[var(--color-text-secondary)]">Press the button</span>
         <span className="text-[var(--color-text-tertiary)]">or</span>
-        <kbd className="px-1.5 py-0.5 text-[11px] font-medium rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-secondary)] font-mono">{formatShortcut(SHORTCUTS.startRecording)}</kbd>
+        <kbd className="px-1.5 py-0.5 text-[11px] font-medium rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-secondary)] font-mono">
+          {formatShortcut(SHORTCUTS.startRecording)}
+        </kbd>
         <span className="text-[var(--color-text-secondary)]">to start</span>
       </div>
 
@@ -182,23 +216,41 @@ export default function SessionListPage(): React.JSX.Element {
           </button>
 
           {dropdownOpen && (
-            <div className="absolute top-[calc(100%+4px)] left-0 min-w-[240px] bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] rounded-lg p-1 z-50"
-              style={{ boxShadow: 'var(--shadow-3)' }}>
+            <div
+              className="absolute top-[calc(100%+4px)] left-0 min-w-[240px] bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] rounded-lg p-1 z-50"
+              style={{ boxShadow: 'var(--shadow-3)' }}
+            >
               {verifiedProviders.map((p) => (
                 <button
                   key={p}
                   onClick={() => handleSelectProvider(p)}
                   className="w-full text-left px-2.5 py-1.5 rounded-md text-[12.5px] text-[var(--color-text-primary)] flex items-center gap-2.5 transition-colors cursor-default"
-                  style={{ background: p === displayProvider ? 'var(--color-bg-surface-hover)' : 'transparent' }}
-                  onMouseEnter={(e) => { if (p !== displayProvider) (e.currentTarget as HTMLElement).style.background = 'var(--color-bg-surface-hover)' }}
-                  onMouseLeave={(e) => { if (p !== displayProvider) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                  style={{
+                    background:
+                      p === displayProvider ? 'var(--color-bg-surface-hover)' : 'transparent'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (p !== displayProvider)
+                      (e.currentTarget as HTMLElement).style.background =
+                        'var(--color-bg-surface-hover)'
+                  }}
+                  onMouseLeave={(e) => {
+                    if (p !== displayProvider)
+                      (e.currentTarget as HTMLElement).style.background = 'transparent'
+                  }}
                 >
                   <Sparkles className="w-2.5 h-2.5 text-[var(--color-text-tertiary)]" />
                   <span className="flex-1">
                     {PROVIDER_LABELS[p]}
-                    {selectedModels[p] && <span className="text-[var(--color-text-muted)] ml-1">· {selectedModels[p]}</span>}
+                    {selectedModels[p] && (
+                      <span className="text-[var(--color-text-muted)] ml-1">
+                        · {selectedModels[p]}
+                      </span>
+                    )}
                   </span>
-                  {p === displayProvider && <span className="text-[var(--color-accent)] text-xs">✓</span>}
+                  {p === displayProvider && (
+                    <span className="text-[var(--color-accent)] text-xs">✓</span>
+                  )}
                 </button>
               ))}
               <div className="h-px bg-[var(--color-border)] my-1" />
@@ -222,7 +274,10 @@ export default function SessionListPage(): React.JSX.Element {
       </div>
 
       {!isConfigured && (
-        <p className="text-[11.5px] text-[var(--color-text-muted)] text-center" style={{ marginTop: -12 }}>
+        <p
+          className="text-[11.5px] text-[var(--color-text-muted)] text-center"
+          style={{ marginTop: -12 }}
+        >
           No AI provider configured —{' '}
           <button
             onClick={handleOpenLLMPrefs}

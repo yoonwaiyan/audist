@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Info } from 'lucide-react'
 import Waveform from '../components/Waveform'
+import TemplateSelector from '../components/TemplateSelector'
 import { useRecorderContext } from '../contexts/RecorderContext'
 import type { ProviderName } from '../../../preload/index.d'
 import { SHORTCUTS, formatShortcut } from '../lib/shortcuts'
@@ -34,7 +35,9 @@ function InputMeter({ label, level }: { label: string; level: number }): React.J
               className="w-0.5 h-2.5 rounded-sm transition-colors duration-75"
               style={{
                 background: on
-                  ? (hot ? 'var(--color-warning)' : 'var(--color-success)')
+                  ? hot
+                    ? 'var(--color-warning)'
+                    : 'var(--color-success)'
                   : 'var(--color-bg-surface-hover)'
               }}
             />
@@ -46,8 +49,16 @@ function InputMeter({ label, level }: { label: string; level: number }): React.J
 }
 
 export default function RecordingPage(): React.JSX.Element {
-  const { state, sessionDir, micAnalyserRef, systemAnalyserRef, analyserVersion, stopRecording } =
-    useRecorderContext()
+  const {
+    state,
+    sessionDir,
+    micAnalyserRef,
+    systemAnalyserRef,
+    analyserVersion,
+    stopRecording,
+    selectedTemplateId,
+    setSelectedTemplateId
+  } = useRecorderContext()
   const [elapsed, setElapsed] = useState(0)
   const [activeProvider, setActiveProvider] = useState<ProviderName | null>(null)
   const [paused, setPaused] = useState(false)
@@ -144,7 +155,15 @@ export default function RecordingPage(): React.JSX.Element {
   }, [stopRecording, elapsed, label, sessionDir])
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-6 px-10 select-none">
+    <div className="flex flex-col items-center justify-center h-full gap-6 px-10 select-none relative">
+      {/* Afterword (prompt template) selector — per-session override */}
+      <div className="absolute top-3 right-3">
+        <TemplateSelector
+          selectedTemplateId={selectedTemplateId}
+          onSelectTemplate={setSelectedTemplateId}
+        />
+      </div>
+
       {/* REC badge + session label */}
       <div className="flex items-center gap-2">
         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--color-recording-dim)] border border-[var(--color-recording)]/35 text-[var(--color-recording)]">
@@ -157,9 +176,15 @@ export default function RecordingPage(): React.JSX.Element {
           <input
             autoFocus
             defaultValue={label}
-            onBlur={(e) => { setLabel(e.target.value); setLabelEdit(false) }}
+            onBlur={(e) => {
+              setLabel(e.target.value)
+              setLabelEdit(false)
+            }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') { setLabel((e.target as HTMLInputElement).value); setLabelEdit(false) }
+              if (e.key === 'Enter') {
+                setLabel((e.target as HTMLInputElement).value)
+                setLabelEdit(false)
+              }
               if (e.key === 'Escape') setLabelEdit(false)
             }}
             className="bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] rounded-md px-2 py-1 text-[13px] text-[var(--color-text-primary)] outline-none min-w-[200px]"
@@ -205,9 +230,14 @@ export default function RecordingPage(): React.JSX.Element {
           className="w-11 h-11 rounded-full bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] flex items-center justify-center text-[var(--color-text-primary)] hover:bg-[var(--color-bg-surface-hover)] transition-colors cursor-default disabled:opacity-40"
         >
           {paused ? (
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
           ) : (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="4" width="4" height="16" />
+              <rect x="14" y="4" width="4" height="16" />
+            </svg>
           )}
         </button>
 
@@ -219,10 +249,10 @@ export default function RecordingPage(): React.JSX.Element {
           className="w-16 h-16 rounded-full flex items-center justify-center text-white disabled:opacity-60 transition-all cursor-default"
           style={{
             background: 'var(--color-recording)',
-            boxShadow: '0 0 0 6px var(--color-recording-dim), 0 10px 30px oklch(0.5 0.2 25 / 0.4)',
+            boxShadow: '0 0 0 6px var(--color-recording-dim), 0 10px 30px oklch(0.5 0.2 25 / 0.4)'
           }}
         >
-          {(isStopping || isStarting) ? (
+          {isStopping || isStarting ? (
             <span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
           ) : (
             <span className="w-6 h-6 rounded-sm bg-white" />
@@ -247,9 +277,14 @@ export default function RecordingPage(): React.JSX.Element {
 
       {/* Active settings */}
       {activeProvider && (
-        <div className="flex items-center gap-1.5 text-[11px] text-[var(--color-text-tertiary)]" style={{ marginTop: -8 }}>
+        <div
+          className="flex items-center gap-1.5 text-[11px] text-[var(--color-text-tertiary)]"
+          style={{ marginTop: -8 }}
+        >
           <span>LLM:</span>
-          <span className="text-[var(--color-text-muted)] font-medium">{PROVIDER_LABELS[activeProvider]}</span>
+          <span className="text-[var(--color-text-muted)] font-medium">
+            {PROVIDER_LABELS[activeProvider]}
+          </span>
         </div>
       )}
     </div>

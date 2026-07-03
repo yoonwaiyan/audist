@@ -99,8 +99,8 @@ const api = {
       ipcRenderer.invoke('audist:recording:get-screen-source'),
     start: (payload: { sessionDir: string; hasSystemAudio?: boolean }): Promise<void> =>
       ipcRenderer.invoke('audist:recording:start', payload),
-    stop: (duration: number): Promise<void> =>
-      ipcRenderer.invoke('audist:recording:stop', duration),
+    stop: (duration: number, templateId?: string): Promise<void> =>
+      ipcRenderer.invoke('audist:recording:stop', duration, templateId),
     updateSystemAudioAvailability: (available: boolean): Promise<void> =>
       ipcRenderer.invoke('audist:recording:update-system-audio', available),
     sendMicAudioChunk: (chunk: Uint8Array): void =>
