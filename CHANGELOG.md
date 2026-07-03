@@ -4,6 +4,15 @@ All notable changes to Audist are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **Preferences window is resizable** — Previously fixed at 640×520; now resizable with a 640×480 minimum.
+- **Window size/position persistence** — Both the main window and Preferences window now remember their size and position across restarts, falling back to defaults if the saved position no longer overlaps a connected display.
+
+### Fixed
+
+- **White line/flash above both windows on macOS** — Elastic scroll bounce revealed the native WebView's white background above window content; `overscroll-behavior: none` stops the bounce.
+
 ## [1.4.0] - 2026-04-29
 
 ### Added
