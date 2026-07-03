@@ -95,14 +95,28 @@ export function getTemplate(id: string): PromptTemplate | null {
   return getTemplateLogic(ensureSeeded(), id)
 }
 
+export function getActiveTemplateId(): string {
+  return ensureSeeded().activeTemplateId
+}
+
 export function createTemplate(partial: Partial<PromptTemplate>): PromptTemplate {
-  const { store, created } = createTemplateLogic(ensureSeeded(), partial, new Date().toISOString(), genId)
+  const { store, created } = createTemplateLogic(
+    ensureSeeded(),
+    partial,
+    new Date().toISOString(),
+    genId
+  )
   writeRawStore(store)
   return created
 }
 
 export function updateTemplate(id: string, changes: Partial<PromptTemplate>): PromptTemplate {
-  const { store, updated } = updateTemplateLogic(ensureSeeded(), id, changes, new Date().toISOString())
+  const { store, updated } = updateTemplateLogic(
+    ensureSeeded(),
+    id,
+    changes,
+    new Date().toISOString()
+  )
   writeRawStore(store)
   return updated
 }

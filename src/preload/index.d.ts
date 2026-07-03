@@ -49,7 +49,9 @@ interface WhisperAPI {
 interface TranscriptionAPI {
   read: (sessionDir: string) => Promise<string | null>
   retry: (sessionDir: string) => Promise<void>
-  onProgress: (cb: (data: { sessionId: string; percent: number; stage: string }) => void) => IpcUnsub
+  onProgress: (
+    cb: (data: { sessionId: string; percent: number; stage: string }) => void
+  ) => IpcUnsub
   onComplete: (cb: (data: { sessionId: string }) => void) => IpcUnsub
   onError: (cb: (data: { sessionId: string; code: string; message: string }) => void) => IpcUnsub
 }
@@ -130,6 +132,7 @@ interface TemplatesAPI {
   delete: (id: string) => Promise<{ success: boolean }>
   duplicate: (id: string, name?: string) => Promise<PromptTemplate>
   setActive: (id: string) => Promise<{ success: boolean }>
+  preview: (templateId: string, sessionId?: string) => Promise<{ markdown: string }>
   onChanged: (cb: () => void) => IpcUnsub
 }
 

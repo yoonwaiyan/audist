@@ -6,36 +6,11 @@ import { llmRegistry } from '../llm/registry'
 import { getLLMSettings } from '../store'
 import { LLMError } from '../llm/types'
 import type { ProviderName } from '../llm/types'
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Default prompts
-// ─────────────────────────────────────────────────────────────────────────────
-
-export const DEFAULT_SYSTEM_PROMPT =
-  'You are an expert meeting assistant. Your job is to produce a concise, structured summary of the meeting transcript provided. Always respond in valid Markdown. Do not include any preamble or explanation — output only the summary document.'
-
-export const DEFAULT_USER_TEMPLATE = `Please summarise the following meeting transcript:
-
-<transcript>
-{{transcript}}
-</transcript>
-
-Use this exact structure:
-
-# Meeting Summary
-**Date:** {{date}}
-
-## Key Points
-(bullet list of the most important discussion points)
-
-## Action Items
-(checkbox list — [ ] Owner: description)
-
-## Decisions Made
-(bullet list of decisions reached)
-
-## Open Questions
-(bullet list of unresolved questions)`
+import {
+  buildPromptFromTemplate,
+  buildVarsFromSession,
+  resolveTemplateForSession
+} from '../templates/engine'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -69,10 +44,6 @@ function updateSessionStatus(
   }
 }
 
-function buildPrompt(template: string, transcript: string, date: string): string {
-  return template.replace('{{transcript}}', transcript).replace('{{date}}', date)
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Core pipeline
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,9 +75,9 @@ export async function summariseSession(sessionDir: string, win: BrowserWindow): 
     return
   }
 
-  const transcript = readFileSync(transcriptPath, 'utf-8')
-  const date = new Date().toISOString().split('T')[0]
-  const userPrompt = buildPrompt(DEFAULT_USER_TEMPLATE, transcript, date)
+  const template = resolveTemplateForSession(sessionDir)
+  const vars = buildVarsFromSession(sessionDir)
+  const messages = buildPromptFromTemplate(template, vars)
 
   const activeProvider = (settings.activeProvider ?? provider.name) as ProviderName
   const model = settings.models?.[activeProvider] ?? provider.availableModels[0] ?? ''
@@ -126,13 +97,7 @@ export async function summariseSession(sessionDir: string, win: BrowserWindow): 
 
   let response: string
   try {
-    response = await provider.complete(
-      [
-        { role: 'system', content: DEFAULT_SYSTEM_PROMPT },
-        { role: 'user', content: userPrompt }
-      ],
-      { model }
-    )
+    response = await provider.complete(messages, { model })
   } catch (err: unknown) {
     let code: string
     let message: string
@@ -183,25 +148,34 @@ import { ipcMain } from 'electron'
 
 export function registerSummaryHandlers(): void {
   // Return summary.md content (or null if not yet written)
-  ipcMain.handle('audist:summary:read', (_, { sessionDir }: { sessionDir: string }): string | null => {
-    const summaryPath = join(sessionDir, 'summary.md')
-    if (!existsSync(summaryPath)) return null
-    try {
-      return readFileSync(summaryPath, 'utf-8')
-    } catch {
-      return null
+  ipcMain.handle(
+    'audist:summary:read',
+    (_, { sessionDir }: { sessionDir: string }): string | null => {
+      const summaryPath = join(sessionDir, 'summary.md')
+      if (!existsSync(summaryPath)) return null
+      try {
+        return readFileSync(summaryPath, 'utf-8')
+      } catch {
+        return null
+      }
     }
-  })
+  )
 
   // Re-run the summarisation pipeline for a session
-  ipcMain.handle('audist:summary:retry', async (event, { sessionDir }: { sessionDir: string }): Promise<void> => {
-    const win = BrowserWindow.fromWebContents(event.sender)
-    if (!win) return
-    await summariseSession(sessionDir, win)
-  })
+  ipcMain.handle(
+    'audist:summary:retry',
+    async (event, { sessionDir }: { sessionDir: string }): Promise<void> => {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (!win) return
+      await summariseSession(sessionDir, win)
+    }
+  )
 
   // Open the session directory in Finder / Explorer
-  ipcMain.handle('audist:session:openInFinder', (_, { sessionDir }: { sessionDir: string }): void => {
-    void shell.openPath(sessionDir)
-  })
+  ipcMain.handle(
+    'audist:session:openInFinder',
+    (_, { sessionDir }: { sessionDir: string }): void => {
+      void shell.openPath(sessionDir)
+    }
+  )
 }
