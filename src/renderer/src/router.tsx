@@ -9,6 +9,8 @@ import WhisperSetupPage from './pages/WhisperSetupPage'
 import GeneralPrefsPage from './pages/prefs/GeneralPrefsPage'
 import LLMPrefsPage from './pages/prefs/LLMPrefsPage'
 import PromptPrefsPage from './pages/prefs/PromptPrefsPage'
+import TemplateListPage from './pages/prefs/templates/TemplateListPage'
+import TemplateEditorPage from './pages/prefs/templates/TemplateEditorPage'
 
 async function requireSetup(): Promise<Response | null> {
   try {
@@ -65,7 +67,9 @@ const router = createHashRouter([
     children: [
       { index: true, element: <GeneralPrefsPage /> },
       { path: 'llm', element: <LLMPrefsPage /> },
-      { path: 'prompt', element: <PromptPrefsPage /> }
+      { path: 'prompt', element: <PromptPrefsPage /> },
+      { path: 'templates', element: <TemplateListPage /> },
+      { path: 'templates/:id', element: <TemplateEditorPage /> }
     ]
   }
 ])
