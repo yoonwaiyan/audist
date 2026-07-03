@@ -112,6 +112,19 @@ const api = {
     sendSystemAudioChunk: (chunk: Uint8Array): void =>
       ipcRenderer.send('audist:recording:system-audio-chunk', chunk),
     onSaved: (cb: IpcListener<{ sessionDir: string }>) => listen('audist:recording:saved', cb)
+  },
+  templates: {
+    list: () => ipcRenderer.invoke('audist:templates:list'),
+    get: (id: string) => ipcRenderer.invoke('audist:templates:get', { id }),
+    create: (template: Record<string, unknown>) =>
+      ipcRenderer.invoke('audist:templates:create', { template }),
+    update: (id: string, changes: Record<string, unknown>) =>
+      ipcRenderer.invoke('audist:templates:update', { id, changes }),
+    delete: (id: string) => ipcRenderer.invoke('audist:templates:delete', { id }),
+    duplicate: (id: string, name?: string) =>
+      ipcRenderer.invoke('audist:templates:duplicate', { id, name }),
+    setActive: (id: string) => ipcRenderer.invoke('audist:templates:setActive', { id }),
+    onChanged: (cb: () => void) => listen('audist:templates:changed', cb)
   }
 }
 
