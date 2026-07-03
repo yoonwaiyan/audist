@@ -64,7 +64,7 @@ export default function TemplateSelector({
       {open && (
         <div
           role="listbox"
-          className="absolute top-[calc(100%+4px)] left-0 min-w-[220px] bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] rounded-lg p-1 z-50"
+          className="absolute top-[calc(100%+4px)] right-0 min-w-[220px] bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] rounded-lg p-1 z-50"
           style={{ boxShadow: 'var(--shadow-3)' }}
         >
           {templates.map((template) => (
