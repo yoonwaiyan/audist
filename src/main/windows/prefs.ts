@@ -16,7 +16,9 @@ function buildPrefsWindowOptions(): Electron.BrowserWindowConstructorOptions {
   const base: Electron.BrowserWindowConstructorOptions = {
     width: 640,
     height: 520,
-    resizable: false,
+    minWidth: 640,
+    minHeight: 480,
+    resizable: true,
     minimizable: false,
     maximizable: false,
     title: 'Preferences',
