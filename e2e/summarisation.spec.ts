@@ -620,7 +620,7 @@ test.describe('No summary placeholder and regenerate button (AUD-84)', () => {
 
     try {
       await page.locator('[data-testid="session-item"]').first().click()
-      await expect(page.getByText('Meeting Notes')).toBeVisible({ timeout: 5000 })
+      await expect(page.getByRole('heading', { name: 'Meeting Notes' })).toBeVisible({ timeout: 5000 })
       await expect(page.locator('button[title="Regenerate summary"]')).toBeVisible()
     } finally {
       await app.close()
@@ -646,7 +646,7 @@ test.describe('No summary placeholder and regenerate button (AUD-84)', () => {
 
     try {
       await page.locator('[data-testid="session-item"]').first().click()
-      await expect(page.getByText('Meeting Notes')).toBeVisible({ timeout: 5000 })
+      await expect(page.getByRole('heading', { name: 'Meeting Notes' })).toBeVisible({ timeout: 5000 })
       // The redesigned session detail shows a "Summarized" status badge in the meta row
       await expect(page.getByText('Summarized')).toBeVisible()
     } finally {
@@ -731,7 +731,7 @@ test.describe('No summary placeholder and regenerate button (AUD-84)', () => {
 
     try {
       await page.locator('[data-testid="session-item"]').first().click()
-      await expect(page.getByText('Meeting Notes')).toBeVisible({ timeout: 5000 })
+      await expect(page.getByRole('heading', { name: 'Meeting Notes' })).toBeVisible({ timeout: 5000 })
       await expect(page.locator('button[title="Regenerate summary"]')).toBeVisible()
 
       await page.getByRole('button', { name: 'Transcript', exact: true }).click()
@@ -789,7 +789,7 @@ test.describe('No summary placeholder and regenerate button (AUD-84)', () => {
 
     try {
       await page.locator('[data-testid="session-item"]').first().click()
-      await expect(page.getByText('Meeting Notes')).toBeVisible({ timeout: 5000 })
+      await expect(page.getByRole('heading', { name: 'Meeting Notes' })).toBeVisible({ timeout: 5000 })
       await expect(page.getByRole('heading', { name: 'No AI Summary Available' })).not.toBeVisible()
       await expect(page.getByRole('button', { name: 'Generate Summary', exact: true })).not.toBeVisible()
       await expect(page.locator('button[title="Regenerate summary"]')).toBeVisible()
