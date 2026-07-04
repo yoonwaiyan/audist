@@ -4,8 +4,10 @@ on:
     types: [opened, synchronize]
 
 permissions:
+  contents: write
   issues: write
   pull-requests: write
+  checks: write
 
 jobs:
   pr_agent_job:
