@@ -23,3 +23,8 @@ jobs:
       env:
         OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # PR-Agent's default pr_actions allow-list is
+        # ["opened", "reopened", "ready_for_review", "review_requested"] — it silently
+        # no-ops on "synchronize" (new commits pushed to an existing PR) unless told
+        # otherwise, even though our workflow trigger above does include it.
+        GITHUB_ACTION_CONFIG.PR_ACTIONS: '["opened", "reopened", "ready_for_review", "review_requested", "synchronize"]'
