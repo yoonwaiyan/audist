@@ -4,6 +4,10 @@ All notable changes to Audist are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Landing page never rebuilt on release** — `landing-pages.yml` listened for `release: types: [published]`, but `release.yml` publishes releases using the default `GITHUB_TOKEN`, which GitHub does not dispatch to other workflows (recursive-trigger prevention). Verified this had silently never fired for any of the 8 releases published to date. Switched to a `workflow_run` trigger on the Release workflow's completion, which isn't subject to that restriction.
+
 ## [1.4.0] - 2026-04-29
 
 ### Added
