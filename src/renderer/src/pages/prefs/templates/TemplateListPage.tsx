@@ -12,12 +12,14 @@ export default function TemplateListPage(): React.JSX.Element {
 
   const hasCustomTemplate = templates.some((t) => !t.isBuiltIn)
 
-  const handleSetActive = (id: string): void => {
-    void window.api.templates.setActive(id)
+  const handleSetDefault = (id: string): void => {
+    void window.api.templates.setDefault(id)
   }
 
   const handleDuplicate = (id: string): void => {
-    void window.api.templates.duplicate(id)
+    void window.api.templates.duplicate(id).then((created) => {
+      navigate(`/prefs/templates/${created.id}`)
+    })
   }
 
   const handleDelete = (id: string): void => {
@@ -55,7 +57,7 @@ export default function TemplateListPage(): React.JSX.Element {
               key={template.id}
               template={template}
               onOpen={handleOpen}
-              onSetActive={handleSetActive}
+              onSetDefault={handleSetDefault}
               onDuplicate={handleDuplicate}
               onDelete={handleDelete}
             />
@@ -72,7 +74,9 @@ export default function TemplateListPage(): React.JSX.Element {
         </div>
       )}
 
-      {showNewTemplateModal && <NewTemplateModal onClose={() => setShowNewTemplateModal(false)} />}
+      {showNewTemplateModal && (
+        <NewTemplateModal templates={templates} onClose={() => setShowNewTemplateModal(false)} />
+      )}
     </div>
   )
 }

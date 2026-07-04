@@ -4,13 +4,32 @@ All notable changes to Audist are documented here.
 
 ## [Unreleased]
 
-### Changed
+### Added
 
-- **PR Agent runs on-demand only** — Switched from auto-running on every PR open/push (burning OpenAI tokens on every commit) to comment-triggered only: comment `/review`, `/improve`, `/describe`, or `/ask` on a PR to invoke it manually.
+- **Custom Prompt Templates (Afterword)** — New data model, CRUD IPC handlers, and 4 built-in presets (Default Meeting Notes, Standup Sync, 1:1 Check-In, Client Discovery Call) power user-editable summarisation templates. (#AUD-56)
+- **Prompt Templates settings page** — New sidebar section in Preferences lists all templates with Default/Built-in badges, an overflow menu (Set as Default, Duplicate, Delete), and an empty-state CTA for first-time custom templates. (#AUD-59)
+- **Template engine wired into summarisation** — The summarisation pipeline now builds its prompt from the resolved template (per-session override, or the default) instead of a hardcoded prompt. Adds a preview IPC handler that renders a template against a sample or real transcript. (#AUD-57)
+- **Per-session template selector** — A compact dropdown in the main recording view lets you override the template for one session without changing the global default. (#AUD-66)
+- **Template editor** — Full editing surface for a template's name, system prompt (with clickable variable chips), and output sections, with a read-only view for built-ins and a Duplicate & Customise action. (#AUD-62)
+- **New template creation modal** — "+ New Template" offers a blank template or duplicating one of the 4 built-in presets. (#AUD-65)
+- **Drag-and-drop output section reordering** — Output sections in the template editor can be reordered by drag handle or keyboard. (#AUD-63)
+- **"Using template" indicator in Session Detail** — Session Detail now shows which template produced (or will produce, on regenerate) a session's summary, resolved the same way the summarisation pipeline itself resolves it.
+- **Preferences window is resizable** — Previously fixed at 640×520; now resizable with a 640×480 minimum.
+- **Window size/position persistence** — Both the main window and Preferences window now remember their size and position across restarts, falling back to defaults if the saved position no longer overlaps a connected display.
 
 ### Fixed
 
 - **Landing page never rebuilt on release** — `landing-pages.yml` listened for `release: types: [published]`, but `release.yml` publishes releases using the default `GITHUB_TOKEN`, which GitHub does not dispatch to other workflows (recursive-trigger prevention). Verified this had silently never fired for any of the 8 releases published to date. Switched to a `workflow_run` trigger on the Release workflow's completion, which isn't subject to that restriction.
+- **Preview modal close button appeared unresponsive** — Closing the template preview while its LLM call was still in flight let the resolved response reopen the modal afterward. A request token now invalidates stale in-flight results.
+- **Template editor action bar overlapped content** — The Preview / Save / Duplicate & Customise bar used `sticky` positioning inside a padded scroll container, letting it overlap trailing content instead of pinning to the window bottom.
+- **Per-session template dropdown overflowed past the window edge** — The dropdown panel anchored its left edge to the trigger button but was wider than it, growing past the visible area. It now anchors from the right.
+- **White line/flash above both windows on macOS** — Elastic scroll bounce revealed the native WebView's white background above window content; `overscroll-behavior: none` stops the bounce.
+- **Escape key inside a modal also closed the whole Preferences window** — `PrefsLayout`'s global Escape-closes-window listener had no way to know a more local component already consumed the keystroke. Fixed by having `NewTemplateModal` and `InlineEditableText`'s own Escape handlers stop propagation.
+
+### Changed
+
+- **Renamed "Active" template to "Default"** — The `isActive` flag never gated which templates could be used, only which one a session falls back to when no per-session override is chosen. Renamed end-to-end (data model, IPC, UI copy) to reflect that; existing local data migrates automatically.
+- **PR Agent runs on-demand only** — Switched from auto-running on every PR open/push (burning OpenAI tokens on every commit) to comment-triggered only: comment `/review`, `/improve`, `/describe`, or `/ask` on a PR to invoke it manually.
 
 ## [1.4.0] - 2026-04-29
 

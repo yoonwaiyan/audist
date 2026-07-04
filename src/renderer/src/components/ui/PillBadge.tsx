@@ -1,10 +1,10 @@
 interface PillBadgeProps {
-  variant: 'active' | 'built-in'
+  variant: 'default' | 'built-in'
   children: React.ReactNode
 }
 
 const VARIANT = {
-  active: 'bg-[var(--color-accent)] text-white',
+  default: 'bg-[var(--color-accent)] text-white',
   'built-in':
     'bg-transparent text-[var(--color-text-muted)] border border-[var(--color-border-strong)]'
 }

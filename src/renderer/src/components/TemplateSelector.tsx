@@ -3,7 +3,7 @@ import { ChevronDown } from 'lucide-react'
 import { useTemplates } from '../hooks/useTemplates'
 
 interface TemplateSelectorProps {
-  /** Per-session override. `null` means "use the global active template". */
+  /** Per-session override. `null` means "use the global default template". */
   selectedTemplateId: string | null
   onSelectTemplate: (id: string) => void
 }
@@ -11,7 +11,7 @@ interface TemplateSelectorProps {
 /**
  * Compact dropdown for picking a per-session Afterword (prompt template) override.
  * Lives in the main recording view, near the recording controls. Selecting a
- * template here does NOT change the global active template — it only affects
+ * template here does NOT change the global default template — it only affects
  * the session about to be (or currently being) recorded.
  */
 export default function TemplateSelector({
@@ -35,9 +35,9 @@ export default function TemplateSelector({
 
   if (isLoading || templates.length === 0) return null
 
-  const activeTemplate = templates.find((t) => t.isActive) ?? templates[0]
-  const currentId = selectedTemplateId ?? activeTemplate.id
-  const currentTemplate = templates.find((t) => t.id === currentId) ?? activeTemplate
+  const defaultTemplate = templates.find((t) => t.isDefault) ?? templates[0]
+  const currentId = selectedTemplateId ?? defaultTemplate.id
+  const currentTemplate = templates.find((t) => t.id === currentId) ?? defaultTemplate
 
   const handleSelect = (id: string): void => {
     onSelectTemplate(id)
@@ -64,7 +64,7 @@ export default function TemplateSelector({
       {open && (
         <div
           role="listbox"
-          className="absolute top-[calc(100%+4px)] left-0 min-w-[220px] bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] rounded-lg p-1 z-50"
+          className="absolute top-[calc(100%+4px)] right-0 min-w-[220px] bg-[var(--color-bg-surface)] border border-[var(--color-border-strong)] rounded-lg p-1 z-50"
           style={{ boxShadow: 'var(--shadow-3)' }}
         >
           {templates.map((template) => (

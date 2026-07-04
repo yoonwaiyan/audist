@@ -67,6 +67,7 @@ export default function SessionDetail(): React.JSX.Element {
   const [session, setSession] = useState<SessionMeta | null>(null)
   const [activeTab, setActiveTab] = useState<'Summary' | 'Transcript'>('Summary')
   const [summary, setSummary] = useState<string | null>(null)
+  const [summaryTemplateName, setSummaryTemplateName] = useState<string | null>(null)
   const [transcript, setTranscript] = useState<string | null>(null)
   const [summaryError, setSummaryError] = useState<{ code: string; message: string } | null>(null)
   const [transcriptionError, setTranscriptionError] = useState<{ code: string; message: string } | null>(null)
@@ -116,6 +117,7 @@ export default function SessionDetail(): React.JSX.Element {
     if (!session) return
     window.api.summary.read(session.dir).then(setSummary)
     window.api.transcription.read(session.dir).then(setTranscript)
+    window.api.templates.resolveForSession(session.dir).then((t) => setSummaryTemplateName(t.name))
   }, [session?.dir])
 
   // Reload when background processing completes / errors
@@ -124,6 +126,9 @@ export default function SessionDetail(): React.JSX.Element {
     const unsubSC = window.api.summary.onComplete(({ sessionId }) => {
       if (sessionId === session.id) {
         window.api.summary.read(session.dir).then(setSummary)
+        window.api.templates
+          .resolveForSession(session.dir)
+          .then((t) => setSummaryTemplateName(t.name))
         setSession((prev) => prev ? { ...prev, status: 'complete' } : prev)
         setSummaryError(null)
         setRetrying(false)
@@ -372,6 +377,12 @@ export default function SessionDetail(): React.JSX.Element {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 py-5">
+        {activeTab === 'Summary' && summaryTemplateName && (
+          <p className="text-[11px] text-[var(--color-text-muted)] mb-3">
+            Using template:{' '}
+            <span className="text-[var(--color-text-secondary)]">{summaryTemplateName}</span>
+          </p>
+        )}
         {activeTab === 'Summary' && (
           summaryError ? (
             <div className="flex flex-col gap-3">

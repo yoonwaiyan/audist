@@ -9,10 +9,10 @@ import {
   duplicateTemplate,
   getTemplate,
   listTemplates,
-  setActiveTemplate,
+  setDefaultTemplate,
   updateTemplate
 } from './store'
-import { buildPromptFromTemplate, buildVarsFromSession } from './engine'
+import { buildPromptFromTemplate, buildVarsFromSession, resolveTemplateForSession } from './engine'
 import { getSampleTranscriptVars } from './sample-transcript'
 import type { PromptTemplate } from './types'
 
@@ -63,11 +63,19 @@ export function registerTemplateHandlers(): void {
   )
 
   ipcMain.handle(
-    'audist:templates:setActive',
+    'audist:templates:setDefault',
     (_, { id }: { id: string }): { success: boolean } => {
-      const result = setActiveTemplate(id)
+      const result = setDefaultTemplate(id)
       broadcastChanged()
       return result
+    }
+  )
+
+  ipcMain.handle(
+    'audist:templates:resolveForSession',
+    (_, { sessionDir }: { sessionDir: string }): { id: string; name: string } => {
+      const template = resolveTemplateForSession(sessionDir)
+      return { id: template.id, name: template.name }
     }
   )
 

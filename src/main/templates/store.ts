@@ -9,7 +9,7 @@ import {
   duplicateTemplate as duplicateTemplateLogic,
   getTemplate as getTemplateLogic,
   listTemplates as listTemplatesLogic,
-  setActiveTemplate as setActiveTemplateLogic,
+  setDefaultTemplate as setDefaultTemplateLogic,
   updateTemplate as updateTemplateLogic,
   type LegacyPromptSettings
 } from './logic'
@@ -27,11 +27,22 @@ function genId(): string {
   return randomUUID()
 }
 
+/** Reads a raw on-disk template, tolerating the pre-rename `isActive` field name. */
+function migrateLegacyActiveField(raw: Record<string, unknown>): PromptTemplatesStore {
+  const templates = ((raw.templates as Record<string, unknown>[]) ?? []).map((t) => ({
+    ...t,
+    isDefault: (t.isDefault as boolean | undefined) ?? (t.isActive as boolean | undefined) ?? false
+  })) as PromptTemplate[]
+  const defaultTemplateId =
+    (raw.defaultTemplateId as string | undefined) ?? (raw.activeTemplateId as string | undefined)
+  return { templates, defaultTemplateId: defaultTemplateId ?? templates[0]?.id ?? '' }
+}
+
 function readRawStore(): PromptTemplatesStore | null {
   const p = templatesPath()
   if (!existsSync(p)) return null
   try {
-    return JSON.parse(readFileSync(p, 'utf-8')) as PromptTemplatesStore
+    return migrateLegacyActiveField(JSON.parse(readFileSync(p, 'utf-8')))
   } catch {
     return null
   }
@@ -95,8 +106,8 @@ export function getTemplate(id: string): PromptTemplate | null {
   return getTemplateLogic(ensureSeeded(), id)
 }
 
-export function getActiveTemplateId(): string {
-  return ensureSeeded().activeTemplateId
+export function getDefaultTemplateId(): string {
+  return ensureSeeded().defaultTemplateId
 }
 
 export function createTemplate(partial: Partial<PromptTemplate>): PromptTemplate {
@@ -139,8 +150,8 @@ export function duplicateTemplate(id: string, name?: string): PromptTemplate {
   return created
 }
 
-export function setActiveTemplate(id: string): { success: boolean } {
-  const { store, success } = setActiveTemplateLogic(ensureSeeded(), id)
+export function setDefaultTemplate(id: string): { success: boolean } {
+  const { store, success } = setDefaultTemplateLogic(ensureSeeded(), id)
   writeRawStore(store)
   return { success }
 }

@@ -88,7 +88,7 @@ export function createBuiltinTemplates(now: string = new Date().toISOString()): 
       name: seed.name,
       description: seed.description,
       isBuiltIn: true,
-      isActive: seed.id === DEFAULT_BUILTIN_TEMPLATE_ID,
+      isDefault: seed.id === DEFAULT_BUILTIN_TEMPLATE_ID,
       systemPrompt: seed.systemPrompt,
       outputSections,
       createdAt: now,

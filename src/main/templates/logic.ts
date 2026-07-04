@@ -17,7 +17,7 @@ export class TemplateOperationError extends Error {
  * Builds the initial store on first launch (or when the `promptTemplates` key is
  * missing). Seeds the 4 built-in presets and, if legacy AUD-38 prompt settings are
  * present, migrates them into a new user-created "My Custom Prompt" template that
- * becomes active instead of the default built-in.
+ * becomes the default instead of the default built-in.
  */
 export function buildInitialStore(
   legacy: LegacyPromptSettings | null | undefined,
@@ -29,11 +29,11 @@ export function buildInitialStore(
   const hasLegacyPrompt = !!(legacy && (legacy.systemPrompt || legacy.userPromptTemplate))
 
   if (!hasLegacyPrompt) {
-    return { templates, activeTemplateId: DEFAULT_BUILTIN_TEMPLATE_ID }
+    return { templates, defaultTemplateId: DEFAULT_BUILTIN_TEMPLATE_ID }
   }
 
-  // Deactivate the default built-in — the migrated template takes over as active.
-  const deactivated = templates.map((t) => ({ ...t, isActive: false }))
+  // Unset the default built-in — the migrated template takes over as default.
+  const unset = templates.map((t) => ({ ...t, isDefault: false }))
 
   const sections: OutputSection[] = legacy?.userPromptTemplate
     ? [
@@ -51,20 +51,20 @@ export function buildInitialStore(
     name: 'My Custom Prompt',
     description: 'Migrated from your previous custom prompt settings',
     isBuiltIn: false,
-    isActive: true,
+    isDefault: true,
     systemPrompt: legacy?.systemPrompt ?? '',
     outputSections: sections,
     createdAt: now,
     updatedAt: now
   }
 
-  return { templates: [...deactivated, migrated], activeTemplateId: migrated.id }
+  return { templates: [...unset, migrated], defaultTemplateId: migrated.id }
 }
 
-/** Sorted: active first, then by `updatedAt` desc. */
+/** Sorted: default first, then by `updatedAt` desc. */
 export function listTemplates(store: PromptTemplatesStore): PromptTemplate[] {
   return [...store.templates].sort((a, b) => {
-    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1
+    if (a.isDefault !== b.isDefault) return a.isDefault ? -1 : 1
     return b.updatedAt.localeCompare(a.updatedAt)
   })
 }
@@ -91,7 +91,7 @@ export function createTemplate(
     name: partial.name ?? 'Untitled Template',
     description: partial.description ?? '',
     isBuiltIn: false,
-    isActive: false,
+    isDefault: false,
     systemPrompt: partial.systemPrompt ?? '',
     outputSections,
     createdAt: now,
@@ -133,7 +133,7 @@ export function deleteTemplate(
   const existing = getTemplate(store, id)
   if (!existing) throw new TemplateOperationError(`Template not found: ${id}`)
   if (existing.isBuiltIn) throw new TemplateOperationError('Cannot delete a built-in template')
-  if (existing.isActive) throw new TemplateOperationError('Cannot delete the active template')
+  if (existing.isDefault) throw new TemplateOperationError('Cannot delete the default template')
 
   return {
     store: { ...store, templates: store.templates.filter((t) => t.id !== id) },
@@ -156,7 +156,7 @@ export function duplicateTemplate(
     id: genId(),
     name: name ?? `Copy of ${existing.name}`,
     isBuiltIn: false,
-    isActive: false,
+    isDefault: false,
     outputSections: existing.outputSections.map((section) => ({ ...section, id: genId() })),
     createdAt: now,
     updatedAt: now
@@ -165,7 +165,7 @@ export function duplicateTemplate(
   return { store: { ...store, templates: [...store.templates, created] }, created }
 }
 
-export function setActiveTemplate(
+export function setDefaultTemplate(
   store: PromptTemplatesStore,
   id: string
 ): { store: PromptTemplatesStore; success: boolean } {
@@ -174,8 +174,8 @@ export function setActiveTemplate(
 
   return {
     store: {
-      templates: store.templates.map((t) => ({ ...t, isActive: t.id === id })),
-      activeTemplateId: id
+      templates: store.templates.map((t) => ({ ...t, isDefault: t.id === id })),
+      defaultTemplateId: id
     },
     success: true
   }
