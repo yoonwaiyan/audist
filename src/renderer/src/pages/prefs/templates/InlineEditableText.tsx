@@ -73,6 +73,8 @@ export default function InlineEditableText({
             commit()
           } else if (e.key === 'Escape') {
             e.preventDefault()
+            // Stop this Escape from also reaching PrefsLayout's window.close() handler.
+            e.stopPropagation()
             cancel()
           }
         }}

@@ -32,7 +32,11 @@ export default function NewTemplateModal({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        // Stop this Escape from also reaching PrefsLayout's window.close() handler.
+        e.stopPropagation()
+        onClose()
+      }
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
