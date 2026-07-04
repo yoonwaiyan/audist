@@ -17,6 +17,7 @@ extraResources:
 asarUnpack:
   - resources/**
   - node_modules/ffmpeg-static/**
+afterPack: scripts/after-pack.mjs
 win:
   executableName: audist
 nsis:
