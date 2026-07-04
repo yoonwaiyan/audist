@@ -53,6 +53,10 @@ linux:
   category: Utility
 appImage:
   artifactName: ${name}-${version}-${arch}.${ext}
+# Use the newer AppImage runtime (bundles its own libs instead of relying on
+# host libz/libfuse2), so the AppImage doesn't need system packages preinstalled.
+toolsets:
+  appimage: '1.0.2'
 npmRebuild: false
 publish:
   provider: generic
