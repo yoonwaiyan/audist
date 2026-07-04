@@ -1,7 +1,9 @@
 name: PR Agent
+# Comment-triggered only — no automatic run on PR open/push. Comment a slash
+# command (e.g. /review, /improve, /describe, /ask) on a PR to invoke it manually.
 on:
-  pull_request:
-    types: [opened, synchronize]
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: write
@@ -11,6 +13,9 @@ permissions:
 
 jobs:
   pr_agent_job:
+    # Without this, PR-Agent's own comments (posted via GITHUB_TOKEN) would
+    # re-trigger this workflow indefinitely.
+    if: ${{ github.event.sender.type != 'Bot' }}
     runs-on: ubuntu-latest
     steps:
     - name: PR Agent action step
