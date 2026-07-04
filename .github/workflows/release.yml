@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ (github.event_name == 'workflow_dispatch' && inputs.platform == 'linux') && fromJSON('["ubuntu-latest"]') || (github.event_name == 'workflow_dispatch' && inputs.platform == 'macos') && fromJSON('["macos-latest"]') || fromJSON('["macos-latest", "ubuntu-latest"]') }}
+        include: ${{ (github.event_name == 'workflow_dispatch' && inputs.platform == 'linux') && fromJSON('[{"os":"ubuntu-latest","arch":"x64"},{"os":"ubuntu-24.04-arm","arch":"arm64"}]') || (github.event_name == 'workflow_dispatch' && inputs.platform == 'macos') && fromJSON('[{"os":"macos-latest"}]') || fromJSON('[{"os":"macos-latest"},{"os":"ubuntu-latest","arch":"x64"},{"os":"ubuntu-24.04-arm","arch":"arm64"}]') }}
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
@@ -115,13 +115,13 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           npx electron-vite build
-          npx electron-builder --linux appimage
+          npx electron-builder --linux appimage --${{ matrix.arch }}
 
       - name: Upload AppImage artifact (Linux)
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
-          name: audist-linux-${{ inputs.tag_name || github.ref_name }}
+          name: audist-linux-${{ matrix.arch }}-${{ inputs.tag_name || github.ref_name }}
           path: dist/*.AppImage
           retention-days: 30
 
