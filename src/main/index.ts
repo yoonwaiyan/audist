@@ -22,6 +22,12 @@ import { AnthropicProvider } from './llm/providers/anthropic'
 import { CompatibleProvider } from './llm/providers/compatible'
 import { MockLLMProvider } from './llm/providers/mock'
 
+// AppImage extraction resets ownership of the bundled chrome-sandbox helper,
+// so it's never root-owned/setuid — the SUID sandbox can't work there.
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('no-sandbox')
+}
+
 function createWindow(): void {
   const savedBounds = getWindowBounds('main')
   const bounds = savedBounds && isOnScreen(savedBounds) ? savedBounds : { width: 900, height: 670 }
