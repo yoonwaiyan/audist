@@ -22,10 +22,15 @@ import { AnthropicProvider } from './llm/providers/anthropic'
 import { CompatibleProvider } from './llm/providers/compatible'
 import { MockLLMProvider } from './llm/providers/mock'
 
-// AppImage extraction resets ownership of the bundled chrome-sandbox helper,
-// so it's never root-owned/setuid — the SUID sandbox can't work there.
-if (process.platform === 'linux') {
-  app.commandLine.appendSwitch('no-sandbox')
+// Chromium's zygote-host sandbox check runs before Electron's JS executes,
+// so appendSwitch('no-sandbox') here is too late to affect it. Neither the
+// SUID sandbox (chrome-sandbox is never root-owned once extracted from an
+// AppImage) nor the namespace sandbox (blocked by AppArmor on some distros)
+// works portably, so relaunch as a fresh process with --no-sandbox in the
+// original argv, which the zygote host check does see.
+if (process.platform === 'linux' && !app.commandLine.hasSwitch('no-sandbox')) {
+  app.relaunch({ args: [...process.argv.slice(1), '--no-sandbox'] })
+  app.exit(0)
 }
 
 function createWindow(): void {
